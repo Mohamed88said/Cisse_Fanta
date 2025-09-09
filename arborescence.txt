@@ -1,0 +1,21 @@
+Arborescence du projet :
+├── .
+│   ├── README.md
+│   ├── app.py
+│   ├── arborescence.txt
+│   ├── gen_arbo.py
+│   ├── instance/
+│   │   ├── database.db
+│   ├── mood_verses.json
+│   ├── requirements.txt
+│   ├── static/
+│   │   ├── style.css
+│   │   ├── uploads/
+│   ├── templates/
+│   │   ├── add.html
+│   │   ├── base.html
+│   │   ├── galerie.html
+│   │   ├── index.html
+│   │   ├── login.html
+│   │   ├── mood.html
+│   │   ├── mood_result.html

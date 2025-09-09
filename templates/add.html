@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Ajouter une phrase du jour</h2>
+<form method="POST">
+    <textarea name="content" placeholder="Écris ton mot doux ici..." required></textarea>
+    <button type="submit">Enregistrer</button>
+</form>
+<a href="{{ url_for('index') }}"><button>⬅ Retour</button></a>
+{% endblock %}

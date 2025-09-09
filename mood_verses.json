@@ -1,0 +1,398 @@
+{
+  "heureux": [
+    {
+      "verse_id": "ad-duha-1",
+      "surah": "Ad-Duha",
+      "verse_number": "1-5",
+      "arabic": "وَالضُّحَىٰ ﴿1﴾ وَاللَّيْلِ إِذَا سَجَىٰ ﴿2﴾ مَا وَدَّعَكَ رَبُّكَ وَمَا قَلَىٰ ﴿3﴾ وَلَلْآخِرَةُ خَيْرٌ لَّكَ مِنَ الْأُولَىٰ ﴿4﴾ وَلَسَوْفَ يُعْطِيكَ رَبُّكَ فَتَرْضَىٰ ﴿5﴾",
+      "french": "Par le jour montant! Et par la nuit quand elle couvre tout! Ton Seigneur ne t'a ni abandonné, ni détesté. La vie dernière t'est, certes, meilleure que la vie présente. Ton Seigneur t'accordera certes [Ses faveurs], et alors tu seras satisfait.",
+      "explanation": "Allah console le Prophète et lui promet que l'au-delà sera meilleur que cette vie.",
+      "conclusion": "Allah ne nous abandonne jamais, même dans les moments difficiles. Ta satisfaction viendra."
+    },
+    {
+      "verse_id": "ar-rad-28",
+      "surah": "Ar-Rad",
+      "verse_number": "28",
+      "arabic": "الَّذِينَ آمَنُوا وَتَطْمَئِنُّ قُلُوبُهُم بِذِكْرِ اللَّهِ ۗ أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ",
+      "french": "Ceux qui ont cru, et dont les cœurs se tranquillisent à l'évocation d'Allah. N'est-ce point par l'évocation d'Allah que se tranquillisent les cœurs?",
+      "explanation": "Le rappel d'Allah apporte la paix et la sérénité aux cœurs des croyants.",
+      "conclusion": "Ton cœur trouve la paix dans le souvenir d'Allah. Continue à L'évoquer."
+    },
+    {
+      "verse_id": "yunus-62",
+      "surah": "Yunus",
+      "verse_number": "62",
+      "arabic": "أَلَا إِنَّ أَوْلِيَاءَ اللَّهِ لَا خَوْفٌ عَلَيْهِمْ وَلَا هُمْ يَحْزَنُونَ",
+      "french": "En vérité, les bien-aimés d’Allah seront à l’abri de toute crainte, et ils ne seront point affligés.",
+      "explanation": "Une promesse divine de sécurité et de bonheur éternel pour ceux qui sont proches d'Allah.",
+      "conclusion": "En étant un serviteur proche d'Allah, la peur et la tristesse ne t'atteignent pas."
+    },
+    {
+      "verse_id": "an-nahl-97",
+      "surah": "An-Nahl",
+      "verse_number": "97",
+      "arabic": "مَنْ عَمِلَ صَالِحًا مِّن ذَكَرٍ أَوْ أُنثَىٰ وَهُوَ مُؤْمِنٌ فَلَنُحْيِيَنَّهُ حَيَاةً طَيِّبَةً",
+      "french": "Quiconque, mâle ou femelle, fait une bonne œuvre tout en étant croyant, Nous lui ferons vivre une bonne vie.",
+      "explanation": "Allah promet une vie bonne et pure à tout croyant qui fait le bien.",
+      "conclusion": "Ta foi et tes bonnes actions sont la clé d'une vie véritablement heureuse et épanouie."
+    },
+    {
+      "verse_id": "ta-ha-130",
+      "surah": "Ta-Ha",
+      "verse_number": "130",
+      "arabic": "فَاصْبِرْ عَلَىٰ مَا يَقُولُونَ وَسَبِّحْ بِحَمْدِ رَبِّكَ قَبْلَ طُلُوعِ الشَّمْسِ وَقَبْلَ غُرُوبِهَا",
+      "french": "Supporte donc patiemment ce qu’ils disent et célèbre la louange de ton Seigneur avant le lever du soleil et avant son coucher.",
+      "explanation": "L'ordre de se tourner vers l'adoration et la gratitude comme source de patience et de contentement.",
+      "conclusion": "Le bonheur se trouve dans l'adoration et la patience face aux épreuves."
+    },
+    {
+      "type": "hadith",
+      "source": "Sahih Al-Bukhari",
+      "reference": "Hadith 6429",
+      "arabic": "عَجَبًا لِأَمْرِ الْمُؤْمِنِ إِنَّ أَمْرَهُ كُلَّهُ خَيْرٌ وَلَيْسَ ذَاكَ لِأَحَدٍ إِلَّا لِلْمُؤْمِنِ إِنْ أَصَابَتْهُ سَرَّاءُ شَكَرَ فَكَانَ خَيْرًا لَهُ وَإِنْ أَصَابَتْهُ ضَرَّاءُ صَبَرَ فَكَانَ خَيْرًا لَهُ",
+      "french": "La situation du croyant est étonnante ; tout est bien pour lui. Ceci n'est le cas pour personne d'autre que le croyant : si un bonheur l'atteint, il remercie et c'est un bien pour lui ; si un malheur l'atteint, il patiente et c'est un bien pour lui.",
+      "explanation": "Le croyant voit le bien dans toute situation grâce à sa gratitude et sa patience.",
+      "conclusion": "Ton statut de croyant fait que toute situation, bonne ou mauvaise, est une source de bien et donc de bonheur."
+    }
+  ],
+  "triste": [
+    {
+      "verse_id": "al-baqarah-286",
+      "surah": "Al-Baqarah",
+      "verse_number": "286",
+      "arabic": "لَا يُكَلِّفُ اللَّهُ نَفْسًا إِلَّا وُسْعَهَا",
+      "french": "Allah n'impose à aucune âme une charge supérieure à sa capacité.",
+      "explanation": "Allah est Juste et ne nous impose que ce que nous pouvons supporter.",
+      "conclusion": "Allah sait ce que tu traverses et ne te donnera que des épreuves à ta mesure."
+    },
+    {
+      "verse_id": "al-inshirah-5-6",
+      "surah": "Al-Inshirah",
+      "verse_number": "5-6",
+      "arabic": "فَإِنَّ مَعَ الْعُسْرِ يُسْرًا ﴿5﴾ إِنَّ مَعَ الْعُسْرِ يُسْرًا ﴿6﴾",
+      "french": "A côté de la difficulté est, certes, une facilité! A côté de la difficulté est, certes, une facilité!",
+      "explanation": "Après chaque difficulté vient la facilité, et cette promesse est répétée pour la renforcer.",
+      "conclusion": "Cette tristesse passera et sera remplacée par la joie, inchallah."
+    },
+    {
+      "verse_id": "al-baqarah-155-157",
+      "surah": "Al-Baqarah",
+      "verse_number": "155-157",
+      "arabic": "وَلَنَبْلُوَنَّكُم بِشَيْءٍ مِّنَ الْخَوْفِ وَالْجُوعِ وَنَقْصٍ مِّنَ الْأَمْوَالِ وَالْأَنفُسِ وَالثَّمَرَاتِ ۗ وَبَشِّرِ الصَّابِرِينَ ﴿155﴾ الَّذِينَ إِذَا أَصَابَتْهُم مُّصِيبَةٌ قَالُوا إِنَّا لِلَّهِ وَإِنَّا إِلَيْهِ رَاجِعُونَ ﴿156﴾ أُولَٰئِكَ عَلَيْهِمْ صَلَوَاتٌ مِّن رَّبِّهِمْ وَرَحْمَةٌ ۖ وَأُولَٰئِكَ هُمُ الْمُهْتَدُونَ ﴿157﴾",
+      "french": "Nous vous éprouverons certes un peu par la peur, la faim, la diminution des biens, des personnes et des récoltes. Et fais la bonne annonce aux endurants. Ceux qui, frappés par un malheur, disent : « Nous appartenons à Allah et c’est à Lui que nous retournerons. » Ceux-là reçoivent des bénédictions et de la miséricorde de leur Seigneur. Et ceux-là sont les biens guidés.",
+      "explanation": "Les épreuves sont inévitables, mais la récompense pour ceux qui patientent et se soumettent à la volonté divine est immense.",
+      "conclusion": "Face à la tristesse, invoque cette parole et tu recevras les bénédictions et la guidance d'Allah."
+    },
+    {
+      "verse_id": "yusuf-86",
+      "surah": "Yusuf",
+      "verse_number": "86",
+      "arabic": "إِنَّمَا أَشْكُو بَثِّي وَحُزْنِي إِلَى اللَّهِ",
+      "french": "Je ne me plains de ma détresse et de mon chagrin qu’à Allah.",
+      "explanation": "Les paroles de Ya'qub (Jacob) qui, dans une immense tristesse, ne se plaint qu'à Allah.",
+      "conclusion": "Tourne-toi exclusivement vers Allah pour Lui confier ta peine et ton chagrin."
+    },
+    {
+      "verse_id": "at-tawbah-40",
+      "surah": "At-Tawbah",
+      "verse_number": "40",
+      "arabic": "لَا تَحْزَنْ إِنَّ اللَّهَ مَعَنَا",
+      "french": "Ne t’afflige pas, car Allah est avec nous.",
+      "explanation": "Les paroles rassurantes d'Abu Bakr au Prophète (ﷺ) dans la grotte, alors qu'ils étaient poursuivis.",
+      "conclusion": "Allah est avec toi, Il te voit et Il t'entend. Ne sois pas triste."
+    },
+    {
+      "type": "hadith",
+      "source": "Sunan Ibn Majah",
+      "reference": "Hadith 1599",
+      "arabic": "مَا يُصِيبُ الْمُسْلِمَ مِنْ نَصَبٍ وَلَا وَصَبٍ وَلَا هَمٍّ وَلَا حُزْنٍ وَلَا أَذًى وَلَا غَمٍّ حَتَّى الشَّوْكَةِ يُشَاكُهَا إِلَّا كَفَّرَ اللَّهُ بِهَا مِنْ خَطَايَاهُ",
+      "french": "Le musulman qui est atteint par une fatigue, une maladie, un souci, une tristesse, un mal, une angoisse, même une épine qui le pique, voit Allah expier ses péchés à cause de cela.",
+      "explanation": "Toute forme de peine ou de difficulté qui atteint un croyant est une expiation pour ses péchés.",
+      "conclusion": "Ta tristesse n'est pas vaine ; elle nettoie tes péchés et élève ton rang auprès d'Allah."
+    }
+  ],
+  "anxieux": [
+    {
+      "verse_id": "at-talaq-2-3",
+      "surah": "At-Talaq",
+      "verse_number": "2-3",
+      "arabic": "وَمَن يَتَّقِ اللَّهَ يَجْعَل لَّهُ مَخْرَجًا ﴿2﴾ وَيَرْزُقْهُ مِنْ حَيْثُ لَا يَحْتَسِبُ",
+      "french": "Et quiconque craint Allah, Il lui donnera une issue favorable et lui accordera Ses dons par [des moyens] sur lesquels il ne comptait pas.",
+      "explanation": "La piété ouvre des portes insoupçonnées et apporte des provisions inattendues.",
+      "conclusion": "Fais confiance à Allah, Il te préparera une solution que tu n'imaginais même pas."
+    },
+    {
+      "verse_id": "al-imran-159",
+      "surah": "Al-Imran",
+      "verse_number": "159",
+      "arabic": "فَإِذَا عَزَمْتَ فَتَوَكَّلْ عَلَى اللَّهِ ۚ إِنَّ اللَّهَ يُحِبُّ الْمُتَوَكِّلِينَ",
+      "french": "Puis, lorsque tu as pris une décision, place ta confiance en Allah. Allah aime, certes, ceux qui Lui font confiance.",
+      "explanation": "Après avoir consulté et pris une décision, il faut s'en remettre entièrement à Allah.",
+      "conclusion": "Planifie, décide, puis abandonne ton anxiété en plaçant une confiance absolue en Allah."
+    },
+    {
+      "verse_id": "ar-rad-11",
+      "surah": "Ar-Ra'd",
+      "verse_number": "11",
+      "arabic": "إِنَّ اللَّهَ لَا يُغَيِّرُ مَا بِقَوْمٍ حَتَّىٰ يُغَيِّرُوا مَا بِأَنفُسِهِمْ",
+      "french": "Allah ne modifie point l’état d’un peuple tant que les [individus qui le composent] ne modifient pas ce qui est en eux-mêmes.",
+      "explanation": "Le changement commence par soi-même. Prendre des actions positives chasse l'anxiété de l'inaction.",
+      "conclusion": "Au lieu de t'inquiéter, agis sur ce que tu peux changer et fais confiance à Allah pour le reste."
+    },
+    {
+      "verse_id": "at-tawbah-51",
+      "surah": "At-Tawbah",
+      "verse_number": "51",
+      "arabic": "قُل لَّن يُصِيبَنَا إِلَّا مَا كَتَبَ اللَّهُ لَنَا",
+      "french": "Dis : « Il ne nous atteindra que ce qu’Allah a prescrit pour nous. »",
+      "explanation": "Rappel que tout est décrété par Allah. L'anxiété ne change rien au destin.",
+      "conclusion": "Rien ne t'atteindra en dehors de ce qu'Allah a déjà écrit pour toi. Sois serein."
+    },
+    {
+      "type": "hadith",
+      "source": "Sahih Al-Bukhari",
+      "reference": "Hadith 7392",
+      "arabic": "احْفَظِ اللَّهَ يَحْفَظْكَ احْفَظِ اللَّهَ تَجِدْهُ تُجَاهَكَ",
+      "french": "Prends soin d’Allah, Il prendra soin de toi. Prends soin d’Allah et tu Le trouveras devant toi.",
+      "explanation": "En obéissant à Allah dans les commandements et les interdits, Il te protégera et te guidera.",
+      "conclusion": "La meilleure protection contre l'anxiété est de se rapprocher d'Allah et de respecter Ses droits."
+    },
+    {
+      "type": "dua",
+      "source": "Prophète Muhammad (ﷺ)",
+      "reference": "Hisn al-Muslim",
+      "arabic": "اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْهَمِّ وَالْحَزَنِ، وَالْعَجْزِ وَالْكَسَلِ، وَالْبُخْلِ وَالْجُبْنِ، وَضَلَعِ الدَّيْنِ وَغَلَبَةِ الرِّجَالِ",
+      "french": "Ô Allah, je cherche refuge auprès de Toi contre l'angoisse et la tristesse, contre l'impuissance et la paresse, contre l'avarice et la lâcheté, et contre l'écrasement des dettes et la domination des hommes.",
+      "explanation": "Une invocation complète pour se protéger de toutes les sources d'anxiété et de soucis.",
+      "conclusion": "Invoque Allah par cette prière puissante pour dissiper ton anxiété."
+    }
+  ],
+  "reconnaissant": [
+    {
+      "verse_id": "ibrahim-7",
+      "surah": "Ibrahim",
+      "verse_number": "7",
+      "arabic": "لَئِن شَكَرْتُمْ لَأَزِيدَنَّكُمْ",
+      "french": "Si vous êtes reconnaissants, très certainement J'augmenterai [Mes bienfaits] pour vous.",
+      "explanation": "Allah promet d'augmenter Ses bienfaits pour ceux qui expriment leur gratitude.",
+      "conclusion": "Ta gratitude attire encore plus de bénédictions d'Allah. Continue à Le remercier."
+    },
+    {
+      "verse_id": "an-naml-93",
+      "surah": "An-Naml",
+      "verse_number": "93",
+      "arabic": "وَقُلِ الْحَمْدُ لِلَّهِ سَيُرِيكُمْ آيَاتِهِ فَتَعْرِفُونَهَا",
+      "french": "Et dis : « Louange à Allah ! Il vous fera voir Ses signes et vous les reconnaîtrez. »",
+      "explanation": "Exprimer sa gratitude ouvre les yeux sur les innombrables signes et bienfaits d'Allah.",
+      "conclusion": "Plus tu remercies, plus tu deviens conscient des miracles qui t'entourent."
+    },
+    {
+      "verse_id": "ad-duha-11",
+      "surah": "Ad-Duha",
+      "verse_number": "11",
+      "arabic": "وَأَمَّا بِنِعْمَةِ رَبِّكَ فَحَدِّثْ",
+      "french": "Et quant au bienfait de ton Seigneur, proclame-le.",
+      "explanation": "Ordre de parler des bienfaits d'Allah, ce qui est une forme de gratitude et d'encouragement pour les autres.",
+      "conclusion": "Exprime ta gratitude en parlant des faveurs qu'Allah t'a accordées."
+    },
+    {
+      "verse_id": "al-jathiyah-12-13",
+      "surah": "Al-Jathiyah",
+      "verse_number": "12-13",
+      "arabic": "سَخَّرَ لَكُم مَّا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ جَمِيعًا مِّنْهُ ۚ إِنَّ فِي ذَٰلِكَ لَآيَاتٍ لِّقَوْمٍ يَتَفَكَّرُونَ",
+      "french": "Allah a assujetti pour vous ce qui est dans les cieux et ce qui est sur la terre, le tout venant de Lui. Il y a en cela des preuves pour des gens qui réfléchissent.",
+      "explanation": "Tout l'univers a été mis à notre service par Allah, une raison immense d'être reconnaissant.",
+      "conclusion": "Réfléchis à tout ce qu'Allah a mis à ta disposition, et ton cœur débordera de gratitude."
+    },
+    {
+      "type": "hadith",
+      "source": "Sahih Muslim",
+      "reference": "Hadith 2999",
+      "arabic": "انْظُرُوا إِلَى مَنْ أَسْفَلَ مِنْكُمْ، وَلَا تَنْظُرُوا إِلَى مَنْ هُوَ فَوْقَكُمْ، فَهُوَ أَجْدَرُ أَنْ لَا تَزْدَرُوا نِعْمَةَ اللَّهِ",
+      "french": "Regardez ceux qui sont au-dessous de vous et ne regardez pas ceux qui sont au-dessus de vous, car c’est plus à même de vous faire ne pas mépriser les bienfaits d’Allah.",
+      "explanation": "Une guidance pour cultiver la gratitude en se comparant à ceux qui ont moins que soi.",
+      "conclusion": "Pour nourrir ta reconnaissance, pense à ceux qui ont moins de bienfaits que toi."
+    }
+  ],
+  "fatigué": [
+    {
+      "verse_id": "al-baqarah-45",
+      "surah": "Al-Baqarah",
+      "verse_number": "45",
+      "arabic": "وَاسْتَعِينُوا بِالصَّبْرِ وَالصَّلَاةِ",
+      "french": "Et cherchez assistance dans l'endurance et la Salât.",
+      "explanation": "La patience et la prière sont des sources de force et de soutien divin.",
+      "conclusion": "Dans la fatigue, trouve ton réconfort dans la prière et la patience."
+    },
+    {
+      "verse_id": "al-baqarah-286",
+      "surah": "Al-Baqarah",
+      "verse_number": "286",
+      "arabic": "رَبَّنَا وَلَا تُحَمِّلْنَا مَا لَا طَاقَةَ لَنَا بِهِ",
+      "french": "Ô notre Seigneur, ne nous impose pas ce que nous ne pouvons supporter.",
+      "explanation": "Une invocation enseignée par Allah Lui-même pour demander de l'allègement.",
+      "conclusion": "Quand tu es accablé de fatigue, invoque Allah par cette belle prière."
+    },
+    {
+      "verse_id": "al-qasas-73",
+      "surah": "Al-Qasas",
+      "verse_number": "73",
+      "arabic": "وَمِن رَّحْمَتِهِ جَعَلَ لَكُمُ اللَّيْلَ وَالنَّهَارَ لِتَسْكُنُوا فِيهِ وَلِتَبْتَغُوا مِن فَضْلِهِ",
+      "french": "Et par un effet de Sa miséricorde, Il a fait pour vous la nuit et le jour pour que vous vous y reposiez et que vous cherchiez de Sa grâce.",
+      "explanation": "Allah a créé le cycle de la nuit et du jour pour que nous puissions nous reposer et travailler.",
+      "conclusion": "Le repos est une miséricorde divine. N'hésite pas à t'accorder le repos dont tu as besoin."
+    },
+    {
+      "type": "hadith",
+      "source": "Sahih Al-Bukhari",
+      "reference": "Hadith 1130",
+      "arabic": "إِنَّ لِرَبِّكَ عَلَيْكَ حَقًّا، وَلِنَفْسِكَ عَلَيْكَ حَقًّا، وَلِأَهْلِكَ عَلَيْكَ حَقًّا، فَأَعْطِ كُلَّ ذِي حَقٍّ حَقَّهُ",
+      "french": "Ton Seigneur a un droit sur toi, ton corps a un droit sur toi, et ta famille a un droit sur toi. Accorde à chacun son dû.",
+      "explanation": "L'Islam est une religion d'équilibre. L'adoration est importante, mais le repos et les droits de sa famille et de son corps le sont aussi.",
+      "conclusion": "Ta fatigue est légitime. Prends du repos, c'est le droit de ton corps sur toi."
+    }
+  ],
+  "serein": [
+    {
+      "verse_id": "al-fath-4",
+      "surah": "Al-Fath",
+      "verse_number": "4",
+      "arabic": "هُوَ الَّذِي أَنزَلَ السَّكِينَةَ فِي قُلُوبِ الْمُؤْمِنِينَ",
+      "french": "C'est Lui qui a fait descendre la quiétude dans les cœurs des croyants.",
+      "explanation": "Allah est Celui qui instille la paix et la tranquillité dans les cœurs des croyants.",
+      "conclusion": "Cette sérénité que tu ressens est un cadeau direct d'Allah. Chéris-la."
+    },
+    {
+      "verse_id": "at-tawbah-40",
+      "surah": "At-Tawbah",
+      "verse_number": "40",
+      "arabic": "فَأَنزَلَ اللَّهُ سَكِينَتَهُ عَلَيْهِ",
+      "french": "Allah fit alors descendre Sa quiétude sur lui.",
+      "explanation": "Allah accorde Sa sérénité à ceux qui Lui font confiance, même dans les situations les plus périlleuses.",
+      "conclusion": "La sérénité divine est une force qui stabilise le cœur face aux tempêtes de la vie."
+    },
+    {
+      "verse_id": "al-fath-18",
+      "surah": "Al-Fath",
+      "verse_number": "18",
+      "arabic": "رَضِيَ اللَّهُ عَنْهُمْ وَرَضُوا عَنْهُ",
+      "french": "Allah les a agréés et ils L’ont agréé.",
+      "explanation": "L'état ultime de sérénité et de félicité : l'agrément mutuel entre Allah et Son serviteur.",
+      "conclusion": "Travaille à atteindre ce niveau où tu es satisfait du décret d'Allah, et Il sera satisfait de toi."
+    },
+    {
+      "type": "hadith",
+      "source": "Musnad Ahmad",
+      "reference": "Hadith 23074",
+      "arabic": "اضْمَنْوا لِي سِتًّا مِنْ أَنْفُسِكُمْ أَضْمَنْ لَكُمُ الْجَنَّةَ: اصْدُقُوا إِذَا حَدَّثْتُمْ، وَأَوْفُوا إِذَا وَعَدْتُمْ، وَأَدُّوا إِذَا اؤْتُمِنْتُمْ، وَاحْفَظُوا فُرُوجَكُمْ، وَغُضُّوا أَبْصَارَكُمْ، وَكُفُّوا أَيْدِيَكُمْ",
+      "french": "Garantissez-moi six choses de votre part, et je vous garantis le Paradis : soyez véridiques quand vous parlez, respectez vos promesses, restituz ce qui vous est confié, préservez votre chasteté, baissez le regard et retenez vos mains (de commettre du mal).",
+      "explanation": "La sérénité provient d'une conscience tranquille, elle-même fruit d'un comportement droit et pieux.",
+      "conclusion": "La paix intérieure est le fruit d'une vie vécue dans l'intégrité et l'obéissance à Allah."
+    }
+  ],
+  "en_colere": [
+    {
+      "verse_id": "al-imran-134",
+      "surah": "Al-Imran",
+      "verse_number": "134",
+      "arabic": "الَّذِينَ يُنفِقُونَ فِي السَّرَّاءِ وَالضَّرَّاءِ وَالْكَاظِمِينَ الْغَيْظَ وَالْعَافِينَ عَنِ النَّاسِ ۗ وَاللَّهُ يُحِبُّ الْمُحْسِنِينَ",
+      "french": "Ceux qui dépensent dans l’aisance et dans l’adversité, qui dominent leur rage et pardonnent à autrui. Et Allah aime les bienfaisants.",
+      "explanation": "Maîtriser sa colère et pardonner sont des qualités parmi les plus nobles, aimées d'Allah.",
+      "conclusion": "Contrôler sa colère est un signe de force spirituelle et te rapproche d'Allah."
+    },
+    {
+      "verse_id": "ash-shura-37",
+      "surah": "Ash-Shura",
+      "verse_number": "37",
+      "arabic": "وَإِذَا مَا غَضِبُوا هُمْ يَغْفِرُونَ",
+      "french": "Et qui, s’ils sont en proie à la colère, savent pardonner.",
+      "explanation": "Décrit les vertueux qui, bien qu'ayant le droit d'être en colère, choisissent le pardon.",
+      "conclusion": "Le vrai courage est de pardonner quand on a le pouvoir de se venger."
+    },
+    {
+      "type": "hadith",
+      "source": "Sahih Al-Bukhari et Muslim",
+      "reference": "Hadith Concordance",
+      "arabic": "لَيْسَ الشَّدِيدُ بِالصُّرَعَةِ، إِنَّمَا الشَّدِيدُ الَّذِي يَمْلِكُ نَفْسَهُ عِنْدَ الْغَضَبِ",
+      "french": "Le fort n’est pas celui qui terrasse les autres dans un combat. Le fort est celui qui se maîtrise lorsqu’il est en colère.",
+      "explanation": "La force réelle est une force de caractère et de contrôle de soi, pas une force physique brutale.",
+      "conclusion": "Maîtriser ta colère fait de toi une personne plus forte que le plus musclé des hommes."
+    },
+    {
+      "type": "hadith",
+      "source": "Sunan Abi Dawud",
+      "reference": "Hadith 4782",
+      "arabic": "إِذَا غَضِبَ أَحَدُكُمْ وَهُوَ قَائِمٌ فَلْيَجْلِسْ، فَإِنْ ذَهَبَ عَنْهُ الْغَضَبُ وَإِلَّا فَلْيَضْطَجِعْ",
+      "french": "Si l’un de vous est en colère alors qu’il est debout, qu’il s’assoie. Si la colère le quitte, (c’est bien) ; sinon, qu’il s’allonge.",
+      "explanation": "Conseil pratique du Prophète (ﷺ) pour dissiper la colère en changeant de position physique.",
+      "conclusion": "Pour calmer ta colère, assieds-toi ou allonge-toi. Change ton état physique pour changer ton état d'esprit."
+    }
+  ],
+  "decourage": [
+    {
+      "verse_id": "yusuf-87",
+      "surah": "Yusuf",
+      "verse_number": "87",
+      "arabic": "وَلَا تَيْأَسُوا مِن رَّوْحِ اللَّهِ ۖ إِنَّهُ لَا يَيْأَسُ مِن رَّوْحِ اللَّهِ إِلَّا الْقَوْمُ الْكَافِرُونَ",
+      "french": "Et ne désespérez pas de la miséricorde d’Allah. Ce sont seulement les mécréants qui désespèrent de la miséricorde d’Allah.",
+      "explanation": "Le désespoir face à la miséricorde et au secours d'Allah est une caractéristique de la mécréance.",
+      "conclusion": "Quelle que soit la situation, jamais tu ne dois désespérer de la miséricorde et de l'aide d'Allah."
+    },
+    {
+      "verse_id": "az-zumar-53",
+      "surah": "Az-Zumar",
+      "verse_number": "53",
+      "arabic": "قُلْ يَا عِبَادِيَ الَّذِينَ أَسْرَفُوا عَلَىٰ أَنفُسِهِمْ لَا تَقْنَطُوا مِن رَّحْمَةِ اللَّهِ",
+      "french": "Dis : « Ô Mes serviteurs qui avez commis des excès à votre propre détriment, ne désespérez pas de la miséricorde d’Allah. »",
+      "explanation": "Un appel direct d'Allah à ceux qui ont beaucoup péché, leur ordonnant de ne pas perdre espoir en Son pardon.",
+      "conclusion": "Peu importe tes erreurs passées, le pardon d'Allah est plus grand. Ne tombe pas dans le découragement."
+    },
+    {
+      "type": "hadith",
+      "source": "Sahih Muslim",
+      "reference": "Hadith 7138",
+      "arabic": "لَوْ يَعْلَمُ الْمُؤْمِنُ مَا عِنْدَ اللَّهِ مِنْ عُقُوبَةٍ مَا طَمِعَ فِي جَنَّتِهِ أَحَدٌ، وَلَوْ يَعْلَمُ الْكَافِرُ مَا عِنْدَ اللَّهِ مِنْ رَحْمَةٍ مَا قَنَطَ مِنْ جَنَّتِهِ أَحَدٌ",
+      "french": "Si le croyant savait le châtiment qui [peut] venir d’Allah, nul n’aurait l’espoir d’entrer au Paradis. Et si le mécréant savait la miséricorde qui vient d’Allah, nul ne désespérerait d’entrer au Paradis.",
+      "explanation": "La miséricorde d'Allah est si vaste qu'elle dépasse toute imagination. Il ne faut jamais en désespérer.",
+      "conclusion": "Ne sois jamais découragé, car la miséricorde d'Allah est infiniment plus grande que ton imagination."
+    }
+  ],
+  "malade": [
+    {
+      "verse_id": "ash-shuara-80",
+      "surah": "Ash-Shu'ara",
+      "verse_number": "80",
+      "arabic": "وَإِذَا مَرِضْتُ فَهُوَ يَشْفِينِ",
+      "french": "Et quand je suis malade, c’est Lui qui me guérit.",
+      "explanation": "Parole d'Ibrahim (AS) qui reconnaît qu'Allah est le seul et unique Guérisseur.",
+      "conclusion": "Même si tu consultes un médecin, place ta confiance en Allah, le Vrai Guérisseur."
+    },
+    {
+      "verse_id": "at-tawbah-51",
+      "surah": "At-Tawbah",
+      "verse_number": "51",
+      "arabic": "قُل لَّن يُصِيبَنَا إِلَّا مَا كَتَبَ اللَّهُ لَنَا",
+      "french": "Dis : « Il ne nous atteindra que ce qu’Allah a prescrit pour nous. »",
+      "explanation": "La maladie, comme toute chose, fait partie du décret divin.",
+      "conclusion": "Cette épreuve est une prédestination. Fais preuve de patience et cherche la récompense."
+    },
+    {
+      "type": "hadith",
+      "source": "Sahih Al-Bukhari",
+      "reference": "Hadith 5641",
+      "arabic": "مَا يُصِيبُ الْمُسْلِمَ مِنْ نَصَبٍ وَلَا وَصَبٍ... إِلَّا كَفَّرَ اللَّهُ بِهَا مِنْ خَطَايَاهُ",
+      "french": "Rien ne fatigue ni n'épuise le musulman, ni une maladie, ni un souci... sans que cela n’expie ses péchés.",
+      "explanation": "La maladie est une expiation des péchés et une purification pour le croyant.",
+      "conclusion": "Ta maladie n'est pas une punition, mais une purification et une élévation en degrés."
+    },
+    {
+      "type": "dua",
+      "source": "Prophète Muhammad (ﷺ)",
+      "reference": "Hisn al-Muslim",
+      "arabic": "أَذْهِبِ الْبَأْسَ رَبَّ النَّاسِ، وَاشْفِ أَنْتَ الشَّافِي، لَا شِفَاءَ إِلَّا شِفَاؤُكَ، شِفَاءً لَا يُغَادِرُ سَقَمًا",
+      "french": "Ô Seigneur des hommes, dissipe le mal. Guéris, car Tu es le Guérisseur. Il n’y a de guérison que la Tienne, une guérison qui ne laisse aucune maladie.",
+      "explanation": "Une invocation complète pour demander la guérison, en reconnaissant qu'elle ne peut venir que d'Allah.",
+      "conclusion": "Invoque Allah avec cette prière pour demander Sa guérison."
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="header-container">
+    <h1>📸 Notre Galerie Photo</h1>
+    <p>Des souvenirs précieux de notre amour</p>
+</div>
+
+<div class="navigation-links">
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">💌 Retour aux messages</a>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="flash-messages">
+            {% for category, message in messages %}
+                <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
+
+<div class="upload-section">
+    <h2>➕ Ajouter une photo</h2>
+    <form method="POST" action="{{ url_for('upload_file') }}" enctype="multipart/form-data" class="upload-form">
+        <div class="form-group">
+            <input type="file" name="file" accept="image/*" required>
+        </div>
+        <div class="form-group">
+            <input type="text" name="legende" placeholder="Légende de la photo..." class="form-input">
+        </div>
+        <button type="submit" class="btn btn-primary">📸 Uploader la photo</button>
+    </form>
+</div>
+
+<div class="gallery-container">
+    {% if photos %}
+        <div class="photos-grid">
+            {% for photo in photos %}
+                <div class="photo-card">
+                    <img src="{{ url_for('static', filename='uploads/' + photo.filename) }}" 
+                         alt="{{ photo.legende }}" class="photo-image">
+                    <div class="photo-info">
+                        <p class="photo-caption">{{ photo.legende }}</p>
+                        <div class="photo-meta">
+                            <span>Par {{ photo.auteur }}</span>
+                            <span>{{ photo.date.strftime('%d/%m/%Y') }}</span>
+                        </div>
+                        <a href="{{ url_for('supprimer_photo', photo_id=photo.id) }}" 
+                           class="btn btn-small btn-logout" 
+                           onclick="return confirm('Supprimer cette photo?')">
+                            🗑️ Supprimer
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="no-photos">
+            <p>📷 Aucune photo pour le moment... Ajoutez la première!</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

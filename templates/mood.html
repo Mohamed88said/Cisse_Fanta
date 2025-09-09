@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="mood-container">
+    <h1>🌷 Comment te sens-tu aujourd'hui, {{ user }} ?</h1>
+    
+    <p class="mood-subtitle">Choisis ton humeur et reçois un verset du Coran spécialement pour toi.</p>
+    
+    <form method="POST" action="{{ url_for('mood') }}" class="mood-form">
+        <div class="mood-options">
+            <label class="mood-option">
+                <input type="radio" name="mood" value="heureux" required>
+                <div class="mood-card">
+                    <span class="mood-emoji">😊</span>
+                    <span class="mood-text">Heureux/Heureuse</span>
+                </div>
+            </label>
+            
+            <label class="mood-option">
+                <input type="radio" name="mood" value="triste">
+                <div class="mood-card">
+                    <span class="mood-emoji">😢</span>
+                    <span class="mood-text">Triste</span>
+                </div>
+            </label>
+            
+            <label class="mood-option">
+                <input type="radio" name="mood" value="anxieux">
+                <div class="mood-card">
+                    <span class="mood-emoji">😰</span>
+                    <span class="mood-text">Anxieux/Anxieuse</span>
+                </div>
+            </label>
+            
+            <label class="mood-option">
+                <input type="radio" name="mood" value="reconnaissant">
+                <div class="mood-card">
+                    <span class="mood-emoji">🙏</span>
+                    <span class="mood-text">Reconnaissant(e)</span>
+                </div>
+            </label>
+            
+            <label class="mood-option">
+                <input type="radio" name="mood" value="fatigué">
+                <div class="mood-card">
+                    <span class="mood-emoji">😴</span>
+                    <span class="mood-text">Fatigué(e)</span>
+                </div>
+            </label>
+            
+            <label class="mood-option">
+                <input type="radio" name="mood" value="serein">
+                <div class="mood-card">
+                    <span class="mood-emoji">😌</span>
+                    <span class="mood-text">Serein(e)</span>
+                </div>
+            </label>
+            <!-- Ajout des nouvelles humeurs -->
+            <label class="mood-option">
+                <input type="radio" name="mood" value="en_colere">
+                <div class="mood-card">
+                    <span class="mood-emoji">😠</span>
+                    <span class="mood-text">En colère</span>
+                </div>
+            </label>
+            
+            <label class="mood-option">
+                <input type="radio" name="mood" value="decourage">
+                <div class="mood-card">
+                    <span class="mood-emoji">😔</span>
+                    <span class="mood-text">Découragé(e)</span>
+                </div>
+            </label>
+            
+            <label class="mood-option">
+                <input type="radio" name="mood" value="malade">
+                <div class="mood-card">
+                    <span class="mood-emoji">🤒</span>
+                    <span class="mood-text">Malade</span>
+                </div>
+            </label>
+        </div>
+        
+        <button type="submit" class="btn btn-primary btn-large">Recevoir mon verset 🌟</button>
+    </form>
+</div>
+{% endblock %}

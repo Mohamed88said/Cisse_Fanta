@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="login-container">
+    <h2>Connexion à notre jardin secret 💖</h2>
+    
+    <form method="POST" class="login-form">
+        <div class="form-group">
+            <input type="text" name="username" placeholder="Nom d'utilisateur" required 
+                   value="{{ 'fanta' if attempts > 0 else '' }}">
+        </div>
+        
+        <div class="form-group">
+            <input type="password" name="password" placeholder="Mot de passe" required>
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Se connecter</button>
+    </form>
+
+    {% if hint %}
+    <div class="hint-box">
+        <p>{{ hint }}</p>
+        {% if attempts >= 3 %}
+        <p class="small-hint">(Psst... essaye de copier-coller la réponse si tu n'y arrives pas)</p>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flash {{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="login-info">
+        <p>💭 Pour Fanta : souviens-toi de notre conversation spéciale...</p>
+    </div>
+</div>
+
+<style>
+.login-container {
+    max-width: 400px;
+    margin: 40px auto;
+    padding: 30px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.login-form {
+    margin: 30px 0;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 15px;
+    border: 2px solid #eee;
+    border-radius: 10px;
+    font-size: 1.1em;
+    transition: all 0.3s ease;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #e60073;
+    box-shadow: 0 0 0 3px rgba(230, 0, 115, 0.1);
+}
+
+.hint-box {
+    background: #fff3cd;
+    border: 2px solid #ffc107;
+    border-radius: 10px;
+    padding: 15px;
+    margin: 20px 0;
+    font-size: 1.1em;
+}
+
+.small-hint {
+    font-size: 0.9em;
+    margin-top: 10px;
+    opacity: 0.8;
+}
+
+.login-info {
+    margin-top: 30px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    font-size: 0.9em;
+    color: #666;
+}
+</style>
+{% endblock %}

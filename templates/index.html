@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="header-container">
+    <h1>💌 Mots Doux pour {{ user }} 💌</h1>
+    <div class="user-welcome">
+        Bienvenue, <span class="username">{{ user }}</span>! 💖
+    </div>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="flash-messages">
+            {% for category, message in messages %}
+                <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
+
+<div class="messages-container">
+    {% if phrases %}
+        <div class="messages-list">
+            {% for phrase in phrases %}
+                <div class="message-card" style="background-color: {{ phrase.couleur }};">
+                    <div class="message-header">
+                        <span class="message-date">{{ phrase.date.strftime('%d/%m/%Y à %H:%M') }}</span>
+                        <span class="message-author">par {{ phrase.auteur }}</span>
+                        <div class="message-actions">
+                            <a href="{{ url_for('toggle_favori', phrase_id=phrase.id) }}" 
+                               class="favorite-btn {% if phrase.est_favori %}favori{% endif %}">
+                                ⭐
+                            </a>
+                            <a href="{{ url_for('supprimer_phrase', phrase_id=phrase.id) }}" 
+                               class="delete-btn" onclick="return confirm('Supprimer ce message?')">
+                                🗑️
+                            </a>
+                        </div>
+                    </div>
+                    <div class="message-content">
+                        {{ phrase.texte }}
+                    </div>
+                    {% if phrase.est_favori %}
+                        <div class="favorite-badge">Favori 💫</div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="no-messages">
+            <p>💝 Aucun message pour le moment... Soyez le premier à partager un mot doux!</p>
+        </div>
+    {% endif %}
+</div>
+
+<div class="add-message-section" id="ajouter">
+    <h2>➕ Ajouter un message spécial</h2>
+    <form method="POST" action="{{ url_for('index') }}" class="message-form">
+        <textarea name="texte" placeholder="Écrivez votre mot doux ici..." required></textarea>
+        
+        <div class="color-picker">
+            <label>Couleur de fond:</label>
+            <input type="color" name="couleur" value="#ffdde1">
+        </div>
+        
+        <button type="submit" class="btn btn-primary">💖 Publier le message</button>
+    </form>
+</div>
+
+<div class="navigation-links">
+    <a href="{{ url_for('galerie') }}" class="btn btn-secondary">📸 Voir la galerie photo</a>
+    <a href="/mood" class="btn btn-info">🌷 Humeur du jour</a>
+    <a href="{{ url_for('logout') }}" class="btn btn-logout">🚪 Déconnexion</a>
+</div>
+{% endblock %}

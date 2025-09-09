@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="verse-container">
+    <div class="verse-header">
+        <h1>💫 Ton verset du jour</h1>
+        <p class="mood-indicator">Humeur: 
+            <span class="mood-badge mood-{{ mood }}">
+                {% if mood == 'heureux' %}😊 Heureux/Heureuse
+                {% elif mood == 'triste' %}😢 Triste
+                {% elif mood == 'anxieux' %}😰 Anxieux/Anxieuse
+                {% elif mood == 'reconnaissant' %}🙏 Reconnaissant(e)
+                {% elif mood == 'fatigué' %}😴 Fatigué(e)
+                {% elif mood == 'serein' %}😌 Serein(e)
+                {% elif mood == 'en_colere' %}😠 En colère
+                {% elif mood == 'decourage' %}😔 Découragé(e)
+                {% elif mood == 'malade' %}🤒 Malade
+                {% endif %}
+            </span>
+        </p>
+    </div>
+    
+    <div class="verse-card">
+        <div class="verse-arabic">
+            {{ verse.arabic }}
+        </div>
+        
+        <div class="verse-details">
+            <div class="surah-info">
+                Sourate {{ verse.surah }}, Verset {{ verse.verse_number }}
+            </div>
+            
+            <div class="verse-french">
+                {{ verse.french }}
+            </div>
+            
+            <div class="verse-explanation">
+                <h3>📖 Explication:</h3>
+                <p>{{ verse.explanation }}</p>
+            </div>
+            
+            <div class="verse-conclusion">
+                <h3>💝 Message pour toi:</h3>
+                <p>{{ verse.conclusion }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="verse-actions">
+        <a href="{{ url_for('index') }}" class="btn btn-primary">Retour à l'accueil</a>
+        <button onclick="window.print()" class="btn btn-secondary">Imprimer ce verset</button>
+    </div>
+</div>
+{% endblock %}
