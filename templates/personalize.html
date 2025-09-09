@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="header-container">
-    <h1>🎨 Personnaliser Votre Espace</h1>
-    <p>Rendez ce jardin secret encore plus vôtre</p>
+    <h1>🎨 Personnalise Notre Jardin Secret</h1>
+    <p>Rends cet espace encore plus magique à ton image</p>
 </div>
 
 <div class="navigation-links">
@@ -22,8 +22,8 @@
 <div class="personalize-container">
     <div class="personalize-card">
         <div class="card-header">
-            <h2>✨ Vos Préférences</h2>
-            <p>Personnalisez votre expérience pour qu'elle vous ressemble</p>
+            <h2>✨ Tes Préférences</h2>
+            <p>Personnalise ton expérience pour qu'elle te ressemble parfaitement</p>
         </div>
         
         <form method="POST" class="personalize-form">
@@ -31,13 +31,13 @@
                 <h3>🎨 Couleurs</h3>
                 <div class="color-preferences">
                     <div class="form-group">
-                        <label for="favorite_color">Couleur préférée pour vos messages :</label>
+                        <label for="favorite_color">Ta couleur préférée pour tes messages :</label>
                         <div class="color-picker-container">
                             <input type="color" name="favorite_color" id="favorite_color" value="{{ current_color }}" class="color-picker">
                             <div class="color-preview" id="color-preview">
                                 <div class="preview-message">
-                                    <p>Aperçu de votre message</p>
-                                    <small>Avec votre couleur préférée</small>
+                                    <p>Aperçu de ton message</p>
+                                    <small>Avec ta couleur préférée</small>
                                 </div>
                             </div>
                         </div>
@@ -58,19 +58,19 @@
             </div>
             
             <div class="form-actions">
-                <button type="submit" class="btn btn-customize btn-large">💾 Sauvegarder mes préférences</button>
+                <button type="submit" class="btn btn-customize btn-large">💾 Sauvegarder tes préférences</button>
             </div>
         </form>
     </div>
     
-    <!-- Statistiques personnelles -->
+    <!-- Informations personnelles -->
     <div class="personal-stats">
-        <h3>📊 Vos Statistiques Personnelles</h3>
+        <h3>📊 Tes Informations</h3>
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-icon">👤</div>
                 <div class="stat-info">
-                    <div class="stat-label">Votre profil</div>
+                    <div class="stat-label">Ton profil</div>
                     <div class="stat-value">{{ user|title }}</div>
                 </div>
             </div>
@@ -78,7 +78,7 @@
             <div class="stat-card">
                 <div class="stat-icon">🗓️</div>
                 <div class="stat-info">
-                    <div class="stat-label">Membre depuis</div>
+                    <div class="stat-label">Dans mon cœur depuis</div>
                     <div class="stat-value">{{ current_user.created_at.strftime('%B %Y') if current_user.created_at else 'Récemment' }}</div>
                 </div>
             </div>
@@ -86,7 +86,7 @@
             <div class="stat-card">
                 <div class="stat-icon">🔄</div>
                 <div class="stat-info">
-                    <div class="stat-label">Visites</div>
+                    <div class="stat-label">Visites de notre jardin</div>
                     <div class="stat-value">{{ current_user.visit_count or 0 }}</div>
                 </div>
             </div>
@@ -94,46 +94,46 @@
             <div class="stat-card">
                 <div class="stat-icon">🕐</div>
                 <div class="stat-info">
-                    <div class="stat-label">Dernière visite</div>
+                    <div class="stat-label">Dernière fois ici</div>
                     <div class="stat-value">{{ current_user.last_login.strftime('%d/%m à %H:%M') if current_user.last_login else 'Maintenant' }}</div>
                 </div>
             </div>
         </div>
     </div>
     
-    <!-- Conseils de personnalisation -->
+    <!-- Conseils romantiques -->
     <div class="personalization-tips">
-        <h3>💡 Conseils de Personnalisation</h3>
+        <h3>💡 Mes Conseils pour Toi</h3>
         <div class="tips-list">
             <div class="tip-item">
                 <span class="tip-icon">🎨</span>
                 <div class="tip-content">
-                    <h4>Choisissez des couleurs qui vous parlent</h4>
-                    <p>Vos couleurs préférées rendront chaque message encore plus spécial et personnel.</p>
+                    <h4>Choisis des couleurs qui te parlent</h4>
+                    <p>Tes couleurs préférées rendront chaque message encore plus spécial et personnel.</p>
                 </div>
             </div>
             
             <div class="tip-item">
                 <span class="tip-icon">💝</span>
                 <div class="tip-content">
-                    <h4>Créez votre propre style</h4>
-                    <p>Utilisez des tags personnalisés pour organiser vos messages selon vos thèmes favoris.</p>
+                    <h4>Crée ton propre style</h4>
+                    <p>Utilise des tags personnalisés pour organiser tes messages selon tes thèmes favoris.</p>
                 </div>
             </div>
             
             <div class="tip-item">
                 <span class="tip-icon">📸</span>
                 <div class="tip-content">
-                    <h4>Ajoutez des photos régulièrement</h4>
-                    <p>Les images rendent vos souvenirs encore plus vivants et précieux.</p>
+                    <h4>Ajoute des photos régulièrement</h4>
+                    <p>Les images rendent nos souvenirs encore plus vivants et précieux.</p>
                 </div>
             </div>
             
             <div class="tip-item">
                 <span class="tip-icon">💌</span>
                 <div class="tip-content">
-                    <h4>Écrivez des lettres d'amour</h4>
-                    <p>Les lettres sont parfaites pour exprimer vos sentiments les plus profonds.</p>
+                    <h4>Écris-moi des lettres d'amour</h4>
+                    <p>Les lettres sont parfaites pour exprimer tes sentiments les plus profonds.</p>
                 </div>
             </div>
         </div>

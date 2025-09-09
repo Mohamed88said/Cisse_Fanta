@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="header-container">
-    <h1>📊 Statistiques de notre jardin secret</h1>
-    <p>Découvrez l'évolution de votre histoire d'amour</p>
+    <h1>📊 Fanta, voici nos statistiques</h1>
+    <p>L'évolution de notre belle histoire d'amour en chiffres</p>
 </div>
 
 <div class="navigation-links">
@@ -12,13 +12,13 @@
 <div class="stats-container">
     <!-- Statistiques générales -->
     <div class="stats-section">
-        <h2>📈 Vue d'ensemble</h2>
+        <h2>📈 Notre amour en chiffres</h2>
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-icon">💌</div>
                 <div class="stat-info">
                     <div class="stat-number">{{ total_messages }}</div>
-                    <div class="stat-label">Messages d'amour</div>
+                    <div class="stat-label">Mots doux échangés</div>
                 </div>
             </div>
             
@@ -26,7 +26,7 @@
                 <div class="stat-icon">📸</div>
                 <div class="stat-info">
                     <div class="stat-number">{{ total_photos }}</div>
-                    <div class="stat-label">Photos partagées</div>
+                    <div class="stat-label">Souvenirs immortalisés</div>
                 </div>
             </div>
             
@@ -34,57 +34,87 @@
                 <div class="stat-icon">⭐</div>
                 <div class="stat-info">
                     <div class="stat-number">{{ favoris_count }}</div>
-                    <div class="stat-label">Messages favoris</div>
+                    <div class="stat-label">Moments précieux</div>
                 </div>
             </div>
             
             <div class="stat-card">
-                <div class="stat-icon">💝</div>
+                <div class="stat-icon">💕</div>
                 <div class="stat-info">
                     <div class="stat-number">{{ ((total_messages + total_photos) / 30) | round(1) }}</div>
-                    <div class="stat-label">Partages par mois</div>
+                    <div class="stat-label">Bonheurs par mois</div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Messages par utilisateur -->
+    <!-- Nouvelles statistiques romantiques -->
     <div class="stats-section">
-        <h2>💌 Messages par personne</h2>
+        <h2>💝 Notre contribution à cette histoire</h2>
         <div class="user-stats">
             {% for user_stat in messages_by_user %}
                 <div class="user-stat-item">
-                    <div class="user-name">{{ user_stat.auteur }}</div>
+                    <div class="user-name">{{ user_stat.auteur|title }}</div>
                     <div class="user-bar">
                         <div class="user-bar-fill" style="width: {{ (user_stat.count / total_messages * 100) if total_messages > 0 else 0 }}%"></div>
                     </div>
-                    <div class="user-count">{{ user_stat.count }} messages</div>
+                    <div class="user-count">{{ user_stat.count }} messages d'amour</div>
                 </div>
             {% endfor %}
         </div>
     </div>
 
-    <!-- Photos par utilisateur -->
+    <!-- Photos partagées -->
     {% if photos_by_user %}
     <div class="stats-section">
-        <h2>📸 Photos par personne</h2>
+        <h2>📸 Nos souvenirs en images</h2>
         <div class="user-stats">
             {% for user_stat in photos_by_user %}
                 <div class="user-stat-item">
-                    <div class="user-name">{{ user_stat.auteur }}</div>
+                    <div class="user-name">{{ user_stat.auteur|title }}</div>
                     <div class="user-bar">
                         <div class="user-bar-fill" style="width: {{ (user_stat.count / total_photos * 100) if total_photos > 0 else 0 }}%"></div>
                     </div>
-                    <div class="user-count">{{ user_stat.count }} photos</div>
+                    <div class="user-count">{{ user_stat.count }} souvenirs partagés</div>
                 </div>
             {% endfor %}
         </div>
     </div>
     {% endif %}
 
+    <!-- Lettres d'amour -->
+    {% if total_letters > 0 %}
+    <div class="stats-section">
+        <h2>💌 Nos lettres d'amour</h2>
+        <div class="love-stats">
+            <div class="love-stat">
+                <p>Nous avons échangé <strong>{{ total_letters }}</strong> lettres d'amour</p>
+            </div>
+            <div class="love-stat">
+                <p>Chaque lettre est un trésor de notre cœur 💝</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Souvenirs précieux -->
+    {% if total_memories > 0 %}
+    <div class="stats-section">
+        <h2>✨ Nos souvenirs précieux</h2>
+        <div class="love-stats">
+            <div class="love-stat">
+                <p>Nous avons immortalisé <strong>{{ total_memories }}</strong> moments spéciaux</p>
+            </div>
+            <div class="love-stat">
+                <p>Chaque souvenir raconte notre belle histoire 📖</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Activité récente -->
     <div class="stats-section">
-        <h2>🕒 Activité récente</h2>
+        <h2>🕒 Ce qui s'est passé récemment</h2>
         <div class="activity-list">
             {% for activity in recent_activity %}
                 <div class="activity-item">
@@ -96,19 +126,25 @@
                         {% elif activity.action == 'photo_liked' %}❤️
                         {% elif activity.action == 'mood_checked' %}🌷
                         {% elif activity.action == 'search' %}🔍
+                        {% elif activity.action == 'letter_sent' %}💌
+                        {% elif activity.action == 'letter_read' %}👁️
+                        {% elif activity.action == 'memory_added' %}✨
                         {% else %}📝
                         {% endif %}
                     </div>
                     <div class="activity-info">
-                        <div class="activity-user">{{ activity.user }}</div>
+                        <div class="activity-user">{{ activity.user|title }}</div>
                         <div class="activity-description">
                             {% if activity.action == 'login' %}s'est connecté(e)
-                            {% elif activity.action == 'message_added' %}a ajouté un message
-                            {% elif activity.action == 'photo_uploaded' %}a uploadé une photo
-                            {% elif activity.action == 'phrase_liked' %}a liké un message
-                            {% elif activity.action == 'photo_liked' %}a liké une photo
+                            {% elif activity.action == 'message_added' %}a écrit un message d'amour
+                            {% elif activity.action == 'photo_uploaded' %}a partagé un souvenir
+                            {% elif activity.action == 'phrase_liked' %}a aimé un message
+                            {% elif activity.action == 'photo_liked' %}a aimé une photo
                             {% elif activity.action == 'mood_checked' %}a vérifié son humeur
                             {% elif activity.action == 'search' %}a effectué une recherche
+                            {% elif activity.action == 'letter_sent' %}a envoyé une lettre d'amour
+                            {% elif activity.action == 'letter_read' %}a lu une lettre
+                            {% elif activity.action == 'memory_added' %}a ajouté un souvenir
                             {% else %}{{ activity.action }}
                             {% endif %}
                         </div>
@@ -122,20 +158,41 @@
         </div>
     </div>
 
-    <!-- Messages inspirants -->
+    <!-- Message romantique final -->
     <div class="stats-section">
-        <h2>💝 Votre histoire en chiffres</h2>
+        <h2>💝 Notre histoire d'amour</h2>
         <div class="love-stats">
             <div class="love-stat">
-                <p>Vous avez partagé <strong>{{ total_messages + total_photos }}</strong> moments précieux ensemble</p>
+                <p>Ma chérie, nous avons partagé <strong>{{ total_messages + total_photos }}</strong> moments magiques ensemble</p>
             </div>
             <div class="love-stat">
-                <p>Cela représente <strong>{{ ((total_messages + total_photos) * 2) | round }}</strong> minutes de bonheur partagé</p>
+                <p>Chaque message, chaque photo raconte notre amour grandissant 💕</p>
             </div>
             <div class="love-stat">
-                <p>Votre amour grandit chaque jour un peu plus 💕</p>
+                <p>Et ce n'est que le début de notre éternité ensemble ∞</p>
+            </div>
+            <div class="love-stat special-message">
+                <p><em>"Avec toi, chaque statistique devient une déclaration d'amour"</em> - Saïd 💖</p>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+.special-message {
+    background: linear-gradient(135deg, rgba(248, 198, 208, 0.2), rgba(241, 196, 15, 0.1));
+    border: 2px solid var(--rose-quartz);
+    border-radius: 15px;
+    padding: 25px;
+    text-align: center;
+    font-size: 1.1em;
+    margin-top: 20px;
+}
+
+.special-message p {
+    color: var(--rose-quartz);
+    font-weight: 600;
+    text-shadow: var(--text-shadow);
+}
+</style>
 {% endblock %}

@@ -23,19 +23,19 @@
     <div class="letter-paper">
         <div class="paper-header">
             <h2>💌 Pour {{ recipient|title }}</h2>
-            <p class="paper-date">{{ moment().format('DD MMMM YYYY') if moment else '' }}</p>
+            <p class="paper-date">{{ moment().strftime('%d %B %Y') if moment else '' }}</p>
         </div>
         
         <form method="POST" class="letter-form">
             <input type="hidden" name="recipient" value="{{ recipient }}">
             
             <div class="form-group">
-                <label for="title">Objet de la lettre :</label>
-                <input type="text" name="title" id="title" placeholder="Un titre pour votre lettre d'amour..." required maxlength="100" class="letter-input">
+                <label for="title">Objet de ta lettre :</label>
+                <input type="text" name="title" id="title" placeholder="Un titre pour ta lettre d'amour..." required maxlength="100" class="letter-input">
             </div>
             
             <div class="form-group">
-                <label for="content">Votre message :</label>
+                <label for="content">Ton message :</label>
                 <textarea name="content" id="content" placeholder="Mon amour,
 
 Laissez votre cœur parler...
@@ -53,25 +53,25 @@ Avec tout mon amour,
         </form>
     </div>
     
-    <!-- Suggestions romantiques -->
+    <!-- Mes suggestions pour toi -->
     <div class="romantic-suggestions">
-        <h3>💡 Idées pour votre lettre</h3>
+        <h3>💡 Idées pour ta lettre</h3>
         <div class="suggestions-grid">
             <div class="suggestion-card" onclick="addSuggestion(this)">
                 <h4>💝 Souvenir précieux</h4>
-                <p>Partagez un moment spécial que vous avez vécu ensemble</p>
+                <p>Partage un moment spécial que nous avons vécu ensemble</p>
             </div>
             <div class="suggestion-card" onclick="addSuggestion(this)">
                 <h4>🌟 Ce que j'aime chez toi</h4>
-                <p>Décrivez ce qui vous fait craquer chez votre moitié</p>
+                <p>Décris ce qui te fait craquer chez moi</p>
             </div>
             <div class="suggestion-card" onclick="addSuggestion(this)">
                 <h4>🔮 Nos rêves d'avenir</h4>
-                <p>Parlez de vos projets et rêves ensemble</p>
+                <p>Parle de nos projets et rêves ensemble</p>
             </div>
             <div class="suggestion-card" onclick="addSuggestion(this)">
                 <h4>💌 Remerciements</h4>
-                <p>Exprimez votre gratitude pour tout ce qu'elle/il fait</p>
+                <p>Exprime ta gratitude pour tout ce que je fais</p>
             </div>
         </div>
     </div>

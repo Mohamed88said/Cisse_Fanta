@@ -2,7 +2,7 @@
 {% block content %}
 <div class="verse-container">
     <div class="verse-header">
-        <h1>💫 Ton verset du jour</h1>
+        <h1>💫 Ta parole sacrée du jour</h1>
         <p class="mood-indicator">Humeur: 
             <span class="mood-badge mood-{{ mood }}">
                 {% if mood == 'heureux' %}😊 Heureux/Heureuse
@@ -25,9 +25,19 @@
         </div>
         
         <div class="verse-details">
-            <div class="surah-info">
-                Sourate {{ verse.surah }}, Verset {{ verse.verse_number }}
-            </div>
+            {% if verse.surah %}
+                <div class="source-info verse-source">
+                    📖 Verset du Coran - Sourate {{ verse.surah }}, Verset {{ verse.verse_number }}
+                </div>
+            {% elif verse.type == 'hadith' %}
+                <div class="source-info hadith-source">
+                    📚 Hadith - {{ verse.source }}, {{ verse.reference }}
+                </div>
+            {% elif verse.type == 'dua' %}
+                <div class="source-info dua-source">
+                    🤲 Invocation - {{ verse.source }}, {{ verse.reference }}
+                </div>
+            {% endif %}
             
             <div class="verse-french">
                 {{ verse.french }}
@@ -47,7 +57,38 @@
     
     <div class="verse-actions">
         <a href="{{ url_for('index') }}" class="btn btn-primary">Retour à l'accueil</a>
-        <button onclick="window.print()" class="btn btn-secondary">Imprimer ce verset</button>
+        <button onclick="window.print()" class="btn btn-secondary">
+            {% if verse.surah %}Imprimer ce verset{% else %}Imprimer ce texte{% endif %}
+        </button>
     </div>
 </div>
+
+<style>
+.source-info {
+    font-weight: 600;
+    margin-bottom: 20px;
+    font-size: 1.1em;
+    padding: 15px;
+    border-radius: 10px;
+    text-align: center;
+}
+
+.verse-source {
+    background: rgba(39, 174, 96, 0.2);
+    color: #27ae60;
+    border: 2px solid rgba(39, 174, 96, 0.3);
+}
+
+.hadith-source {
+    background: rgba(52, 152, 219, 0.2);
+    color: #3498db;
+    border: 2px solid rgba(52, 152, 219, 0.3);
+}
+
+.dua-source {
+    background: rgba(155, 89, 182, 0.2);
+    color: #9b59b6;
+    border: 2px solid rgba(155, 89, 182, 0.3);
+}
+</style>
 {% endblock %}

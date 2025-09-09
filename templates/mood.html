@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="mood-container">
-    <h1>🌷 Comment te sens-tu aujourd'hui, {{ user }} ?</h1>
+    <h1>🌷 Comment te sens-tu aujourd'hui, {{ user|title }} ?</h1>
     
-    <p class="mood-subtitle">Choisis ton humeur et reçois un verset du Coran spécialement pour toi.</p>
+    <p class="mood-subtitle">Choisis ton humeur et reçois une parole sacrée spécialement pour toi.</p>
     
     <form method="POST" action="{{ url_for('mood') }}" class="mood-form">
         <div class="mood-options">
@@ -54,7 +54,7 @@
                     <span class="mood-text">Serein(e)</span>
                 </div>
             </label>
-            <!-- Ajout des nouvelles humeurs -->
+            
             <label class="mood-option">
                 <input type="radio" name="mood" value="en_colere">
                 <div class="mood-card">
@@ -80,7 +80,7 @@
             </label>
         </div>
         
-        <button type="submit" class="btn btn-primary btn-large">Recevoir mon verset 🌟</button>
+        <button type="submit" class="btn btn-primary btn-large">Recevoir ma parole sacrée 🌟</button>
     </form>
 </div>
 {% endblock %}

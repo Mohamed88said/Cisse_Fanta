@@ -528,7 +528,7 @@ def personalize():
         db.session.commit()
         
         log_activity(current_user.username, 'profile_updated', f'Couleur: {favorite_color}')
-        flash('Vos préférences ont été sauvegardées! 🎨', 'success')
+        flash('Tes préférences ont été sauvegardées! 🎨', 'success')
         return redirect(url_for('personalize'))
     
     return render_template('personalize.html', 
