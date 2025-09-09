@@ -1,0 +1,453 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="challenges-container">
+    <div class="challenges-header">
+        <h1>🎯 Défis d'Amour</h1>
+        <p>Des petites missions romantiques pour nous rapprocher encore plus</p>
+        <div class="points-display">
+            <div class="points-circle">
+                <span class="points-number">{{ total_points }}</span>
+                <span class="points-label">Points d'amour</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="challenges-sections">
+        <!-- Défis actifs -->
+        <div class="challenges-section">
+            <h2>🎯 Défis en cours</h2>
+            {% if active_challenges %}
+                <div class="challenges-grid">
+                    {% for challenge in active_challenges %}
+                        <div class="challenge-card active">
+                            <div class="challenge-header">
+                                <h3>{{ challenge.title }}</h3>
+                                <div class="challenge-points">+{{ challenge.points }} pts</div>
+                            </div>
+                            <p class="challenge-description">{{ challenge.description }}</p>
+                            <div class="challenge-type">
+                                {% if challenge.challenge_type == 'message' %}📝 Message
+                                {% elif challenge.challenge_type == 'photo' %}📸 Photo
+                                {% elif challenge.challenge_type == 'mood' %}🌷 Humeur
+                                {% elif challenge.challenge_type == 'memory' %}💝 Souvenir
+                                {% elif challenge.challenge_type == 'letter' %}💌 Lettre
+                                {% else %}✨ Spécial
+                                {% endif %}
+                            </div>
+                            <div class="challenge-actions">
+                                <a href="{{ url_for('complete_challenge', challenge_id=challenge.id) }}" 
+                                   class="btn btn-complete" 
+                                   onclick="return confirm('As-tu vraiment terminé ce défi ?')">
+                                    ✅ Terminé !
+                                </a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="no-challenges">
+                    <p>🎉 Bravo ! Tu as terminé tous les défis actuels !</p>
+                    <p>De nouveaux défis arrivent bientôt...</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Défis terminés -->
+        {% if completed_challenges %}
+        <div class="challenges-section">
+            <h2>✅ Défis accomplis</h2>
+            <div class="challenges-grid">
+                {% for challenge in completed_challenges %}
+                    <div class="challenge-card completed">
+                        <div class="challenge-header">
+                            <h3>{{ challenge.title }}</h3>
+                            <div class="challenge-points earned">+{{ challenge.points }} pts</div>
+                        </div>
+                        <p class="challenge-description">{{ challenge.description }}</p>
+                        <div class="challenge-completion">
+                            <div class="completed-by">✅ Terminé par {{ challenge.completed_by|title }}</div>
+                            <div class="completed-date">{{ challenge.completed_date.strftime('%d/%m/%Y à %H:%M') }}</div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Récompenses -->
+    <div class="rewards-section">
+        <h2>🏆 Récompenses d'amour</h2>
+        <div class="rewards-grid">
+            <div class="reward-card {% if total_points >= 50 %}unlocked{% endif %}">
+                <div class="reward-icon">💖</div>
+                <h3>Cœur Tendre</h3>
+                <p>50 points d'amour</p>
+                {% if total_points >= 50 %}
+                    <div class="reward-status unlocked">Débloqué ! 🎉</div>
+                {% else %}
+                    <div class="reward-status locked">{{ 50 - total_points }} points restants</div>
+                {% endif %}
+            </div>
+            
+            <div class="reward-card {% if total_points >= 100 %}unlocked{% endif %}">
+                <div class="reward-icon">🌟</div>
+                <h3>Étoile Brillante</h3>
+                <p>100 points d'amour</p>
+                {% if total_points >= 100 %}
+                    <div class="reward-status unlocked">Débloqué ! 🎉</div>
+                {% else %}
+                    <div class="reward-status locked">{{ 100 - total_points }} points restants</div>
+                {% endif %}
+            </div>
+            
+            <div class="reward-card {% if total_points >= 200 %}unlocked{% endif %}">
+                <div class="reward-icon">👑</div>
+                <h3>Reine de Mon Cœur</h3>
+                <p>200 points d'amour</p>
+                {% if total_points >= 200 %}
+                    <div class="reward-status unlocked">Débloqué ! 🎉</div>
+                {% else %}
+                    <div class="reward-status locked">{{ 200 - total_points }} points restants</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.challenges-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.challenges-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.challenges-header h1 {
+    color: var(--rose-quartz);
+    font-size: 2.5em;
+    margin-bottom: 10px;
+    text-shadow: var(--text-shadow);
+}
+
+.challenges-header p {
+    color: var(--moonlight-silver);
+    font-size: 1.2em;
+    opacity: 0.9;
+    margin-bottom: 30px;
+}
+
+.points-display {
+    display: flex;
+    justify-content: center;
+    margin: 30px 0;
+}
+
+.points-circle {
+    background: linear-gradient(135deg, var(--starlight-gold), var(--warning-orange));
+    border-radius: 50%;
+    width: 120px;
+    height: 120px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 25px rgba(241, 196, 15, 0.4);
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.points-number {
+    font-size: 2.5em;
+    font-weight: bold;
+    color: white;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.points-label {
+    font-size: 0.8em;
+    color: white;
+    text-align: center;
+    opacity: 0.9;
+}
+
+.challenges-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+}
+
+.challenges-section {
+    background: rgba(30, 26, 77, 0.7);
+    backdrop-filter: blur(15px);
+    border-radius: 25px;
+    padding: 30px;
+    box-shadow: var(--card-shadow);
+    border: 1px solid rgba(236, 240, 241, 0.1);
+}
+
+.challenges-section h2 {
+    color: var(--rose-quartz);
+    font-size: 1.8em;
+    margin-bottom: 25px;
+    text-align: center;
+    text-shadow: var(--text-shadow);
+}
+
+.challenges-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 25px;
+}
+
+.challenge-card {
+    background: rgba(10, 17, 40, 0.6);
+    border-radius: 20px;
+    padding: 25px;
+    transition: var(--transition);
+    border: 2px solid rgba(236, 240, 241, 0.1);
+    position: relative;
+}
+
+.challenge-card.active {
+    border-color: var(--starlight-gold);
+}
+
+.challenge-card.completed {
+    border-color: var(--success-green);
+    opacity: 0.8;
+}
+
+.challenge-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+}
+
+.challenge-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+    gap: 15px;
+}
+
+.challenge-header h3 {
+    color: var(--moonlight-silver);
+    font-size: 1.2em;
+    flex: 1;
+}
+
+.challenge-points {
+    background: var(--starlight-gold);
+    color: var(--midnight-blue);
+    padding: 5px 12px;
+    border-radius: 15px;
+    font-size: 0.9em;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.challenge-points.earned {
+    background: var(--success-green);
+    color: white;
+}
+
+.challenge-description {
+    color: var(--lavender-blush);
+    line-height: 1.6;
+    margin-bottom: 15px;
+}
+
+.challenge-type {
+    color: var(--rose-quartz);
+    font-size: 0.9em;
+    font-weight: 600;
+    margin-bottom: 20px;
+    opacity: 0.8;
+}
+
+.challenge-actions {
+    text-align: center;
+}
+
+.btn-complete {
+    background: linear-gradient(135deg, var(--success-green), var(--forest-green));
+    color: white;
+    padding: 10px 20px;
+    border-radius: 20px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: var(--transition);
+    display: inline-block;
+}
+
+.btn-complete:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 20px rgba(39, 174, 96, 0.4);
+    text-decoration: none;
+    color: white;
+}
+
+.challenge-completion {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(236, 240, 241, 0.2);
+}
+
+.completed-by {
+    color: var(--success-green);
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.completed-date {
+    color: var(--moonlight-silver);
+    font-size: 0.9em;
+    opacity: 0.7;
+}
+
+.no-challenges {
+    text-align: center;
+    padding: 40px;
+    color: var(--moonlight-silver);
+}
+
+.no-challenges p {
+    font-size: 1.2em;
+    margin-bottom: 10px;
+}
+
+.rewards-section {
+    background: rgba(10, 17, 40, 0.6);
+    backdrop-filter: blur(10px);
+    border-radius: 25px;
+    padding: 30px;
+    margin-top: 40px;
+    box-shadow: var(--card-shadow);
+    border: 1px solid rgba(236, 240, 241, 0.1);
+}
+
+.rewards-section h2 {
+    color: var(--starlight-gold);
+    font-size: 1.8em;
+    margin-bottom: 25px;
+    text-align: center;
+    text-shadow: var(--text-shadow);
+}
+
+.rewards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 25px;
+}
+
+.reward-card {
+    background: rgba(30, 26, 77, 0.6);
+    border-radius: 20px;
+    padding: 25px;
+    text-align: center;
+    border: 2px solid rgba(236, 240, 241, 0.2);
+    transition: var(--transition);
+}
+
+.reward-card.unlocked {
+    border-color: var(--starlight-gold);
+    background: linear-gradient(135deg, rgba(241, 196, 15, 0.1), rgba(248, 198, 208, 0.1));
+}
+
+.reward-card:hover {
+    transform: translateY(-5px);
+}
+
+.reward-icon {
+    font-size: 3em;
+    margin-bottom: 15px;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+}
+
+.reward-card h3 {
+    color: var(--moonlight-silver);
+    margin-bottom: 10px;
+    font-size: 1.2em;
+}
+
+.reward-card p {
+    color: var(--lavender-blush);
+    margin-bottom: 15px;
+    opacity: 0.8;
+}
+
+.reward-status.unlocked {
+    color: var(--starlight-gold);
+    font-weight: bold;
+    background: rgba(241, 196, 15, 0.2);
+    padding: 8px 15px;
+    border-radius: 15px;
+}
+
+.reward-status.locked {
+    color: var(--moonlight-silver);
+    opacity: 0.6;
+    font-size: 0.9em;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .challenges-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .rewards-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .challenge-header {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 10px;
+    }
+    
+    .points-circle {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .points-number {
+        font-size: 2em;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Animation d'entrée pour les cartes de défis
+    const challengeCards = document.querySelectorAll('.challenge-card');
+    challengeCards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(30px)';
+        
+        setTimeout(() => {
+            card.style.transition = 'all 0.6s ease-out';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
+    
+    // Animation pour les récompenses débloquées
+    const unlockedRewards = document.querySelectorAll('.reward-card.unlocked');
+    unlockedRewards.forEach(reward => {
+        const icon = reward.querySelector('.reward-icon');
+        setInterval(() => {
+            icon.style.transform = 'scale(1.2) rotate(10deg)';
+            setTimeout(() => {
+                icon.style.transform = 'scale(1) rotate(0deg)';
+            }, 300);
+        }, 3000);
+    });
+});
+</script>
+{% endblock %}

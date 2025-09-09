@@ -10,6 +10,7 @@ import json
 from datetime import datetime, date
 from datetime import timedelta
 import secrets
+import calendar
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
@@ -134,6 +135,37 @@ class Statistics(db.Model):
     date = db.Column(db.DateTime, default=datetime.utcnow)
     details = db.Column(db.String(200))
 
+# --- Nouveau modèle pour les surprises d'anniversaire ---
+class BirthdaySurprise(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    surprise_type = db.Column(db.String(50), nullable=False)  # 'letter', 'message', 'photo', 'video'
+    reveal_date = db.Column(db.Date, nullable=False)
+    is_revealed = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+# --- Nouveau modèle pour le calendrier d'amour ---
+class LoveCalendar(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    date = db.Column(db.Date, nullable=False)
+    title = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text)
+    event_type = db.Column(db.String(50), default='special')  # 'anniversary', 'special', 'memory'
+    created_by = db.Column(db.String(50), nullable=False)
+
+# --- Nouveau modèle pour les défis d'amour ---
+class LoveChallenge(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    challenge_type = db.Column(db.String(50), nullable=False)
+    points = db.Column(db.Integer, default=10)
+    is_completed = db.Column(db.Boolean, default=False)
+    completed_by = db.Column(db.String(50))
+    completed_date = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
@@ -144,6 +176,12 @@ def allowed_file(filename):
 
 def get_personalized_greeting(username):
     """Retourne un message personnalisé selon l'utilisateur"""
+    today = date.today()
+    
+    # Message spécial d'anniversaire
+    if username == "fanta" and today.month == 9 and today.day == 27:
+        return "🎉 JOYEUX ANNIVERSAIRE MA PRINCESSE ! 🎂✨"
+    
     if username == "fanta":
         return random.choice(FANTA_MESSAGES)
     elif username == "said":
@@ -154,8 +192,36 @@ def create_special_message_if_needed():
     """Crée des messages spéciaux automatiquement selon les occasions"""
     today = date.today()
     
+    # Vérifier si c'est l'anniversaire de Fanta (27 septembre)
+    if today.month == 9 and today.day == 27:
+        existing_birthday = Phrase.query.filter(
+            Phrase.is_special == True,
+            db.func.date(Phrase.date) == today,
+            Phrase.texte.contains('anniversaire')
+        ).first()
+        
+        if not existing_birthday:
+            birthday_message = Phrase(
+                texte=f"🎉 JOYEUX ANNIVERSAIRE MA N'NA MANINKA MOUSSO ! 🎂 Aujourd'hui, c'est ton jour spécial et je veux que le monde entier sache à quel point tu es extraordinaire ! Tu illumines ma vie chaque jour. Bon anniversaire mon amour ! 💖✨",
+                couleur='#FFD700',
+                auteur='Saïd',
+                is_special=True,
+                tags='anniversaire,spécial,amour,fanta'
+            )
+            db.session.add(birthday_message)
+            
+            # Révéler la surprise d'anniversaire
+            birthday_surprise = BirthdaySurprise.query.filter_by(
+                reveal_date=today,
+                is_revealed=False
+            ).first()
+            if birthday_surprise:
+                birthday_surprise.is_revealed = True
+            
+            db.session.commit()
+    
     # Vérifier si c'est un jour spécial (exemple: 14 de chaque mois)
-    if today.day == 14:
+    elif today.day == 14:
         existing = Phrase.query.filter(
             Phrase.is_special == True,
             db.func.date(Phrase.date) == today
@@ -197,6 +263,9 @@ def upgrade_database():
                     db.session.execute(text('ALTER TABLE phrase ADD COLUMN tags VARCHAR(200)'))
                 if 'is_special' not in columns:
                     db.session.execute(text('ALTER TABLE phrase ADD COLUMN is_special BOOLEAN DEFAULT FALSE'))
+            
+            # Nouvelles tables
+            db.create_all()
             
             # Vérification et ajout des colonnes manquantes pour la table photo
             if inspector.has_table('photo'):
@@ -777,6 +846,228 @@ def stats():
                          recent_activity=recent_activity,
                          user=current_user.username)
 
+@app.route('/birthday_surprise')
+@login_required
+def birthday_surprise():
+    """Page surprise d'anniversaire"""
+    today = date.today()
+    
+    # Vérifier si c'est l'anniversaire de Fanta
+    if current_user.username != "fanta":
+        flash("Cette page est réservée à Fanta ! 💖", 'info')
+        return redirect(url_for('index'))
+    
+    # Vérifier si c'est le bon jour ou après
+    target_date = date(2025, 9, 27)
+    if today < target_date:
+        days_left = (target_date - today).days
+        flash(f"Patience ma princesse ! Plus que {days_left} jour(s) avant ta surprise ! 🎁", 'info')
+        return redirect(url_for('index'))
+    
+    # Révéler la surprise
+    surprise = BirthdaySurprise.query.filter_by(
+        reveal_date=target_date
+    ).first()
+    
+    if not surprise:
+        # Créer la surprise si elle n'existe pas
+        surprise_content = """💌 Lettre pour N'na Maninka Mousso
+
+Ma chère N'na Maninka Mousso,
+
+Tu sais, chaque fois que je prends la plume – enfin, dans ce cas le clavier – pour t'écrire, j'ai l'impression que je suis en train de mélanger un cocktail (dédicace à mon côté barman) à ton nom : un peu de douceur, une bonne dose de folie, une pincée d'humour, et surtout beaucoup, beaucoup d'amour. 🍹💛
+
+Je ne sais pas si tu t'en rends compte, mais tu as un superpouvoir : même quand les journées sont lourdes, quand les choses ne tournent pas rond, il suffit que je pense à toi, à ton sourire, à une de tes petites phrases, pour que je retrouve le moral. Tu es un peu comme mon bouton "reset bonheur".
+
+Et je sais aussi que tes journées ne sont pas toujours faciles. Parfois, tu portes des choses que personne ne voit, des peines, des inquiétudes, des moments de fatigue émotionnelle… et pourtant, malgré tout ça, tu arrives à m'apporter tellement de bonheur, tellement de lumière. Ça me touche profondément, et ça me donne encore plus envie d'être là pour toi.
+
+J'aimerais être celui sur qui tu peux te reposer émotionnellement, à qui tu peux raconter tous tes problèmes sans crainte, celui qui t'aide à sentir que tu es en sécurité, écoutée et soutenue. Je veux être à la hauteur de tout ce que tu m'apportes : un pilier quand tu en as besoin, un soutien quand les moments sont difficiles, et quelqu'un sur qui tu peux toujours compter.
+
+Tu sais, parfois je me demande comment j'ai pu avoir cette chance de te rencontrer. Toi et moi, ça sonne comme une chanson qu'on aime écouter en boucle sans jamais se lasser. Et si un jour on sort un album, je vote pour que le titre soit « Main dans la main, version originale ».
+
+Mais soyons honnêtes : être avec toi, ce n'est pas juste des mots doux et des moments parfaits (même si on en a plein !). C'est aussi des fous rires improbables, des discussions qui partent dans tous les sens, des projets un peu fous, et parfois même des mini-désaccords qui finissent toujours par des sourires. Et je crois que c'est ça, la vraie richesse : on vit tout, mais toujours ensemble, toujours avec cette complicité qui nous appartient.
+
+Je t'aime non seulement pour ce que tu es, mais aussi pour ce que je deviens à tes côtés : plus fort, plus motivé, plus rêveur, et surtout plus heureux. Et si parfois je me projette dans l'avenir, c'est parce que je sais que tu en fais partie.
+
+Alors oui, je veux qu'on continue à travailler dur, à se battre pour nos rêves, à construire pas à pas. Parce que le vrai but, ce n'est pas juste d'arriver quelque part : c'est d'y aller avec toi. Et je sais qu'un jour, on regardera en arrière en se disant : "Tu te souviens de tout ce qu'on a traversé ? Eh bien regarde où on est aujourd'hui !"
+
+Et même si la vie est parfois compliquée, je crois profondément que notre histoire, c'est une lumière qui ne s'éteint pas. Tu es mon espoir, mon énergie, ma joie. Et tu seras toujours celle à qui je veux écrire des lettres trop longues, qui mélangent un peu tout : amour, humour, promesses, et même quelques bêtises.
+
+Alors voilà, ma N'na Maninka Mousso : merci d'exister, merci d'être toi, merci d'être avec moi. Et prépare-toi, parce que le meilleur reste à venir. 🌟
+
+Toujours ton plus grand fan, ton complice, et celui qui t'aime plus qu'il n'arrive parfois à le dire,
+Ton panda préféré bg Saïd 💕"""
+        
+        surprise = BirthdaySurprise(
+            title="Lettre spéciale d'anniversaire",
+            content=surprise_content,
+            surprise_type="letter",
+            reveal_date=target_date,
+            is_revealed=True
+        )
+        db.session.add(surprise)
+        db.session.commit()
+    
+    log_activity(current_user.username, 'birthday_surprise_viewed', 'Surprise d\'anniversaire découverte')
+    
+    return render_template('birthday_surprise.html', 
+                         surprise=surprise,
+                         user=current_user.username)
+
+@app.route('/love_calendar')
+@login_required
+def love_calendar():
+    """Calendrier de nos moments spéciaux"""
+    today = date.today()
+    current_month = request.args.get('month', today.month, type=int)
+    current_year = request.args.get('year', today.year, type=int)
+    
+    # Générer le calendrier du mois
+    cal = calendar.monthcalendar(current_year, current_month)
+    month_name = calendar.month_name[current_month]
+    
+    # Récupérer les événements du mois
+    events = LoveCalendar.query.filter(
+        db.extract('month', LoveCalendar.date) == current_month,
+        db.extract('year', LoveCalendar.date) == current_year
+    ).all()
+    
+    # Organiser les événements par jour
+    events_by_day = {}
+    for event in events:
+        day = event.date.day
+        if day not in events_by_day:
+            events_by_day[day] = []
+        events_by_day[day].append(event)
+    
+    # Ajouter des événements spéciaux automatiques
+    special_dates = {
+        27: {"title": "🎂 Anniversaire de Fanta", "type": "anniversary"} if current_month == 9 else None,
+        14: {"title": "💝 Jour spécial du mois", "type": "special"},
+    }
+    
+    return render_template('love_calendar.html',
+                         calendar_data=cal,
+                         month_name=month_name,
+                         current_month=current_month,
+                         current_year=current_year,
+                         today=today,
+                         events_by_day=events_by_day,
+                         special_dates=special_dates,
+                         user=current_user.username)
+
+@app.route('/love_challenges')
+@login_required
+def love_challenges():
+    """Défis d'amour quotidiens"""
+    active_challenges = LoveChallenge.query.filter_by(is_completed=False).all()
+    completed_challenges = LoveChallenge.query.filter_by(is_completed=True).order_by(LoveChallenge.completed_date.desc()).limit(10).all()
+    
+    # Créer des défis par défaut s'il n'y en a pas
+    if not active_challenges and not completed_challenges:
+        default_challenges = [
+            {
+                "title": "💌 Écris un message d'amour surprise",
+                "description": "Laisse un petit mot doux inattendu dans notre jardin secret",
+                "challenge_type": "message",
+                "points": 15
+            },
+            {
+                "title": "📸 Partage un souvenir photo",
+                "description": "Ajoute une photo qui te rappelle un beau moment ensemble",
+                "challenge_type": "photo",
+                "points": 20
+            },
+            {
+                "title": "🌷 Vérifie ton humeur spirituelle",
+                "description": "Prends un moment pour consulter ta guidance spirituelle du jour",
+                "challenge_type": "mood",
+                "points": 10
+            },
+            {
+                "title": "💝 Ajoute un souvenir précieux",
+                "description": "Immortalise un moment spécial dans notre livre de souvenirs",
+                "challenge_type": "memory",
+                "points": 25
+            }
+        ]
+        
+        for challenge_data in default_challenges:
+            challenge = LoveChallenge(**challenge_data)
+            db.session.add(challenge)
+        db.session.commit()
+        
+        active_challenges = LoveChallenge.query.filter_by(is_completed=False).all()
+    
+    total_points = sum(c.points for c in completed_challenges)
+    
+    return render_template('love_challenges.html',
+                         active_challenges=active_challenges,
+                         completed_challenges=completed_challenges,
+                         total_points=total_points,
+                         user=current_user.username)
+
+@app.route('/complete_challenge/<int:challenge_id>')
+@login_required
+def complete_challenge(challenge_id):
+    """Marquer un défi comme terminé"""
+    challenge = LoveChallenge.query.get_or_404(challenge_id)
+    
+    if not challenge.is_completed:
+        challenge.is_completed = True
+        challenge.completed_by = current_user.username
+        challenge.completed_date = datetime.utcnow()
+        db.session.commit()
+        
+        log_activity(current_user.username, 'challenge_completed', f'Défi: {challenge.title}')
+        flash(f'Bravo ! Tu as gagné {challenge.points} points d\'amour ! 💖', 'success')
+    
+    return redirect(url_for('love_challenges'))
+
+@app.route('/add_calendar_event', methods=['POST'])
+@login_required
+def add_calendar_event():
+    """Ajouter un événement au calendrier"""
+    event_date = datetime.strptime(request.form['event_date'], '%Y-%m-%d').date()
+    title = request.form['title']
+    description = request.form.get('description', '')
+    event_type = request.form['event_type']
+    
+    if len(title.strip()) == 0:
+        flash('Le titre ne peut pas être vide! 📝', 'error')
+        return redirect(url_for('love_calendar'))
+    
+    new_event = LoveCalendar(
+        date=event_date,
+        title=title,
+        description=description,
+        event_type=event_type,
+        created_by=current_user.username
+    )
+    db.session.add(new_event)
+    db.session.commit()
+    
+    log_activity(current_user.username, 'calendar_event_added', f'Événement: {title}')
+    flash('Événement ajouté avec succès! 📅', 'success')
+    return redirect(url_for('love_calendar'))
+
+@app.route('/countdown')
+@login_required
+def countdown():
+    """Compte à rebours pour l'anniversaire"""
+    today = date.today()
+    target_date = date(2025, 9, 27)
+    
+    if today >= target_date:
+        return redirect(url_for('birthday_surprise'))
+    
+    days_left = (target_date - today).days
+    
+    return render_template('countdown.html',
+                         days_left=days_left,
+                         target_date=target_date,
+                         user=current_user.username)
+
 @app.errorhandler(404)
 def not_found_error(error):
     return render_template('errors/404.html'), 404
@@ -794,6 +1085,50 @@ def too_large(error):
 if __name__ == '__main__':
     with app.app_context():
         upgrade_database()
+        
+        # Créer la surprise d'anniversaire si elle n'existe pas
+        existing_surprise = BirthdaySurprise.query.filter_by(
+            reveal_date=date(2025, 9, 27)
+        ).first()
+        
+        if not existing_surprise:
+            surprise_content = """💌 Lettre pour N'na Maninka Mousso
+
+Ma chère N'na Maninka Mousso,
+
+Tu sais, chaque fois que je prends la plume – enfin, dans ce cas le clavier – pour t'écrire, j'ai l'impression que je suis en train de mélanger un cocktail (dédicace à mon côté barman) à ton nom : un peu de douceur, une bonne dose de folie, une pincée d'humour, et surtout beaucoup, beaucoup d'amour. 🍹💛
+
+Je ne sais pas si tu t'en rends compte, mais tu as un superpouvoir : même quand les journées sont lourdes, quand les choses ne tournent pas rond, il suffit que je pense à toi, à ton sourire, à une de tes petites phrases, pour que je retrouve le moral. Tu es un peu comme mon bouton "reset bonheur".
+
+Et je sais aussi que tes journées ne sont pas toujours faciles. Parfois, tu portes des choses que personne ne voit, des peines, des inquiétudes, des moments de fatigue émotionnelle… et pourtant, malgré tout ça, tu arrives à m'apporter tellement de bonheur, tellement de lumière. Ça me touche profondément, et ça me donne encore plus envie d'être là pour toi.
+
+J'aimerais être celui sur qui tu peux te reposer émotionnellement, à qui tu peux raconter tous tes problèmes sans crainte, celui qui t'aide à sentir que tu es en sécurité, écoutée et soutenue. Je veux être à la hauteur de tout ce que tu m'apportes : un pilier quand tu en as besoin, un soutien quand les moments sont difficiles, et quelqu'un sur qui tu peux toujours compter.
+
+Tu sais, parfois je me demande comment j'ai pu avoir cette chance de te rencontrer. Toi et moi, ça sonne comme une chanson qu'on aime écouter en boucle sans jamais se lasser. Et si un jour on sort un album, je vote pour que le titre soit « Main dans la main, version originale ».
+
+Mais soyons honnêtes : être avec toi, ce n'est pas juste des mots doux et des moments parfaits (même si on en a plein !). C'est aussi des fous rires improbables, des discussions qui partent dans tous les sens, des projets un peu fous, et parfois même des mini-désaccords qui finissent toujours par des sourires. Et je crois que c'est ça, la vraie richesse : on vit tout, mais toujours ensemble, toujours avec cette complicité qui nous appartient.
+
+Je t'aime non seulement pour ce que tu es, mais aussi pour ce que je deviens à tes côtés : plus fort, plus motivé, plus rêveur, et surtout plus heureux. Et si parfois je me projette dans l'avenir, c'est parce que je sais que tu en fais partie.
+
+Alors oui, je veux qu'on continue à travailler dur, à se battre pour nos rêves, à construire pas à pas. Parce que le vrai but, ce n'est pas juste d'arriver quelque part : c'est d'y aller avec toi. Et je sais qu'un jour, on regardera en arrière en se disant : "Tu te souviens de tout ce qu'on a traversé ? Eh bien regarde où on est aujourd'hui !"
+
+Et même si la vie est parfois compliquée, je crois profondément que notre histoire, c'est une lumière qui ne s'éteint pas. Tu es mon espoir, mon énergie, ma joie. Et tu seras toujours celle à qui je veux écrire des lettres trop longues, qui mélangent un peu tout : amour, humour, promesses, et même quelques bêtises.
+
+Alors voilà, ma N'na Maninka Mousso : merci d'exister, merci d'être toi, merci d'être avec moi. Et prépare-toi, parce que le meilleur reste à venir. 🌟
+
+Toujours ton plus grand fan, ton complice, et celui qui t'aime plus qu'il n'arrive parfois à le dire,
+Ton panda préféré bg Saïd 💕"""
+            
+            birthday_surprise = BirthdaySurprise(
+                title="Lettre spéciale d'anniversaire",
+                content=surprise_content,
+                surprise_type="letter",
+                reveal_date=date(2025, 9, 27),
+                is_revealed=False
+            )
+            db.session.add(birthday_surprise)
+            db.session.commit()
+            print("Surprise d'anniversaire créée!")
         
         # Créer les utilisateurs avec les nouveaux champs
         if not User.query.first():

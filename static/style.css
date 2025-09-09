@@ -1028,6 +1028,18 @@ textarea:focus {
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
+    /* Optimisations mobile générales */
+    body {
+        font-size: 16px; /* Évite le zoom automatique sur iOS */
+    }
+    
+    /* Amélioration du touch */
+    .btn, .favorite-btn, .delete-btn, .like-btn {
+        min-height: 44px; /* Taille minimum recommandée pour le touch */
+        min-width: 44px;
+    }
+    
+    /* Espacement amélioré pour mobile */
     .container {
         padding: 15px;
     }
@@ -1127,6 +1139,86 @@ textarea:focus {
         top: 5px;
         right: 15px;
         font-size: 25px;
+    }
+    
+    /* Améliorations spécifiques pour les nouvelles fonctionnalités */
+    .birthday-title {
+        font-size: 1.8em !important;
+    }
+    
+    .countdown-display {
+        width: 180px !important;
+        height: 180px !important;
+    }
+    
+    .countdown-number {
+        font-size: 2.5em !important;
+    }
+    
+    .gifts-grid, .challenges-grid, .rewards-grid {
+        grid-template-columns: 1fr !important;
+    }
+    
+    /* Navigation améliorée pour mobile */
+    .navigation-links {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        max-width: 400px;
+        margin: 0 auto;
+    }
+    
+    .navigation-links .btn {
+        font-size: 0.9em;
+        padding: 12px 8px;
+        text-align: center;
+    }
+    
+    /* Formulaires optimisés pour mobile */
+    .form-input, .form-textarea {
+        font-size: 16px; /* Évite le zoom sur iOS */
+    }
+    
+    /* Messages flash optimisés */
+    .flash {
+        margin: 10px;
+        padding: 15px;
+        font-size: 0.9em;
+    }
+    
+    /* Calendrier mobile */
+    .calendar-day {
+        min-height: 70px !important;
+        font-size: 0.8em;
+    }
+    
+    .event, .special-event {
+        font-size: 0.6em !important;
+        padding: 1px 3px !important;
+    }
+}
+
+/* ===== OPTIMISATIONS TACTILES ===== */
+@media (hover: none) and (pointer: coarse) {
+    /* Styles spécifiques pour les appareils tactiles */
+    .btn:hover, .message-card:hover, .gallery-item:hover {
+        transform: none; /* Désactive les effets hover sur mobile */
+    }
+    
+    .btn:active {
+        transform: scale(0.95);
+    }
+    
+    .message-card:active, .gallery-item:active {
+        transform: scale(0.98);
+    }
+}
+
+/* ===== AMÉLIORATIONS PWA ===== */
+@media (display-mode: standalone) {
+    /* Styles quand l'app est installée comme PWA */
+    .container {
+        padding-top: 30px; /* Compense la barre de statut */
     }
 }
 
@@ -1311,6 +1403,40 @@ textarea:focus {
 .btn-customize:hover {
     transform: translateY(-5px) scale(1.05);
     box-shadow: 0 15px 30px rgba(155, 89, 182, 0.6);
+}
+
+.btn-birthday {
+    background: linear-gradient(135deg, #FFD700, #FF69B4, #FF1493);
+    color: white;
+    box-shadow: 0 8px 20px rgba(255, 215, 0, 0.4);
+    animation: birthdayGlow 2s ease-in-out infinite;
+}
+
+.btn-birthday:hover {
+    transform: translateY(-5px) scale(1.05);
+    box-shadow: 0 15px 30px rgba(255, 215, 0, 0.6);
+}
+
+@keyframes birthdayGlow {
+    0%, 100% { box-shadow: 0 8px 20px rgba(255, 215, 0, 0.4); }
+    50% { box-shadow: 0 12px 30px rgba(255, 105, 180, 0.6); }
+}
+
+.btn-countdown {
+    background: linear-gradient(135deg, var(--mystic-purple), var(--starlight-gold));
+    color: white;
+    box-shadow: 0 8px 20px rgba(142, 68, 173, 0.4);
+    animation: countdownPulse 1.5s ease-in-out infinite;
+}
+
+.btn-countdown:hover {
+    transform: translateY(-5px) scale(1.05);
+    box-shadow: 0 15px 30px rgba(142, 68, 173, 0.6);
+}
+
+@keyframes countdownPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
 }
 
 .no-messages {

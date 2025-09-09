@@ -1,0 +1,380 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="calendar-container">
+    <div class="calendar-header">
+        <h1>📅 Notre Calendrier d'Amour</h1>
+        <p>Tous nos moments précieux immortalisés</p>
+    </div>
+
+    <div class="calendar-navigation">
+        <a href="{{ url_for('love_calendar', month=current_month-1 if current_month > 1 else 12, year=current_year if current_month > 1 else current_year-1) }}" class="btn btn-secondary">← Mois précédent</a>
+        <h2 class="current-month">{{ month_name }} {{ current_year }}</h2>
+        <a href="{{ url_for('love_calendar', month=current_month+1 if current_month < 12 else 1, year=current_year if current_month < 12 else current_year+1) }}" class="btn btn-secondary">Mois suivant →</a>
+    </div>
+
+    <div class="calendar-grid">
+        <div class="calendar-header-days">
+            <div class="day-header">Lun</div>
+            <div class="day-header">Mar</div>
+            <div class="day-header">Mer</div>
+            <div class="day-header">Jeu</div>
+            <div class="day-header">Ven</div>
+            <div class="day-header">Sam</div>
+            <div class="day-header">Dim</div>
+        </div>
+        
+        <div class="calendar-days">
+            {% for week in calendar_data %}
+                {% for day in week %}
+                    <div class="calendar-day {% if day == 0 %}empty{% endif %} 
+                                           {% if day == today.day and current_month == today.month and current_year == today.year %}today{% endif %}
+                                           {% if day in events_by_day %}has-event{% endif %}
+                                           {% if day in special_dates and special_dates[day] %}special-day{% endif %}">
+                        {% if day != 0 %}
+                            <div class="day-number">{{ day }}</div>
+                            
+                            {% if day in special_dates and special_dates[day] %}
+                                <div class="special-event {{ special_dates[day]['type'] }}">
+                                    {{ special_dates[day]['title'] }}
+                                </div>
+                            {% endif %}
+                            
+                            {% if day in events_by_day %}
+                                {% for event in events_by_day[day] %}
+                                    <div class="event {{ event.event_type }}">
+                                        {{ event.title }}
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="calendar-legend">
+        <h3>📝 Légende</h3>
+        <div class="legend-items">
+            <div class="legend-item">
+                <div class="legend-color anniversary"></div>
+                <span>Anniversaires</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color special"></div>
+                <span>Jours spéciaux</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color memory"></div>
+                <span>Souvenirs</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color today"></div>
+                <span>Aujourd'hui</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="add-event-section">
+        <h3>➕ Ajouter un événement</h3>
+        <form method="POST" action="{{ url_for('add_calendar_event') }}" class="event-form">
+            <div class="form-row">
+                <input type="date" name="event_date" required class="form-input">
+                <input type="text" name="title" placeholder="Titre de l'événement..." required class="form-input">
+            </div>
+            <div class="form-row">
+                <select name="event_type" class="form-input">
+                    <option value="special">Jour spécial</option>
+                    <option value="anniversary">Anniversaire</option>
+                    <option value="memory">Souvenir</option>
+                </select>
+                <button type="submit" class="btn btn-primary">Ajouter</button>
+            </div>
+            <textarea name="description" placeholder="Description (optionnelle)..." class="form-input"></textarea>
+        </form>
+    </div>
+</div>
+
+<style>
+.calendar-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.calendar-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.calendar-header h1 {
+    color: var(--rose-quartz);
+    font-size: 2.5em;
+    margin-bottom: 10px;
+    text-shadow: var(--text-shadow);
+}
+
+.calendar-header p {
+    color: var(--moonlight-silver);
+    font-size: 1.2em;
+    opacity: 0.9;
+}
+
+.calendar-navigation {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.current-month {
+    color: var(--starlight-gold);
+    font-size: 1.8em;
+    text-shadow: var(--text-shadow);
+    text-align: center;
+    flex: 1;
+}
+
+.calendar-grid {
+    background: rgba(30, 26, 77, 0.7);
+    backdrop-filter: blur(15px);
+    border-radius: 25px;
+    padding: 30px;
+    box-shadow: var(--card-shadow);
+    border: 1px solid rgba(236, 240, 241, 0.1);
+    margin-bottom: 40px;
+}
+
+.calendar-header-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    margin-bottom: 10px;
+}
+
+.day-header {
+    text-align: center;
+    font-weight: 600;
+    color: var(--rose-quartz);
+    padding: 15px 5px;
+    font-size: 1.1em;
+}
+
+.calendar-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+
+.calendar-day {
+    min-height: 100px;
+    background: rgba(10, 17, 40, 0.6);
+    border-radius: 10px;
+    padding: 8px;
+    position: relative;
+    transition: var(--transition);
+    border: 2px solid transparent;
+}
+
+.calendar-day.empty {
+    background: transparent;
+}
+
+.calendar-day.today {
+    border-color: var(--starlight-gold);
+    box-shadow: 0 0 15px rgba(241, 196, 15, 0.4);
+}
+
+.calendar-day.has-event {
+    border-color: var(--rose-quartz);
+}
+
+.calendar-day.special-day {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(248, 198, 208, 0.2));
+}
+
+.calendar-day:hover {
+    transform: scale(1.05);
+    background: rgba(10, 17, 40, 0.8);
+}
+
+.day-number {
+    font-weight: bold;
+    color: var(--moonlight-silver);
+    font-size: 1.1em;
+    margin-bottom: 5px;
+}
+
+.event, .special-event {
+    font-size: 0.8em;
+    padding: 3px 6px;
+    border-radius: 8px;
+    margin: 2px 0;
+    text-align: center;
+    font-weight: 500;
+}
+
+.event.anniversary, .special-event.anniversary {
+    background: rgba(255, 215, 0, 0.8);
+    color: #8B0000;
+}
+
+.event.special, .special-event.special {
+    background: rgba(248, 198, 208, 0.8);
+    color: #8B0000;
+}
+
+.event.memory, .special-event.memory {
+    background: rgba(142, 68, 173, 0.8);
+    color: white;
+}
+
+.calendar-legend {
+    background: rgba(10, 17, 40, 0.6);
+    border-radius: 20px;
+    padding: 25px;
+    margin-bottom: 30px;
+    backdrop-filter: blur(10px);
+}
+
+.calendar-legend h3 {
+    color: var(--rose-quartz);
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.legend-items {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--moonlight-silver);
+}
+
+.legend-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+}
+
+.legend-color.anniversary {
+    background: rgba(255, 215, 0, 0.8);
+}
+
+.legend-color.special {
+    background: rgba(248, 198, 208, 0.8);
+}
+
+.legend-color.memory {
+    background: rgba(142, 68, 173, 0.8);
+}
+
+.legend-color.today {
+    background: var(--starlight-gold);
+}
+
+.add-event-section {
+    background: rgba(30, 26, 77, 0.7);
+    backdrop-filter: blur(15px);
+    border-radius: 25px;
+    padding: 30px;
+    box-shadow: var(--card-shadow);
+    border: 1px solid rgba(236, 240, 241, 0.1);
+}
+
+.add-event-section h3 {
+    color: var(--rose-quartz);
+    margin-bottom: 25px;
+    text-align: center;
+    font-size: 1.5em;
+}
+
+.event-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form-row {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.form-input {
+    flex: 1;
+    min-width: 200px;
+    padding: 12px;
+    border: 2px solid rgba(236, 240, 241, 0.2);
+    border-radius: 10px;
+    background: rgba(10, 17, 40, 0.6);
+    color: var(--moonlight-silver);
+    transition: var(--transition);
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--rose-quartz);
+    box-shadow: 0 0 15px rgba(248, 198, 208, 0.3);
+}
+
+textarea.form-input {
+    min-height: 80px;
+    resize: vertical;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .calendar-navigation {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .current-month {
+        order: -1;
+        margin-bottom: 20px;
+    }
+    
+    .calendar-days {
+        gap: 1px;
+    }
+    
+    .calendar-day {
+        min-height: 80px;
+        padding: 5px;
+    }
+    
+    .day-header {
+        padding: 10px 2px;
+        font-size: 0.9em;
+    }
+    
+    .event, .special-event {
+        font-size: 0.7em;
+        padding: 2px 4px;
+    }
+    
+    .legend-items {
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+    }
+    
+    .form-row {
+        flex-direction: column;
+    }
+    
+    .form-input {
+        min-width: auto;
+    }
+}
+</style>
+{% endblock %}
