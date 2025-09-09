@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="header-container">
+    <h1>💌 Lettres d'Amour</h1>
+    <p>Nos mots les plus tendres, gardés précieusement</p>
+</div>
+
+<div class="navigation-links">
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">← Retour à l'accueil</a>
+    <a href="{{ url_for('write_letter') }}" class="btn btn-romantic">✍️ Écrire une lettre</a>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="flash-messages">
+            {% for category, message in messages %}
+                <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
+
+<div class="letters-container">
+    <!-- Lettres reçues -->
+    <div class="letters-section">
+        <h2>💝 Lettres reçues</h2>
+        {% if received_letters %}
+            <div class="letters-grid">
+                {% for letter in received_letters %}
+                    <div class="letter-card {% if not letter.is_read %}unread{% endif %}">
+                        <div class="letter-header">
+                            <h3>{{ letter.title }}</h3>
+                            <div class="letter-meta">
+                                <span class="letter-sender">De: {{ letter.sender }}</span>
+                                <span class="letter-date">{{ letter.created_at.strftime('%d/%m/%Y à %H:%M') }}</span>
+                                {% if not letter.is_read %}
+                                    <span class="unread-indicator">Nouveau ✨</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="letter-preview">
+                            {{ letter.content[:100] }}{% if letter.content|length > 100 %}...{% endif %}
+                        </div>
+                        <div class="letter-actions">
+                            <a href="{{ url_for('read_letter', letter_id=letter.id) }}" class="btn btn-primary">
+                                {% if letter.is_read %}Relire{% else %}Lire{% endif %} 💖
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="no-letters">
+                <p>💌 Aucune lettre reçue pour le moment...</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Lettres envoyées -->
+    <div class="letters-section">
+        <h2>📮 Lettres envoyées</h2>
+        {% if sent_letters %}
+            <div class="letters-grid">
+                {% for letter in sent_letters %}
+                    <div class="letter-card sent">
+                        <div class="letter-header">
+                            <h3>{{ letter.title }}</h3>
+                            <div class="letter-meta">
+                                <span class="letter-recipient">À: {{ letter.recipient }}</span>
+                                <span class="letter-date">{{ letter.created_at.strftime('%d/%m/%Y à %H:%M') }}</span>
+                                {% if letter.is_read %}
+                                    <span class="read-indicator">Lu ✓</span>
+                                {% else %}
+                                    <span class="pending-indicator">En attente...</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="letter-preview">
+                            {{ letter.content[:100] }}{% if letter.content|length > 100 %}...{% endif %}
+                        </div>
+                        <div class="letter-actions">
+                            <a href="{{ url_for('read_letter', letter_id=letter.id) }}" class="btn btn-secondary">Voir 👁️</a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="no-letters">
+                <p>📝 Vous n'avez encore envoyé aucune lettre...</p>
+                <a href="{{ url_for('write_letter') }}" class="btn btn-romantic">Écrire votre première lettre ✍️</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.letters-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+}
+
+.letters-section {
+    background: rgba(30, 26, 77, 0.7);
+    backdrop-filter: blur(15px);
+    border-radius: 25px;
+    padding: 30px;
+    box-shadow: var(--card-shadow);
+    border: 1px solid rgba(236, 240, 241, 0.1);
+}
+
+.letters-section h2 {
+    color: var(--rose-quartz);
+    margin-bottom: 25px;
+    text-align: center;
+    font-size: 1.8em;
+    text-shadow: var(--text-shadow);
+}
+
+.letters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 25px;
+}
+
+.letter-card {
+    background: rgba(10, 17, 40, 0.6);
+    border-radius: 20px;
+    padding: 25px;
+    transition: var(--transition);
+    border: 2px solid rgba(236, 240, 241, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.letter-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--rose-quartz), var(--starlight-gold));
+}
+
+.letter-card.unread {
+    border-color: var(--starlight-gold);
+    box-shadow: 0 0 20px rgba(241, 196, 15, 0.3);
+    animation: gentleGlow 3s ease-in-out infinite;
+}
+
+.letter-card.sent {
+    border-color: var(--ocean-blue);
+}
+
+.letter-card.sent::before {
+    background: linear-gradient(90deg, var(--ocean-blue), var(--mystic-purple));
+}
+
+.letter-card:hover {
+    transform: translateY(-10px) rotateX(5deg);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    border-color: var(--rose-quartz);
+}
+
+.letter-header h3 {
+    color: var(--moonlight-silver);
+    margin-bottom: 15px;
+    font-size: 1.3em;
+    text-shadow: var(--text-shadow);
+}
+
+.letter-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-bottom: 15px;
+    font-size: 0.9em;
+}
+
+.letter-sender, .letter-recipient {
+    color: var(--rose-quartz);
+    font-weight: 600;
+}
+
+.letter-date {
+    color: var(--moonlight-silver);
+    opacity: 0.7;
+}
+
+.unread-indicator {
+    color: var(--starlight-gold);
+    font-weight: bold;
+    animation: sparkle 2s ease-in-out infinite;
+}
+
+.read-indicator {
+    color: var(--success-green);
+    font-weight: 600;
+}
+
+.pending-indicator {
+    color: var(--warning-orange);
+    font-style: italic;
+}
+
+.letter-preview {
+    color: var(--lavender-blush);
+    line-height: 1.6;
+    margin-bottom: 20px;
+    font-style: italic;
+    opacity: 0.9;
+}
+
+.letter-actions {
+    display: flex;
+    justify-content: center;
+}
+
+.no-letters {
+    text-align: center;
+    padding: 40px;
+    color: var(--moonlight-silver);
+    opacity: 0.8;
+}
+
+.no-letters p {
+    font-size: 1.2em;
+    margin-bottom: 20px;
+}
+
+@keyframes gentleGlow {
+    0%, 100% { box-shadow: 0 0 20px rgba(241, 196, 15, 0.3); }
+    50% { box-shadow: 0 0 30px rgba(241, 196, 15, 0.5); }
+}
+
+@keyframes sparkle {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.1); }
+}
+
+@media (max-width: 768px) {
+    .letters-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .letters-container {
+        gap: 25px;
+    }
+    
+    .letters-section {
+        padding: 20px;
+    }
+}
+</style>
+{% endblock %}
