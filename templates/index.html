@@ -17,19 +17,6 @@
     <div class="daily-quote">
         <p class="love-quote">"{{ love_quote }}"</p>
         <small>💝 Citation d'amour du jour</small>
-        {% if unread_letters > 0 %}
-            <div class="notification-badge">
-                <a href="{{ url_for('letters') }}" class="unread-letters">
-                    💌 {{ unread_letters }} lettre{{ 's' if unread_letters > 1 else '' }} d'amour non lue{{ 's' if unread_letters > 1 else '' }}
-                </a>
-            </div>
-        {% endif %}
-    </div>
-    
-    <!-- Citation d'amour du jour -->
-    <div class="daily-quote">
-        <p class="love-quote">"{{ love_quote }}"</p>
-        <small>💝 Citation d'amour du jour</small>
     </div>
     
     <!-- Statistiques rapides -->
@@ -131,6 +118,20 @@
                                 <span class="btn btn-primary current-page">{{ page_num }}</span>
                             {% endif %}
                         {% else %}
+                            <span class="pagination-ellipsis">...</span>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if pagination.has_next %}
+                        <a href="{{ url_for('index', page=pagination.next_num) }}" class="btn btn-secondary">Suivant →</a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    {% else %}
+        <div class="no-messages">
+            <p>💝 Aucun message d'amour encore... Sois le premier à écrire quelque chose de doux !</p>
+        </div>
     {% endif %}
 </div>
 
