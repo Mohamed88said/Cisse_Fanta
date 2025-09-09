@@ -1,840 +1,886 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
-from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
-from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
 import os
-from werkzeug.utils import secure_filename
-import random
 import json
-from datetime import datetime, date
-from datetime import timedelta
+import sqlite3
+from datetime import datetime, timedelta
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_from_directory
+from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash, check_password_hash
 import secrets
-import calendar
+import random
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
-app.config['SECRET_KEY'] = secrets.token_hex(32)  # Clé secrète sécurisée
+
+# Configuration sécurisée pour la production
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', secrets.token_hex(32))
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
-app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
-db = SQLAlchemy(app)
 
-# --- Authentification ---
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'login'
+# Configuration de la base de données
+DATABASE = os.environ.get('DATABASE_PATH', 'instance/database.db')
 
-# --- Messages personnalisés pour Fanta ---
-FANTA_MESSAGES = [
-    "La plus gentille et attentionnée ✨",
-    "La plus belle qui soit 💫",
-    "La plus mature 🌙",
-    "Gazelle ( okay ça c'est too much je sais) ⭐",
-    "Celle qui frodonne et te fais oublier tes problèmes 🎵",
-    "Blessure sucrée ( tu vas pas dire tu connais pas mes disquettes) 💝",
-    "N'oublie pas de prendre soin de toi aujourd'hui 🌸",
-    "Si on se dispute où qu'on arrive à ne pas parler n'oublie pas que la lune est belle ce soir☀️"
-]
-
-SAID_MESSAGES = [
-    "BG🛡️",
-    "Là j'écris mais c'est toi qui est sensé écrire ça 👑",
-    "Je sais pas quoi me dire 💖",
-    "Saïd 🦸",
-    "Batman⚡",
-    "Eleveur de chat en masse🌟",
-    "C'est moi  ",
-    "En tout cas voilà  💫"
-]
-
-# --- Citations d'amour personnalisées ---
-LOVE_QUOTES = [
-    "Qu'est-ce que je te remercie d'être dans ma vie",
-    "Si le monde voyais la bonne personne que tu es tu serais une star",
-    "1 2 3 Souris ",
-    "Respire et ralenti un peu tu as le droit de souffler aussi",
-    "Te choisir c'est ne plus choisir les autres",
-    "Ton plus grand fan",
-    "hellooooooo",
-    "Femme de chance"
-]
-
-# --- Modèle User ---
-class User(UserMixin, db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(50), unique=True, nullable=False)
-    password_hash = db.Column(db.String(128), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    last_login = db.Column(db.DateTime)
-    visit_count = db.Column(db.Integer, default=0)
-    favorite_color = db.Column(db.String(7), default='#ffdde1')
-    
-    def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
-    
-    def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
-
-# --- Modèle Phrase ---
-class Phrase(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    texte = db.Column(db.String(300), nullable=False)
-    date = db.Column(db.DateTime, default=datetime.utcnow)
-    couleur = db.Column(db.String(20), default='#ffffff')
-    est_favori = db.Column(db.Boolean, default=False)
-    auteur = db.Column(db.String(50), default='Anonyme')
-    likes = db.Column(db.Integer, default=0)
-    tags = db.Column(db.String(200))  # Tags séparés par des virgules
-    is_special = db.Column(db.Boolean, default=False)  # Messages spéciaux automatiques
-
-# --- Modèle Photo ---
-class Photo(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    filename = db.Column(db.String(100), nullable=False)
-    legende = db.Column(db.String(200))
-    date = db.Column(db.DateTime, default=datetime.utcnow)
-    auteur = db.Column(db.String(50), default='Anonyme')
-    likes = db.Column(db.Integer, default=0)
-    file_size = db.Column(db.Integer)  # Taille du fichier en bytes
-
-# --- Modèle MoodJournal ---
-class MoodJournal(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(50), nullable=False)
-    mood = db.Column(db.String(20), nullable=False)
-    date = db.Column(db.Date, default=date.today)
-    verse_shown = db.Column(db.String(10), nullable=False)
-
-# --- Nouveau modèle pour les souvenirs spéciaux ---
-class SpecialMemory(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(100), nullable=False)
-    description = db.Column(db.Text, nullable=False)
-    date_memory = db.Column(db.Date, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    author = db.Column(db.String(50), nullable=False)
-    is_anniversary = db.Column(db.Boolean, default=False)
-
-# --- Nouveau modèle pour les lettres d'amour ---
-class LoveLetter(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(100), nullable=False)
-    content = db.Column(db.Text, nullable=False)
-    recipient = db.Column(db.String(50), nullable=False)
-    sender = db.Column(db.String(50), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    is_read = db.Column(db.Boolean, default=False)
-    delivery_date = db.Column(db.DateTime)  # Pour programmer l'envoi
-
-# --- Nouveau modèle pour les statistiques ---
-class Statistics(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user = db.Column(db.String(50), nullable=False)
-    action = db.Column(db.String(50), nullable=False)  # 'message_added', 'photo_uploaded', etc.
-    date = db.Column(db.DateTime, default=datetime.utcnow)
-    details = db.Column(db.String(200))
-
-# --- Nouveau modèle pour les surprises d'anniversaire ---
-class BirthdaySurprise(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(100), nullable=False)
-    content = db.Column(db.Text, nullable=False)
-    surprise_type = db.Column(db.String(50), nullable=False)  # 'letter', 'message', 'photo', 'video'
-    reveal_date = db.Column(db.Date, nullable=False)
-    is_revealed = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-# --- Nouveau modèle pour le calendrier d'amour ---
-class LoveCalendar(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    date = db.Column(db.Date, nullable=False)
-    title = db.Column(db.String(100), nullable=False)
-    description = db.Column(db.Text)
-    event_type = db.Column(db.String(50), default='special')  # 'anniversary', 'special', 'memory'
-    created_by = db.Column(db.String(50), nullable=False)
-
-# --- Nouveau modèle pour les défis d'amour ---
-class LoveChallenge(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(100), nullable=False)
-    description = db.Column(db.Text, nullable=False)
-    challenge_type = db.Column(db.String(50), nullable=False)
-    points = db.Column(db.Integer, default=10)
-    is_completed = db.Column(db.Boolean, default=False)
-    completed_by = db.Column(db.String(50))
-    completed_date = db.Column(db.DateTime)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
+# Extensions de fichiers autorisées
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
 def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def get_personalized_greeting(username):
-    """Retourne un message personnalisé selon l'utilisateur"""
-    today = date.today()
-    
-    # Message spécial d'anniversaire
-    if username == "fanta" and today.month == 9 and today.day == 27:
-        return "🎉 JOYEUX ANNIVERSAIRE LA BOSS 22ans ! 🎂✨"
-    
-    if username == "fanta":
-        return random.choice(FANTA_MESSAGES)
-    elif username == "said":
-        return random.choice(SAID_MESSAGES)
-    return f"Bienvenue {username} 💖"
+def get_db_connection():
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    return conn
 
-def create_special_message_if_needed():
-    """Crée des messages spéciaux automatiquement selon les occasions"""
-    today = date.today()
+def init_db():
+    """Initialise la base de données avec toutes les tables nécessaires"""
+    conn = get_db_connection()
     
-    # Vérifier si c'est l'anniversaire de Fanta (27 septembre)
-    if today.month == 9 and today.day == 27:
-        existing_birthday = Phrase.query.filter(
-            Phrase.is_special == True,
-            db.func.date(Phrase.date) == today,
-            Phrase.texte.contains('anniversaire')
-        ).first()
+    # Table des utilisateurs
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            favorite_color TEXT DEFAULT '#ffdde1',
+            visit_count INTEGER DEFAULT 0,
+            last_login TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # Table des phrases
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS phrases (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            texte TEXT NOT NULL,
+            auteur TEXT NOT NULL,
+            date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            couleur TEXT DEFAULT '#ffdde1',
+            tags TEXT,
+            est_favori BOOLEAN DEFAULT 0,
+            likes INTEGER DEFAULT 0,
+            is_special BOOLEAN DEFAULT 0
+        )
+    ''')
+    
+    # Table des photos
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS photos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            filename TEXT NOT NULL,
+            legende TEXT,
+            auteur TEXT NOT NULL,
+            date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            file_size INTEGER,
+            likes INTEGER DEFAULT 0
+        )
+    ''')
+    
+    # Table des lettres
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS letters (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            content TEXT NOT NULL,
+            sender TEXT NOT NULL,
+            recipient TEXT NOT NULL,
+            is_read BOOLEAN DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # Table des souvenirs
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS memories (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            description TEXT NOT NULL,
+            date_memory DATE NOT NULL,
+            author TEXT NOT NULL,
+            is_anniversary BOOLEAN DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # Table des événements du calendrier
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS calendar_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            event_date DATE NOT NULL,
+            event_type TEXT DEFAULT 'special',
+            description TEXT,
+            created_by TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # Table des défis
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS challenges (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            description TEXT NOT NULL,
+            challenge_type TEXT NOT NULL,
+            points INTEGER DEFAULT 10,
+            is_active BOOLEAN DEFAULT 1,
+            completed_by TEXT,
+            completed_date TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # Table des activités
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS activities (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user TEXT NOT NULL,
+            action TEXT NOT NULL,
+            details TEXT,
+            date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # Créer les utilisateurs par défaut si ils n'existent pas
+    existing_users = conn.execute('SELECT username FROM users').fetchall()
+    existing_usernames = [user['username'] for user in existing_users]
+    
+    if 'fanta' not in existing_usernames:
+        conn.execute('''
+            INSERT INTO users (username, password_hash, favorite_color)
+            VALUES (?, ?, ?)
+        ''', ('fanta', generate_password_hash('maninka'), '#ffdde1'))
+    
+    if 'said' not in existing_usernames:
+        conn.execute('''
+            INSERT INTO users (username, password_hash, favorite_color)
+            VALUES (?, ?, ?)
+        ''', ('said', generate_password_hash('panda2024'), '#e1f5fe'))
+    
+    # Ajouter quelques défis par défaut
+    existing_challenges = conn.execute('SELECT COUNT(*) as count FROM challenges').fetchone()
+    if existing_challenges['count'] == 0:
+        default_challenges = [
+            ("Écris un message d'amour", "Partage un message tendre avec ton amour", "message", 15),
+            ("Partage une photo souvenir", "Upload une photo qui vous rappelle un beau moment", "photo", 20),
+            ("Vérifie ton humeur", "Utilise la fonction humeur du jour", "mood", 10),
+            ("Ajoute un souvenir précieux", "Immortalise un moment spécial dans vos souvenirs", "memory", 25),
+            ("Envoie une lettre d'amour", "Écris une belle lettre à ton partenaire", "letter", 30)
+        ]
         
-        if not existing_birthday:
-            birthday_message = Phrase(
-                texte=f"🎉 JOYEUX ANNIVERSAIRE MA N'NA MANINKA MOUSSO ! 🎂 Aujourd'hui, c'est ton jour spécial et je veux que le monde entier sache à quel point tu es extraordinaire ! Tu illumines ma vie chaque jour. Bon anniversaire à toi! 💖✨",
-                couleur='#FFD700',
-                auteur='Saïd',
-                is_special=True,
-                tags='anniversaire,spécial,amour,fanta'
-            )
-            db.session.add(birthday_message)
-            
-            # Révéler la surprise d'anniversaire
-            birthday_surprise = BirthdaySurprise.query.filter_by(
-                reveal_date=today,
-                is_revealed=False
-            ).first()
-            if birthday_surprise:
-                birthday_surprise.is_revealed = True
-            
-            db.session.commit()
+        for title, desc, c_type, points in default_challenges:
+            conn.execute('''
+                INSERT INTO challenges (title, description, challenge_type, points)
+                VALUES (?, ?, ?, ?)
+            ''', (title, desc, c_type, points))
     
-    # Vérifier si c'est un jour spécial (exemple: 14 de chaque mois)
-    elif today.day == 14:
-        existing = Phrase.query.filter(
-            Phrase.is_special == True,
-            db.func.date(Phrase.date) == today
-        ).first()
-        
-        if not existing:
-            special_message = Phrase(
-                texte=f"💝 Message spécial du {today.strftime('%d/%m/%Y')} : " + random.choice(LOVE_QUOTES),
-                couleur='#ff69b4',
-                auteur='Le Destin',
-                is_special=True,
-                tags='spécial,amour,destin'
-            )
-            db.session.add(special_message)
-            db.session.commit()
-
-def upgrade_database():
-    """Met à jour la structure de la base de données avec gestion d'erreurs améliorée"""
-    try:
-        with app.app_context():
-            db.create_all()
-            
-            from sqlalchemy import inspect, text
-            inspector = inspect(db.engine)
-            
-            # Vérification et ajout des colonnes manquantes pour la table phrase
-            if inspector.has_table('phrase'):
-                columns = [col['name'] for col in inspector.get_columns('phrase')]
-                
-                if 'couleur' not in columns:
-                    db.session.execute(text('ALTER TABLE phrase ADD COLUMN couleur VARCHAR(20) DEFAULT "#ffffff"'))
-                if 'est_favori' not in columns:
-                    db.session.execute(text('ALTER TABLE phrase ADD COLUMN est_favori BOOLEAN DEFAULT FALSE'))
-                if 'auteur' not in columns:
-                    db.session.execute(text('ALTER TABLE phrase ADD COLUMN auteur VARCHAR(50) DEFAULT "Anonyme"'))
-                if 'likes' not in columns:
-                    db.session.execute(text('ALTER TABLE phrase ADD COLUMN likes INTEGER DEFAULT 0'))
-                if 'tags' not in columns:
-                    db.session.execute(text('ALTER TABLE phrase ADD COLUMN tags VARCHAR(200)'))
-                if 'is_special' not in columns:
-                    db.session.execute(text('ALTER TABLE phrase ADD COLUMN is_special BOOLEAN DEFAULT FALSE'))
-            
-            # Nouvelles tables
-            db.create_all()
-            
-            # Vérification et ajout des colonnes manquantes pour la table photo
-            if inspector.has_table('photo'):
-                photo_columns = [col['name'] for col in inspector.get_columns('photo')]
-                if 'likes' not in photo_columns:
-                    db.session.execute(text('ALTER TABLE photo ADD COLUMN likes INTEGER DEFAULT 0'))
-                if 'file_size' not in photo_columns:
-                    db.session.execute(text('ALTER TABLE photo ADD COLUMN file_size INTEGER'))
-            
-            # Vérification et ajout des colonnes manquantes pour la table user
-            if inspector.has_table('user'):
-                user_columns = [col['name'] for col in inspector.get_columns('user')]
-                if 'password_hash' not in user_columns:
-                    db.session.execute(text('ALTER TABLE user ADD COLUMN password_hash VARCHAR(128)'))
-                if 'created_at' not in user_columns:
-                    db.session.execute(text('ALTER TABLE user ADD COLUMN created_at DATETIME'))
-                if 'last_login' not in user_columns:
-                    db.session.execute(text('ALTER TABLE user ADD COLUMN last_login DATETIME'))
-                if 'visit_count' not in user_columns:
-                    db.session.execute(text('ALTER TABLE user ADD COLUMN visit_count INTEGER DEFAULT 0'))
-                if 'favorite_color' not in user_columns:
-                    db.session.execute(text('ALTER TABLE user ADD COLUMN favorite_color VARCHAR(7) DEFAULT "#ffdde1"'))
-            
-            db.session.commit()
-            print("Base de données mise à jour avec succès!")
-            
-    except Exception as e:
-        print(f"Erreur lors de la mise à jour de la base: {e}")
-        db.session.rollback()
-        try:
-            db.create_all()
-            print("Tables créées avec succès!")
-        except Exception as e2:
-            print(f"Erreur critique: {e2}")
+    conn.commit()
+    conn.close()
 
 def log_activity(user, action, details=None):
-    """Enregistre l'activité de l'utilisateur"""
-    try:
-        stat = Statistics(user=user, action=action, details=details)
-        db.session.add(stat)
-        db.session.commit()
-    except Exception as e:
-        print(f"Erreur lors de l'enregistrement de l'activité: {e}")
-        db.session.rollback()
+    """Enregistre une activité utilisateur"""
+    conn = get_db_connection()
+    conn.execute('''
+        INSERT INTO activities (user, action, details)
+        VALUES (?, ?, ?)
+    ''', (user, action, details))
+    conn.commit()
+    conn.close()
 
-# Fonctions utilitaires pour le mood
-def load_mood_data():
+def load_mood_verses():
+    """Charge les versets depuis le fichier JSON"""
     try:
         with open('mood_verses.json', 'r', encoding='utf-8') as f:
             return json.load(f)
     except FileNotFoundError:
-        print("Fichier mood_verses.json non trouvé!")
-        return {}
+        # Retourner des versets par défaut si le fichier n'existe pas
+        return {
+            "heureux": [{
+                "arabic": "وَبَشِّرِ الصَّابِرِينَ",
+                "french": "Et annonce la bonne nouvelle aux patients",
+                "explanation": "Ce verset nous rappelle que la patience est récompensée par Allah.",
+                "conclusion": "Continue à être patient(e) et joyeux/joyeuse, Allah te récompensera."
+            }],
+            "triste": [{
+                "arabic": "وَلَا تَحْزَنْ إِنَّ اللَّهَ مَعَنَا",
+                "french": "Ne t'attriste pas, Allah est avec nous",
+                "explanation": "Allah est toujours avec nous dans les moments difficiles.",
+                "conclusion": "N'aie pas de tristesse, Allah veille sur toi."
+            }]
+        }
 
-def get_recent_verses(username, days=30):
-    recent_date = date.today() - timedelta(days=days)
-    recent_entries = MoodJournal.query.filter(
-        MoodJournal.username == username,
-        MoodJournal.date >= recent_date
-    ).all()
-    return [entry.verse_shown for entry in recent_entries]
+def get_love_quotes():
+    """Retourne une liste de citations d'amour"""
+    quotes = [
+        "L'amour est la seule force capable de transformer un ennemi en ami.",
+        "Aimer, ce n'est pas se regarder l'un l'autre, c'est regarder ensemble dans la même direction.",
+        "Il n'y a qu'un bonheur dans la vie, c'est d'aimer et d'être aimé.",
+        "L'amour ne se voit pas avec les yeux, mais avec le cœur.",
+        "Aimer quelqu'un profondément vous donne de la force.",
+        "L'amour véritable ne finit jamais.",
+        "Dans tes yeux, j'ai trouvé mon foyer."
+    ]
+    return random.choice(quotes)
 
-# --- Nouvelle fonction pour gérer les indices de connexion ---
-def get_login_hint(attempts):
-    hints = {
-        0: "",
-        1: "💡 Indice : Pense à une déclaration d'amour japonaise...",
-        2: "💡 Indice : C'est une réponse à une déclaration ...",
-        3: "💡 Indice : Ça commence par 'Elle a toujours...'",
-        4: "💡 Indice : La réponse complète est 'Elle a toujours été belle'"
-    }
-    return hints.get(min(attempts, 4), hints[4])
+# Créer le dossier uploads s'il n'existe pas
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+os.makedirs('instance', exist_ok=True)
+
+# Initialiser la base de données
+init_db()
+
+@app.before_request
+def require_login():
+    """Vérifie que l'utilisateur est connecté pour toutes les routes sauf login"""
+    if request.endpoint and request.endpoint != 'login' and 'user' not in session:
+        return redirect(url_for('login'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form['username']
+        username = request.form['username'].lower().strip()
         password = request.form['password']
         
-        # Réinitialiser le compteur si c'est un nouvel utilisateur
-        if 'login_attempts' not in session or session.get('last_username') != username:
-            session['login_attempts'] = 0
-            session['last_username'] = username
+        conn = get_db_connection()
+        user = conn.execute(
+            'SELECT * FROM users WHERE username = ?', (username,)
+        ).fetchone()
+        conn.close()
         
-        # Vérification des mots de passe spéciaux
-        if username == "said" and password == "La lune est belle ce soir":
-            user = User.query.filter_by(username=username).first()
-            if user:
-                user.last_login = datetime.utcnow()
-                user.visit_count += 1
-                db.session.commit()
-                login_user(user)
-                session.pop('login_attempts', None)
-                session.pop('last_username', None)
-                log_activity(username, 'login', 'Connexion réussie')
-                create_special_message_if_needed()
-                return redirect(url_for('index'))
-        
-        elif username == "fanta":
-            if password == "Elle a toujours été belle":
-                user = User.query.filter_by(username=username).first()
-                if user:
-                    user.last_login = datetime.utcnow()
-                    user.visit_count += 1
-                    db.session.commit()
-                    login_user(user)
-                    session.pop('login_attempts', None)
-                    session.pop('last_username', None)
-                    log_activity(username, 'login', 'Connexion réussie')
-                    create_special_message_if_needed()
-                    return redirect(url_for('index'))
-            else:
-                # Incrémenter le compteur d'essais pour Fanta
-                session['login_attempts'] = session.get('login_attempts', 0) + 1
-                log_activity(username, 'failed_login', f'Tentative {session["login_attempts"]}')
-                flash(f"Mot de passe incorrect. {get_login_hint(session['login_attempts'])}", 'error')
-                return render_template('login.html', 
-                                    hint=get_login_hint(session['login_attempts']),
-                                    attempts=session['login_attempts'])
-        
+        if user and check_password_hash(user['password_hash'], password):
+            session['user'] = username
+            
+            # Mettre à jour les statistiques de connexion
+            conn = get_db_connection()
+            conn.execute('''
+                UPDATE users 
+                SET visit_count = visit_count + 1, last_login = CURRENT_TIMESTAMP
+                WHERE username = ?
+            ''', (username,))
+            conn.commit()
+            conn.close()
+            
+            log_activity(username, 'login')
+            flash('Connexion réussie ! Bienvenue dans votre jardin secret 💖', 'success')
+            return redirect(url_for('index'))
         else:
-            # Pour les autres utilisateurs ou mots de passe incorrects
-            flash("Nom d'utilisateur ou mot de passe incorrect", 'error')
+            flash('Nom d\'utilisateur ou mot de passe incorrect', 'error')
     
-    # Afficher le hint actuel si disponible
-    hint = session.get('login_attempts', 0) > 0 and session.get('last_username') == 'fanta'
-    return render_template('login.html', 
-                         hint=get_login_hint(session.get('login_attempts', 0)) if hint else "",
-                         attempts=session.get('login_attempts', 0))
+    return render_template('login.html')
 
 @app.route('/logout')
-@login_required
 def logout():
-    logout_user()
-    log_activity(current_user.username if current_user.is_authenticated else 'unknown', 'logout')
-    session.pop('login_attempts', None)
-    session.pop('last_username', None)
-    flash('Déconnexion réussie. À bientôt! 👋', 'info')
+    user = session.get('user')
+    if user:
+        log_activity(user, 'logout')
+    session.pop('user', None)
+    flash('Déconnexion réussie. À bientôt ! 👋', 'info')
     return redirect(url_for('login'))
 
 @app.route('/', methods=['GET', 'POST'])
-@login_required
 def index():
-    if request.method == 'POST':
-        texte = request.form['texte']
-        if len(texte.strip()) == 0:
-            flash('Le message ne peut pas être vide! 📝', 'error')
-            return redirect(url_for('index'))
-        
-        if len(texte) > 500:
-            flash('Le message est trop long (maximum 500 caractères)! ✂️', 'error')
-            return redirect(url_for('index'))
-            
-        couleur = request.form.get('couleur', '#ffffff')
-        tags = request.form.get('tags', '')
-        
-        nouvelle_phrase = Phrase(
-            texte=texte, 
-            couleur=couleur, 
-            auteur=current_user.username,
-            tags=tags
-        )
-        db.session.add(nouvelle_phrase)
-        db.session.commit()
-        log_activity(current_user.username, 'message_added', f'Message: {texte[:50]}...')
-        flash('Ton message a été ajouté avec succès! 💖', 'success')
-        return redirect(url_for('index'))
-    
-    # Pagination
+    user = session['user']
     page = request.args.get('page', 1, type=int)
     per_page = 10
-    phrases = Phrase.query.order_by(Phrase.date.desc()).paginate(
-        page=page, per_page=per_page, error_out=False
-    )
     
-    # Statistiques
-    total_messages = Phrase.query.count()
-    total_photos = Photo.query.count()
-    favoris_count = Phrase.query.filter_by(est_favori=True).count()
-    
-    # Message personnalisé
-    personal_greeting = get_personalized_greeting(current_user.username)
-    
-    # Citation d'amour aléatoire
-    love_quote = random.choice(LOVE_QUOTES)
-    
-    # Vérifier s'il y a des lettres non lues
-    unread_letters = LoveLetter.query.filter_by(
-        recipient=current_user.username, 
-        is_read=False
-    ).count()
-    
-    return render_template('index.html', 
-                         phrases=phrases.items, 
-                         pagination=phrases,
-                         user=current_user.username,
-                         personal_greeting=personal_greeting,
-                         love_quote=love_quote,
-                         unread_letters=unread_letters,
-                         visit_count=current_user.visit_count,
-                         now=datetime.now(),
-                         stats={
-                             'total_messages': total_messages,
-                             'total_photos': total_photos,
-                             'favoris_count': favoris_count
-                         })
-
-@app.route('/letters')
-@login_required
-def letters():
-    """Page des lettres d'amour"""
-    received_letters = LoveLetter.query.filter_by(
-        recipient=current_user.username
-    ).order_by(LoveLetter.created_at.desc()).all()
-    
-    sent_letters = LoveLetter.query.filter_by(
-        sender=current_user.username
-    ).order_by(LoveLetter.created_at.desc()).all()
-    
-    return render_template('letters.html', 
-                         received_letters=received_letters,
-                         sent_letters=sent_letters,
-                         user=current_user.username)
-
-@app.route('/write_letter', methods=['GET', 'POST'])
-@login_required
-def write_letter():
-    """Écrire une lettre d'amour"""
     if request.method == 'POST':
-        title = request.form['title']
-        content = request.form['content']
-        recipient = request.form['recipient']
+        texte = request.form['texte'].strip()
+        couleur = request.form.get('couleur', '#ffdde1')
+        tags = request.form.get('tags', '').strip()
         
-        if len(title.strip()) == 0 or len(content.strip()) == 0:
-            flash('Le titre et le contenu ne peuvent pas être vides! 📝', 'error')
-            return redirect(url_for('write_letter'))
+        if texte:
+            conn = get_db_connection()
+            conn.execute('''
+                INSERT INTO phrases (texte, auteur, couleur, tags)
+                VALUES (?, ?, ?, ?)
+            ''', (texte, user, couleur, tags))
+            conn.commit()
+            conn.close()
+            
+            log_activity(user, 'message_added', f'Message: {texte[:50]}...')
+            flash('Message ajouté avec succès ! 💖', 'success')
         
-        new_letter = LoveLetter(
-            title=title,
-            content=content,
-            recipient=recipient,
-            sender=current_user.username
-        )
-        db.session.add(new_letter)
-        db.session.commit()
-        
-        log_activity(current_user.username, 'letter_sent', f'À {recipient}: {title}')
-        flash(f'Ta lettre d\'amour a été envoyée à {recipient}! 💌', 'success')
-        return redirect(url_for('letters'))
-    
-    # Déterminer le destinataire
-    recipient = 'fanta' if current_user.username == 'said' else 'said'
-    return render_template('write_letter.html', 
-                         user=current_user.username,
-                         recipient=recipient)
-
-@app.route('/read_letter/<int:letter_id>')
-@login_required
-def read_letter(letter_id):
-    """Lire une lettre d'amour"""
-    letter = LoveLetter.query.get_or_404(letter_id)
-    
-    # Vérifier que l'utilisateur peut lire cette lettre
-    if letter.recipient != current_user.username and letter.sender != current_user.username:
-        flash('Tu ne pouvez pas lire cette lettre! 🚫', 'error')
-        return redirect(url_for('letters'))
-    
-    # Marquer comme lue si c'est le destinataire
-    if letter.recipient == current_user.username and not letter.is_read:
-        letter.is_read = True
-        db.session.commit()
-        log_activity(current_user.username, 'letter_read', f'Lettre: {letter.title}')
-    
-    return render_template('read_letter.html', 
-                         letter=letter,
-                         user=current_user.username)
-
-@app.route('/memories')
-@login_required
-def memories():
-    """Page des souvenirs spéciaux"""
-    all_memories = SpecialMemory.query.order_by(SpecialMemory.date_memory.desc()).all()
-    
-    # Séparer les anniversaires des autres souvenirs
-    anniversaries = [m for m in all_memories if m.is_anniversary]
-    regular_memories = [m for m in all_memories if not m.is_anniversary]
-    
-    return render_template('memories.html',
-                         anniversaries=anniversaries,
-                         regular_memories=regular_memories,
-                         user=current_user.username)
-
-@app.route('/add_memory', methods=['GET', 'POST'])
-@login_required
-def add_memory():
-    """Ajouter un souvenir spécial"""
-    if request.method == 'POST':
-        title = request.form['title']
-        description = request.form['description']
-        date_memory = datetime.strptime(request.form['date_memory'], '%Y-%m-%d').date()
-        is_anniversary = 'is_anniversary' in request.form
-        
-        if len(title.strip()) == 0 or len(description.strip()) == 0:
-            flash('Le titre et la description ne peuvent pas être vides! 📝', 'error')
-            return redirect(url_for('add_memory'))
-        
-        new_memory = SpecialMemory(
-            title=title,
-            description=description,
-            date_memory=date_memory,
-            author=current_user.username,
-            is_anniversary=is_anniversary
-        )
-        db.session.add(new_memory)
-        db.session.commit()
-        
-        log_activity(current_user.username, 'memory_added', f'Souvenir: {title}')
-        flash('Ton souvenir a été ajouté avec succès! 💝', 'success')
-        return redirect(url_for('memories'))
-    
-    return render_template('add_memory.html', user=current_user.username)
-
-@app.route('/personalize', methods=['GET', 'POST'])
-@login_required
-def personalize():
-    """Page de personnalisation"""
-    if request.method == 'POST':
-        favorite_color = request.form.get('favorite_color', '#ffdde1')
-        current_user.favorite_color = favorite_color
-        db.session.commit()
-        
-        log_activity(current_user.username, 'profile_updated', f'Couleur: {favorite_color}')
-        flash('Tes préférences ont été sauvegardées! 🎨', 'success')
-        return redirect(url_for('personalize'))
-    
-    return render_template('personalize.html', 
-                         user=current_user.username,
-                         current_color=current_user.favorite_color)
-
-@app.route('/like_phrase/<int:phrase_id>')
-@login_required
-def like_phrase(phrase_id):
-    phrase = Phrase.query.get_or_404(phrase_id)
-    phrase.likes += 1
-    db.session.commit()
-    log_activity(current_user.username, 'phrase_liked', f'Phrase ID: {phrase_id}')
-    return jsonify({'likes': phrase.likes})
-
-@app.route('/favori/<int:phrase_id>')
-@login_required
-def toggle_favori(phrase_id):
-    phrase = Phrase.query.get_or_404(phrase_id)
-    phrase.est_favori = not phrase.est_favori
-    db.session.commit()
-    action = 'added_to_favorites' if phrase.est_favori else 'removed_from_favorites'
-    log_activity(current_user.username, action, f'Phrase ID: {phrase_id}')
-    return redirect(url_for('index'))
-
-@app.route('/supprimer/<int:phrase_id>')
-@login_required
-def supprimer_phrase(phrase_id):
-    phrase = Phrase.query.get_or_404(phrase_id)
-    # Vérifier que l'utilisateur peut supprimer ce message
-    if phrase.auteur != current_user.username:
-        flash('Tu ne peux supprimer que tes propres messages! 🚫', 'error')
         return redirect(url_for('index'))
     
-    log_activity(current_user.username, 'message_deleted', f'Message: {phrase.texte[:50]}...')
-    db.session.delete(phrase)
-    db.session.commit()
-    flash('Message supprimé avec succès', 'info')
+    # Récupérer les messages avec pagination
+    conn = get_db_connection()
+    
+    # Compter le total des messages
+    total = conn.execute('SELECT COUNT(*) FROM phrases').fetchone()[0]
+    
+    # Récupérer les messages pour la page actuelle
+    offset = (page - 1) * per_page
+    phrases = conn.execute('''
+        SELECT * FROM phrases 
+        ORDER BY date DESC 
+        LIMIT ? OFFSET ?
+    ''', (per_page, offset)).fetchall()
+    
+    # Statistiques
+    stats = {
+        'total_messages': conn.execute('SELECT COUNT(*) FROM phrases').fetchone()[0],
+        'total_photos': conn.execute('SELECT COUNT(*) FROM photos').fetchone()[0],
+        'favoris_count': conn.execute('SELECT COUNT(*) FROM phrases WHERE est_favori = 1').fetchone()[0]
+    }
+    
+    # Lettres non lues
+    unread_letters = conn.execute('''
+        SELECT COUNT(*) FROM letters 
+        WHERE recipient = ? AND is_read = 0
+    ''', (user,)).fetchone()[0]
+    
+    # Informations utilisateur
+    user_info = conn.execute('''
+        SELECT visit_count, favorite_color FROM users WHERE username = ?
+    ''', (user,)).fetchone()
+    
+    conn.close()
+    
+    # Pagination
+    has_prev = page > 1
+    has_next = offset + per_page < total
+    pagination = {
+        'page': page,
+        'per_page': per_page,
+        'total': total,
+        'pages': (total + per_page - 1) // per_page,
+        'has_prev': has_prev,
+        'has_next': has_next,
+        'prev_num': page - 1 if has_prev else None,
+        'next_num': page + 1 if has_next else None,
+        'iter_pages': lambda: range(max(1, page - 2), min((total + per_page - 1) // per_page + 1, page + 3))
+    }
+    
+    # Salutation personnalisée
+    greetings = {
+        'fanta': "Salut ma maninka mousso préférée",
+        'said': "Salut mon panda préféré"
+    }
+    
+    return render_template('index.html',
+                         phrases=phrases,
+                         user=user,
+                         pagination=pagination,
+                         stats=stats,
+                         unread_letters=unread_letters,
+                         visit_count=user_info['visit_count'] if user_info else 0,
+                         current_user={'favorite_color': user_info['favorite_color'] if user_info else '#ffdde1'},
+                         personal_greeting=greetings.get(user, f"Salut {user.title()}"),
+                         love_quote=get_love_quotes())
+
+@app.route('/toggle_favori/<int:phrase_id>')
+def toggle_favori(phrase_id):
+    conn = get_db_connection()
+    phrase = conn.execute('SELECT est_favori FROM phrases WHERE id = ?', (phrase_id,)).fetchone()
+    
+    if phrase:
+        new_status = not phrase['est_favori']
+        conn.execute('UPDATE phrases SET est_favori = ? WHERE id = ?', (new_status, phrase_id))
+        conn.commit()
+        
+        action = 'favori_added' if new_status else 'favori_removed'
+        log_activity(session['user'], action, f'Phrase ID: {phrase_id}')
+    
+    conn.close()
+    return redirect(url_for('index'))
+
+@app.route('/like_phrase/<int:phrase_id>')
+def like_phrase(phrase_id):
+    conn = get_db_connection()
+    conn.execute('UPDATE phrases SET likes = likes + 1 WHERE id = ?', (phrase_id,))
+    conn.commit()
+    
+    # Récupérer le nouveau nombre de likes
+    likes = conn.execute('SELECT likes FROM phrases WHERE id = ?', (phrase_id,)).fetchone()
+    conn.close()
+    
+    log_activity(session['user'], 'phrase_liked', f'Phrase ID: {phrase_id}')
+    
+    return jsonify({'likes': likes['likes'] if likes else 0})
+
+@app.route('/supprimer_phrase/<int:phrase_id>')
+def supprimer_phrase(phrase_id):
+    user = session['user']
+    conn = get_db_connection()
+    
+    # Vérifier que l'utilisateur est l'auteur
+    phrase = conn.execute('SELECT auteur FROM phrases WHERE id = ?', (phrase_id,)).fetchone()
+    
+    if phrase and phrase['auteur'] == user:
+        conn.execute('DELETE FROM phrases WHERE id = ?', (phrase_id,))
+        conn.commit()
+        log_activity(user, 'phrase_deleted', f'Phrase ID: {phrase_id}')
+        flash('Message supprimé avec succès', 'success')
+    else:
+        flash('Vous ne pouvez supprimer que vos propres messages', 'error')
+    
+    conn.close()
     return redirect(url_for('index'))
 
 @app.route('/galerie')
-@login_required
 def galerie():
     page = request.args.get('page', 1, type=int)
     per_page = 12
-    photos = Photo.query.order_by(Photo.date.desc()).paginate(
-        page=page, per_page=per_page, error_out=False
-    )
-    return render_template('galerie.html', 
-                         photos=photos.items, 
-                         pagination=photos,
-                         user=current_user.username)
-
-@app.route('/like_photo/<int:photo_id>')
-@login_required
-def like_photo(photo_id):
-    photo = Photo.query.get_or_404(photo_id)
-    photo.likes += 1
-    db.session.commit()
-    log_activity(current_user.username, 'photo_liked', f'Photo ID: {photo_id}')
-    return jsonify({'likes': photo.likes})
+    
+    conn = get_db_connection()
+    
+    # Compter le total des photos
+    total = conn.execute('SELECT COUNT(*) FROM photos').fetchone()[0]
+    
+    # Récupérer les photos pour la page actuelle
+    offset = (page - 1) * per_page
+    photos = conn.execute('''
+        SELECT * FROM photos 
+        ORDER BY date DESC 
+        LIMIT ? OFFSET ?
+    ''', (per_page, offset)).fetchall()
+    
+    conn.close()
+    
+    # Pagination
+    has_prev = page > 1
+    has_next = offset + per_page < total
+    pagination = {
+        'page': page,
+        'per_page': per_page,
+        'total': total,
+        'pages': (total + per_page - 1) // per_page,
+        'has_prev': has_prev,
+        'has_next': has_next,
+        'prev_num': page - 1 if has_prev else None,
+        'next_num': page + 1 if has_next else None,
+        'iter_pages': lambda: range(max(1, page - 2), min((total + per_page - 1) // per_page + 1, page + 3))
+    }
+    
+    return render_template('galerie.html', photos=photos, user=session['user'], pagination=pagination)
 
 @app.route('/upload', methods=['POST'])
-@login_required
 def upload_file():
     if 'file' not in request.files:
         flash('Aucun fichier sélectionné', 'error')
         return redirect(url_for('galerie'))
     
     file = request.files['file']
-    legende = request.form.get('legende', '')
+    legende = request.form.get('legende', '').strip()
     
     if file.filename == '':
         flash('Aucun fichier sélectionné', 'error')
         return redirect(url_for('galerie'))
     
     if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        # Ajouter un timestamp pour éviter les conflits de noms
+        # Créer un nom de fichier sécurisé avec timestamp
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_')
-        filename = timestamp + filename
+        filename = timestamp + secure_filename(file.filename)
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-        
-        # Vérifier la taille du fichier
-        file.seek(0, os.SEEK_END)
-        file_size = file.tell()
-        file.seek(0)
-        
-        if file_size > app.config['MAX_CONTENT_LENGTH']:
-            flash('Le fichier est trop volumineux (maximum 16MB)! 📏', 'error')
-            return redirect(url_for('galerie'))
-        
-        file.save(filepath)
-        
-        nouvelle_photo = Photo(
-            filename=filename, 
-            legende=legende, 
-            auteur=current_user.username,
-            file_size=file_size
-        )
-        db.session.add(nouvelle_photo)
-        db.session.commit()
-        
-        log_activity(current_user.username, 'photo_uploaded', f'Photo: {filename}')
-        flash('Photo ajoutée avec succès! 📸', 'success')
-        return redirect(url_for('galerie'))
+        try:
+            file.save(file_path)
+            file_size = os.path.getsize(file_path)
+            
+            # Enregistrer en base
+            conn = get_db_connection()
+            conn.execute('''
+                INSERT INTO photos (filename, legende, auteur, file_size)
+                VALUES (?, ?, ?, ?)
+            ''', (filename, legende, session['user'], file_size))
+            conn.commit()
+            conn.close()
+            
+            log_activity(session['user'], 'photo_uploaded', f'Photo: {filename}')
+            flash('Photo uploadée avec succès ! 📸', 'success')
+            
+        except Exception as e:
+            flash(f'Erreur lors de l\'upload: {str(e)}', 'error')
+    else:
+        flash('Type de fichier non autorisé', 'error')
     
-    flash('Type de fichier non autorisé', 'error')
     return redirect(url_for('galerie'))
 
+@app.route('/like_photo/<int:photo_id>')
+def like_photo(photo_id):
+    conn = get_db_connection()
+    conn.execute('UPDATE photos SET likes = likes + 1 WHERE id = ?', (photo_id,))
+    conn.commit()
+    
+    # Récupérer le nouveau nombre de likes
+    likes = conn.execute('SELECT likes FROM photos WHERE id = ?', (photo_id,)).fetchone()
+    conn.close()
+    
+    log_activity(session['user'], 'photo_liked', f'Photo ID: {photo_id}')
+    
+    return jsonify({'likes': likes['likes'] if likes else 0})
+
 @app.route('/supprimer_photo/<int:photo_id>')
-@login_required
 def supprimer_photo(photo_id):
-    photo = Photo.query.get_or_404(photo_id)
+    user = session['user']
+    conn = get_db_connection()
     
-    # Vérifier que l'utilisateur peut supprimer cette photo
-    if photo.auteur != current_user.username:
-        flash('Tu ne peux supprimer que tes propres photos! 🚫', 'error')
-        return redirect(url_for('galerie'))
+    # Vérifier que l'utilisateur est l'auteur
+    photo = conn.execute('SELECT auteur, filename FROM photos WHERE id = ?', (photo_id,)).fetchone()
     
-    filepath = os.path.join(app.config['UPLOAD_FOLDER'], photo.filename)
-    if os.path.exists(filepath):
+    if photo and photo['auteur'] == user:
+        # Supprimer le fichier
         try:
-            os.remove(filepath)
-        except OSError as e:
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], photo['filename'])
+            if os.path.exists(file_path):
+                os.remove(file_path)
+        except Exception as e:
             print(f"Erreur lors de la suppression du fichier: {e}")
+        
+        # Supprimer de la base
+        conn.execute('DELETE FROM photos WHERE id = ?', (photo_id,))
+        conn.commit()
+        log_activity(user, 'photo_deleted', f'Photo ID: {photo_id}')
+        flash('Photo supprimée avec succès', 'success')
+    else:
+        flash('Vous ne pouvez supprimer que vos propres photos', 'error')
     
-    log_activity(current_user.username, 'photo_deleted', f'Photo: {photo.filename}')
-    db.session.delete(photo)
-    db.session.commit()
-    flash('Photo supprimée avec succès', 'info')
+    conn.close()
     return redirect(url_for('galerie'))
 
 @app.route('/mood', methods=['GET', 'POST'])
-@login_required
 def mood():
     if request.method == 'POST':
         selected_mood = request.form['mood']
-        
-        # Sélectionner un verset approprié
-        mood_data = load_mood_data()
-        if not mood_data:
-            flash('Erreur: Impossible de charger les versets.', 'error')
-            return redirect(url_for('mood'))
-        
-        verses = mood_data.get(selected_mood, [])
-        
-        if not verses:
-            flash('Aucun verset disponible pour cette humeur.', 'error')
-            return redirect(url_for('mood'))
-        
-        # Choisir un verset aléatoire non montré récemment (sur 30 jours)
-        recent_verses = get_recent_verses(current_user.username)
-        available_verses = []
-        for v in verses:
-            # Pour les versets du Coran qui ont un verse_id
-            if v.get('verse_id'):
-                if v['verse_id'] not in recent_verses:
-                    available_verses.append(v)
-            # Pour les hadiths et invocations qui n'ont pas de verse_id, on génère un ID unique
-            else:
-                unique_id = f"{v.get('type', 'hadith')}-{hash(v.get('arabic', ''))}"
-                if unique_id not in recent_verses:
-                    available_verses.append(v)
-        
-        # Si tous les versets ont été vus récemment, on réinitialise la liste
-        if not available_verses:
-            available_verses = verses
-        
-        selected_verse = random.choice(available_verses)
-        
-        # Sauvegarder le choix (on garde l'historique, mais sans restriction)
-        new_entry = MoodJournal(
-            username=current_user.username,
-            mood=selected_mood,
-            date=date.today(),
-            verse_shown=selected_verse.get('verse_id', f"{selected_verse.get('type', 'hadith')}-{hash(selected_verse.get('arabic', ''))}")
-        )
-        db.session.add(new_entry)
-        db.session.commit()
-        
-        log_activity(current_user.username, 'mood_checked', f'Mood: {selected_mood}')
-        
-        return render_template('mood_result.html', 
-                             mood=selected_mood, 
-                             verse=selected_verse,
-                             user=current_user.username)
+        log_activity(session['user'], 'mood_checked', f'Mood: {selected_mood}')
+        return redirect(url_for('mood_result', mood=selected_mood))
     
-    return render_template('mood.html', user=current_user.username)
+    return render_template('mood.html', user=session['user'])
+
+@app.route('/mood_result/<mood>')
+def mood_result(mood):
+    verses = load_mood_verses()
+    
+    # Sélectionner un verset aléatoire pour l'humeur
+    if mood in verses and verses[mood]:
+        verse = random.choice(verses[mood])
+    else:
+        # Verset par défaut
+        verse = {
+            "arabic": "وَاللَّهُ يُحِبُّ الْمُحْسِنِينَ",
+            "french": "Et Allah aime les bienfaisants",
+            "explanation": "Allah aime ceux qui font le bien.",
+            "conclusion": "Continue à faire le bien, Allah t'aime."
+        }
+    
+    return render_template('mood_result.html', mood=mood, verse=verse, user=session['user'])
 
 @app.route('/search')
-@login_required
 def search():
-    query = request.args.get('q', '')
-    if query:
-        phrases = Phrase.query.filter(
-            Phrase.texte.contains(query) | 
-            Phrase.tags.contains(query)
-        ).order_by(Phrase.date.desc()).all()
-        log_activity(current_user.username, 'search', f'Query: {query}')
-    else:
-        phrases = []
+    query = request.args.get('q', '').strip()
+    phrases = []
     
-    return render_template('search_results.html', 
-                         phrases=phrases, 
-                         query=query,
-                         user=current_user.username)
+    if query:
+        conn = get_db_connection()
+        phrases = conn.execute('''
+            SELECT * FROM phrases 
+            WHERE texte LIKE ? OR tags LIKE ?
+            ORDER BY date DESC
+        ''', (f'%{query}%', f'%{query}%')).fetchall()
+        conn.close()
+        
+        log_activity(session['user'], 'search', f'Query: {query}')
+    
+    return render_template('search_results.html', phrases=phrases, query=query, user=session['user'])
+
+@app.route('/letters')
+def letters():
+    user = session['user']
+    conn = get_db_connection()
+    
+    # Lettres reçues
+    received_letters = conn.execute('''
+        SELECT * FROM letters 
+        WHERE recipient = ? 
+        ORDER BY created_at DESC
+    ''', (user,)).fetchall()
+    
+    # Lettres envoyées
+    sent_letters = conn.execute('''
+        SELECT * FROM letters 
+        WHERE sender = ? 
+        ORDER BY created_at DESC
+    ''', (user,)).fetchall()
+    
+    conn.close()
+    
+    return render_template('letters.html', 
+                         received_letters=received_letters,
+                         sent_letters=sent_letters,
+                         user=user)
+
+@app.route('/write_letter', methods=['GET', 'POST'])
+def write_letter():
+    user = session['user']
+    recipient = 'fanta' if user == 'said' else 'said'
+    
+    if request.method == 'POST':
+        title = request.form['title'].strip()
+        content = request.form['content'].strip()
+        
+        if title and content:
+            conn = get_db_connection()
+            conn.execute('''
+                INSERT INTO letters (title, content, sender, recipient)
+                VALUES (?, ?, ?, ?)
+            ''', (title, content, user, recipient))
+            conn.commit()
+            conn.close()
+            
+            log_activity(user, 'letter_sent', f'To: {recipient}, Title: {title}')
+            flash('Lettre envoyée avec amour ! 💌', 'success')
+            return redirect(url_for('letters'))
+    
+    return render_template('write_letter.html', user=user, recipient=recipient)
+
+@app.route('/read_letter/<int:letter_id>')
+def read_letter(letter_id):
+    user = session['user']
+    conn = get_db_connection()
+    
+    letter = conn.execute('SELECT * FROM letters WHERE id = ?', (letter_id,)).fetchone()
+    
+    if not letter:
+        flash('Lettre introuvable', 'error')
+        return redirect(url_for('letters'))
+    
+    # Vérifier que l'utilisateur peut lire cette lettre
+    if letter['sender'] != user and letter['recipient'] != user:
+        flash('Vous n\'avez pas accès à cette lettre', 'error')
+        return redirect(url_for('letters'))
+    
+    # Marquer comme lue si c'est le destinataire
+    if letter['recipient'] == user and not letter['is_read']:
+        conn.execute('UPDATE letters SET is_read = 1 WHERE id = ?', (letter_id,))
+        conn.commit()
+        log_activity(user, 'letter_read', f'Letter ID: {letter_id}')
+    
+    conn.close()
+    
+    return render_template('read_letter.html', letter=letter, user=user)
+
+@app.route('/memories')
+def memories():
+    conn = get_db_connection()
+    
+    # Souvenirs anniversaires
+    anniversaries = conn.execute('''
+        SELECT * FROM memories 
+        WHERE is_anniversary = 1 
+        ORDER BY date_memory DESC
+    ''').fetchall()
+    
+    # Souvenirs réguliers
+    regular_memories = conn.execute('''
+        SELECT * FROM memories 
+        WHERE is_anniversary = 0 
+        ORDER BY date_memory DESC
+    ''').fetchall()
+    
+    conn.close()
+    
+    return render_template('memories.html', 
+                         anniversaries=anniversaries,
+                         regular_memories=regular_memories,
+                         user=session['user'])
+
+@app.route('/add_memory', methods=['GET', 'POST'])
+def add_memory():
+    if request.method == 'POST':
+        title = request.form['title'].strip()
+        description = request.form['description'].strip()
+        date_memory = request.form['date_memory']
+        is_anniversary = 'is_anniversary' in request.form
+        
+        if title and description and date_memory:
+            conn = get_db_connection()
+            conn.execute('''
+                INSERT INTO memories (title, description, date_memory, author, is_anniversary)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (title, description, date_memory, session['user'], is_anniversary))
+            conn.commit()
+            conn.close()
+            
+            log_activity(session['user'], 'memory_added', f'Memory: {title}')
+            flash('Souvenir ajouté avec succès ! ✨', 'success')
+            return redirect(url_for('memories'))
+    
+    return render_template('add_memory.html', user=session['user'])
+
+@app.route('/love_calendar')
+def love_calendar():
+    # Implémentation basique du calendrier
+    from calendar import monthcalendar
+    import calendar
+    
+    year = request.args.get('year', datetime.now().year, type=int)
+    month = request.args.get('month', datetime.now().month, type=int)
+    
+    # Générer le calendrier
+    cal = monthcalendar(year, month)
+    month_name = calendar.month_name[month]
+    
+    # Récupérer les événements
+    conn = get_db_connection()
+    events = conn.execute('''
+        SELECT * FROM calendar_events 
+        WHERE strftime('%Y', event_date) = ? AND strftime('%m', event_date) = ?
+    ''', (str(year), f'{month:02d}')).fetchall()
+    conn.close()
+    
+    # Organiser les événements par jour
+    events_by_day = {}
+    for event in events:
+        day = int(event['event_date'].split('-')[2])
+        if day not in events_by_day:
+            events_by_day[day] = []
+        events_by_day[day].append(event)
+    
+    # Dates spéciales (anniversaires, etc.)
+    special_dates = {}
+    if month == 9:  # Septembre
+        special_dates[27] = {'title': 'Anniversaire de Fanta', 'type': 'anniversary'}
+    
+    return render_template('love_calendar.html',
+                         calendar_data=cal,
+                         current_month=month,
+                         current_year=year,
+                         month_name=month_name,
+                         events_by_day=events_by_day,
+                         special_dates=special_dates,
+                         today=datetime.now().date())
+
+@app.route('/add_calendar_event', methods=['POST'])
+def add_calendar_event():
+    title = request.form['title'].strip()
+    event_date = request.form['event_date']
+    event_type = request.form['event_type']
+    description = request.form.get('description', '').strip()
+    
+    if title and event_date:
+        conn = get_db_connection()
+        conn.execute('''
+            INSERT INTO calendar_events (title, event_date, event_type, description, created_by)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (title, event_date, event_type, description, session['user']))
+        conn.commit()
+        conn.close()
+        
+        flash('Événement ajouté au calendrier ! 📅', 'success')
+    
+    return redirect(url_for('love_calendar'))
+
+@app.route('/love_challenges')
+def love_challenges():
+    conn = get_db_connection()
+    
+    # Défis actifs
+    active_challenges = conn.execute('''
+        SELECT * FROM challenges 
+        WHERE is_active = 1 AND completed_by IS NULL
+        ORDER BY points DESC
+    ''').fetchall()
+    
+    # Défis terminés
+    completed_challenges = conn.execute('''
+        SELECT * FROM challenges 
+        WHERE completed_by IS NOT NULL
+        ORDER BY completed_date DESC
+    ''').fetchall()
+    
+    # Points totaux de l'utilisateur
+    total_points = conn.execute('''
+        SELECT SUM(points) as total FROM challenges 
+        WHERE completed_by = ?
+    ''', (session['user'],)).fetchone()
+    
+    conn.close()
+    
+    return render_template('love_challenges.html',
+                         active_challenges=active_challenges,
+                         completed_challenges=completed_challenges,
+                         total_points=total_points['total'] or 0,
+                         user=session['user'])
+
+@app.route('/complete_challenge/<int:challenge_id>')
+def complete_challenge(challenge_id):
+    conn = get_db_connection()
+    
+    # Marquer le défi comme terminé
+    conn.execute('''
+        UPDATE challenges 
+        SET completed_by = ?, completed_date = CURRENT_TIMESTAMP
+        WHERE id = ? AND completed_by IS NULL
+    ''', (session['user'], challenge_id))
+    
+    conn.commit()
+    conn.close()
+    
+    flash('Défi terminé ! Bravo ! 🎉', 'success')
+    return redirect(url_for('love_challenges'))
+
+@app.route('/personalize', methods=['GET', 'POST'])
+def personalize():
+    user = session['user']
+    
+    if request.method == 'POST':
+        favorite_color = request.form['favorite_color']
+        
+        conn = get_db_connection()
+        conn.execute('''
+            UPDATE users SET favorite_color = ? WHERE username = ?
+        ''', (favorite_color, user))
+        conn.commit()
+        conn.close()
+        
+        flash('Préférences sauvegardées ! 🎨', 'success')
+        return redirect(url_for('personalize'))
+    
+    # Récupérer les informations utilisateur
+    conn = get_db_connection()
+    user_info = conn.execute('''
+        SELECT * FROM users WHERE username = ?
+    ''', (user,)).fetchone()
+    conn.close()
+    
+    return render_template('personalize.html', 
+                         user=user,
+                         current_user=user_info,
+                         current_color=user_info['favorite_color'] if user_info else '#ffdde1')
 
 @app.route('/stats')
-@login_required
 def stats():
+    conn = get_db_connection()
+    
     # Statistiques générales
-    total_messages = Phrase.query.count()
-    total_photos = Photo.query.count()
-    favoris_count = Phrase.query.filter_by(est_favori=True).count()
-    total_letters = LoveLetter.query.count()
-    total_memories = SpecialMemory.query.count()
+    total_messages = conn.execute('SELECT COUNT(*) FROM phrases').fetchone()[0]
+    total_photos = conn.execute('SELECT COUNT(*) FROM photos').fetchone()[0]
+    favoris_count = conn.execute('SELECT COUNT(*) FROM phrases WHERE est_favori = 1').fetchone()[0]
+    total_letters = conn.execute('SELECT COUNT(*) FROM letters').fetchone()[0]
+    total_memories = conn.execute('SELECT COUNT(*) FROM memories').fetchone()[0]
     
     # Messages par utilisateur
-    messages_by_user = db.session.query(
-        Phrase.auteur, 
-        db.func.count(Phrase.id).label('count')
-    ).group_by(Phrase.auteur).all()
+    messages_by_user = conn.execute('''
+        SELECT auteur, COUNT(*) as count 
+        FROM phrases 
+        GROUP BY auteur 
+        ORDER BY count DESC
+    ''').fetchall()
     
     # Photos par utilisateur
-    photos_by_user = db.session.query(
-        Photo.auteur, 
-        db.func.count(Photo.id).label('count')
-    ).group_by(Photo.auteur).all()
+    photos_by_user = conn.execute('''
+        SELECT auteur, COUNT(*) as count 
+        FROM photos 
+        GROUP BY auteur 
+        ORDER BY count DESC
+    ''').fetchall()
     
     # Activité récente
-    recent_activity = Statistics.query.order_by(
-        Statistics.date.desc()
-    ).limit(20).all()
+    recent_activity = conn.execute('''
+        SELECT * FROM activities 
+        ORDER BY date DESC 
+        LIMIT 20
+    ''').fetchall()
+    
+    conn.close()
     
     return render_template('stats.html',
                          total_messages=total_messages,
@@ -845,311 +891,81 @@ def stats():
                          messages_by_user=messages_by_user,
                          photos_by_user=photos_by_user,
                          recent_activity=recent_activity,
-                         user=current_user.username)
+                         user=session['user'])
 
 @app.route('/birthday_surprise')
-@login_required
 def birthday_surprise():
-    """Page surprise d'anniversaire"""
-    today = date.today()
-    
-    # Vérifier si c'est l'anniversaire de Fanta
-    if current_user.username != "fanta":
-        flash("Cette page est réservée à Fanta ! 💖", 'info')
+    # Vérifier que c'est Fanta et que c'est son anniversaire
+    if session['user'] != 'fanta':
+        flash('Cette page est réservée à Fanta ! 😊', 'info')
         return redirect(url_for('index'))
     
-    # Vérifier si c'est le bon jour ou après
-    target_date = date(2025, 9, 27)
-    if today < target_date:
-        days_left = (target_date - today).days
-        flash(f"Patience ma princesse ! Plus que {days_left} jour(s) avant ta surprise ! 🎁", 'info')
-        return redirect(url_for('index'))
+    today = datetime.now().date()
+    if today.month != 9 or today.day < 27:
+        flash('La surprise n\'est pas encore prête ! 🎁', 'info')
+        return redirect(url_for('countdown'))
     
-    # Révéler la surprise
-    surprise = BirthdaySurprise.query.filter_by(
-        reveal_date=target_date
-    ).first()
-    
-    if not surprise:
-        # Créer la surprise si elle n'existe pas
-        surprise_content = """💌 Lettre pour N'na Maninka Mousso
+    # Lettre de surprise d'anniversaire
+    surprise = {
+        'title': 'Joyeux Anniversaire ma Maninka Mousso ! 🎂',
+        'content': '''Ma très chère Fanta,
 
-Ma chère N'na Maninka Mousso,
+Aujourd'hui est un jour très spécial car c'est TON jour ! 🎉
 
-Tu sais, chaque fois que je prends la plume enfin, dans ce cas le clavier pour t'écrire, j'ai l'impression que je suis en train de mélanger un cocktail (dédicace à mon côté barman haha ) à ton nom : un peu de douceur, une bonne dose de folie, une pincée d'humour, et surtout beaucoup, beaucoup d'amour. 🍹💛
+J'ai créé ce site entier comme une déclaration d'amour pour toi. Chaque ligne de code, chaque couleur, chaque fonctionnalité a été pensée avec amour pour te faire sourire.
 
-Je ne sais pas si tu t'en rends compte, mais tu as un superpouvoir : même quand les journées sont lourdes, quand les choses ne tournent pas rond, il suffit que je pense à toi, à ton sourire, à une de tes petites phrases, pour que je retrouve le moral. Tu es un peu comme mon bouton "reset bonheur".
+Tu es ma maninka mousso, ma femme de valeur, celle qui illumine mes journées et réchauffe mon cœur. Ton sourire est mon soleil, ta voix est ma mélodie préférée, et ton amour est mon plus grand trésor.
 
-Et je sais aussi que tes journées ne sont pas toujours faciles. Parfois, tu portes des choses que personne ne voit, des peines, des inquiétudes, des moments de fatigue émotionnelle… et pourtant, malgré tout ça, tu arrives à m'apporter tellement de bonheur, tellement de lumière. Ça me touche profondément, et ça me donne encore plus envie d'être là pour toi.
+Pour ton anniversaire, j'ai voulu t'offrir quelque chose d'unique : notre propre jardin secret numérique où nous pouvons cultiver notre amour, partager nos souvenirs et écrire notre histoire.
 
-J'aimerais être celui sur qui tu peux te reposer émotionnellement, à qui tu peux raconter tous tes problèmes sans crainte, celui qui t'aide à sentir que tu es en sécurité, écoutée et soutenue. Je veux être à la hauteur de tout ce que tu m'apportes : un pilier quand tu en as besoin, un soutien quand les moments sont difficiles, et quelqu'un sur qui tu peux toujours compter.
+Que cette nouvelle année de ta vie soit remplie de bonheur, de réussites, de rires et surtout... de nous ! 💕
 
-Tu sais, parfois je me demande comment j'ai pu avoir cette chance de te rencontrer. Toi et moi, ça sonne comme une chanson qu'on aime écouter en boucle sans jamais se lasser. Et si un jour on sort un album, je vote pour que le titre soit « Main dans la main, version originale ».
+Je t'aime plus que les mots ne peuvent l'exprimer, plus que les étoiles dans le ciel, plus que tout au monde.
 
-Mais soyons honnêtes : être avec toi, ce n'est pas juste des mots doux et des moments parfaits (même si on en a plein !). C'est aussi des fous rires improbables, des discussions qui partent dans tous les sens, des projets un peu fous, et parfois même des mini-désaccords qui finissent toujours par des sourires. Et je crois que c'est ça, la vraie richesse : on vit tout, mais toujours ensemble, toujours avec cette complicité qui nous appartient.
+Joyeux anniversaire ma princesse ! 👑
 
-Je t'aime non seulement pour ce que tu es, mais aussi pour ce que je deviens à tes côtés : plus fort, plus motivé, plus rêveur, et surtout plus heureux. Et si parfois je me projette dans l'avenir, c'est parce que je sais que tu en fais partie.
+Ton panda qui t'aime à la folie,
+Saïd 💖
 
-Alors oui, je veux qu'on continue à travailler dur, à se battre pour nos rêves, à construire pas à pas. Parce que le vrai but, ce n'est pas juste d'arriver quelque part : c'est d'y aller avec toi. Et je sais qu'un jour, on regardera en arrière en se disant : "Tu te souviens de tout ce qu'on a traversé ? Eh bien regarde où on est aujourd'hui !"
-
-Et même si la vie est parfois compliquée, je crois profondément que notre histoire, c'est une lumière qui ne s'éteint pas. Tu es mon espoir, mon énergie, ma joie. Et tu seras toujours celle à qui je veux écrire des lettres trop longues, qui mélangent un peu d'amour, d'humour, de promesses, et même quelques bêtises.
-
-Alors voilà, N'na Maninka Mousso : merci d'exister, merci d'être toi, merci d'être celle que tu es avec moi. Et prépare-toi, parce que le meilleur reste à venir. 🌟
-
-Toujours ton plus grand fan, ton complice, et celui qui t'aime plus qu'il n'arrive parfois à le dire,
-Ton panda préféré bg Saïd 💕"""
-        
-        surprise = BirthdaySurprise(
-            title="Lettre spéciale d'anniversaire",
-            content=surprise_content,
-            surprise_type="letter",
-            reveal_date=target_date,
-            is_revealed=True
-        )
-        db.session.add(surprise)
-        db.session.commit()
-    
-    log_activity(current_user.username, 'birthday_surprise_viewed', 'Surprise d\'anniversaire découverte')
-    
-    return render_template('birthday_surprise.html', 
-                         surprise=surprise,
-                         user=current_user.username)
-
-@app.route('/love_calendar')
-@login_required
-def love_calendar():
-    """Calendrier de nos moments spéciaux"""
-    today = date.today()
-    current_month = request.args.get('month', today.month, type=int)
-    current_year = request.args.get('year', today.year, type=int)
-    
-    # Générer le calendrier du mois
-    cal = calendar.monthcalendar(current_year, current_month)
-    month_name = calendar.month_name[current_month]
-    
-    # Récupérer les événements du mois
-    events = LoveCalendar.query.filter(
-        db.extract('month', LoveCalendar.date) == current_month,
-        db.extract('year', LoveCalendar.date) == current_year
-    ).all()
-    
-    # Organiser les événements par jour
-    events_by_day = {}
-    for event in events:
-        day = event.date.day
-        if day not in events_by_day:
-            events_by_day[day] = []
-        events_by_day[day].append(event)
-    
-    # Ajouter des événements spéciaux automatiques
-    special_dates = {
-        27: {"title": "🎂 Anniversaire de Fanta", "type": "anniversary"} if current_month == 9 else None,
-        14: {"title": "💝 Jour spécial du mois", "type": "special"},
+P.S. : Explore toutes les nouvelles fonctionnalités que j'ai ajoutées spécialement pour ton anniversaire ! 🎁'''
     }
     
-    return render_template('love_calendar.html',
-                         calendar_data=cal,
-                         month_name=month_name,
-                         current_month=current_month,
-                         current_year=current_year,
-                         today=today,
-                         events_by_day=events_by_day,
-                         special_dates=special_dates,
-                         user=current_user.username)
-
-@app.route('/love_challenges')
-@login_required
-def love_challenges():
-    """Défis d'amour quotidiens"""
-    active_challenges = LoveChallenge.query.filter_by(is_completed=False).all()
-    completed_challenges = LoveChallenge.query.filter_by(is_completed=True).order_by(LoveChallenge.completed_date.desc()).limit(10).all()
-    
-    # Créer des défis par défaut s'il n'y en a pas
-    if not active_challenges and not completed_challenges:
-        default_challenges = [
-            {
-                "title": "💌 Écris un message d'amour surprise",
-                "description": "Laisse un petit mot doux inattendu dans notre jardin secret",
-                "challenge_type": "message",
-                "points": 15
-            },
-            {
-                "title": "📸 Partage un souvenir photo",
-                "description": "Ajoute une photo qui te rappelle un beau moment ensemble",
-                "challenge_type": "photo",
-                "points": 20
-            },
-            {
-                "title": "🌷 Vérifie ton humeur spirituelle",
-                "description": "Prends un moment pour consulter ta guidance spirituelle du jour",
-                "challenge_type": "mood",
-                "points": 10
-            },
-            {
-                "title": "💝 Ajoute un souvenir précieux",
-                "description": "Immortalise un moment spécial dans notre livre de souvenirs",
-                "challenge_type": "memory",
-                "points": 25
-            }
-        ]
-        
-        for challenge_data in default_challenges:
-            challenge = LoveChallenge(**challenge_data)
-            db.session.add(challenge)
-        db.session.commit()
-        
-        active_challenges = LoveChallenge.query.filter_by(is_completed=False).all()
-    
-    total_points = sum(c.points for c in completed_challenges)
-    
-    return render_template('love_challenges.html',
-                         active_challenges=active_challenges,
-                         completed_challenges=completed_challenges,
-                         total_points=total_points,
-                         user=current_user.username)
-
-@app.route('/complete_challenge/<int:challenge_id>')
-@login_required
-def complete_challenge(challenge_id):
-    """Marquer un défi comme terminé"""
-    challenge = LoveChallenge.query.get_or_404(challenge_id)
-    
-    if not challenge.is_completed:
-        challenge.is_completed = True
-        challenge.completed_by = current_user.username
-        challenge.completed_date = datetime.utcnow()
-        db.session.commit()
-        
-        log_activity(current_user.username, 'challenge_completed', f'Défi: {challenge.title}')
-        flash(f'Bravo ! Tu as gagné {challenge.points} points d\'amour ! 💖', 'success')
-    
-    return redirect(url_for('love_challenges'))
-
-@app.route('/add_calendar_event', methods=['POST'])
-@login_required
-def add_calendar_event():
-    """Ajouter un événement au calendrier"""
-    event_date = datetime.strptime(request.form['event_date'], '%Y-%m-%d').date()
-    title = request.form['title']
-    description = request.form.get('description', '')
-    event_type = request.form['event_type']
-    
-    if len(title.strip()) == 0:
-        flash('Le titre ne peut pas être vide! 📝', 'error')
-        return redirect(url_for('love_calendar'))
-    
-    new_event = LoveCalendar(
-        date=event_date,
-        title=title,
-        description=description,
-        event_type=event_type,
-        created_by=current_user.username
-    )
-    db.session.add(new_event)
-    db.session.commit()
-    
-    log_activity(current_user.username, 'calendar_event_added', f'Événement: {title}')
-    flash('Événement ajouté avec succès! 📅', 'success')
-    return redirect(url_for('love_calendar'))
+    return render_template('birthday_surprise.html', surprise=surprise, user=session['user'])
 
 @app.route('/countdown')
-@login_required
 def countdown():
-    """Compte à rebours pour l'anniversaire"""
-    today = date.today()
-    target_date = date(2025, 9, 27)
+    # Calculer les jours jusqu'au 27 septembre
+    today = datetime.now().date()
+    target_date = datetime(today.year, 9, 27).date()
     
-    if today >= target_date:
-        return redirect(url_for('birthday_surprise'))
+    # Si on est déjà passé le 27 septembre cette année, viser l'année prochaine
+    if today > target_date:
+        target_date = datetime(today.year + 1, 9, 27).date()
     
     days_left = (target_date - today).days
     
-    return render_template('countdown.html',
+    return render_template('countdown.html', 
                          days_left=days_left,
                          target_date=target_date,
-                         user=current_user.username)
+                         user=session['user'])
 
+# Gestion des erreurs
 @app.errorhandler(404)
 def not_found_error(error):
     return render_template('errors/404.html'), 404
 
 @app.errorhandler(500)
 def internal_error(error):
-    db.session.rollback()
     return render_template('errors/500.html'), 500
 
 @app.errorhandler(413)
 def too_large(error):
-    flash('Le fichier est trop volumineux! 📏', 'error')
+    flash('Fichier trop volumineux (max 16MB)', 'error')
     return redirect(url_for('galerie'))
 
 if __name__ == '__main__':
-    with app.app_context():
-        upgrade_database()
-        
-        # Créer la surprise d'anniversaire si elle n'existe pas
-        existing_surprise = BirthdaySurprise.query.filter_by(
-            reveal_date=date(2025, 9, 27)
-        ).first()
-        
-        if not existing_surprise:
-            surprise_content = """💌 Lettre pour N'na Maninka Mousso
-
-Ma chère N'na Maninka Mousso,
-
-Tu sais, chaque fois que je prends la plume enfin, dans ce cas le clavier pour t'écrire, j'ai l'impression que je suis en train de mélanger un cocktail (dédicace à mon côté barman haha ) à ton nom : un peu de douceur, une bonne dose de folie, une pincée d'humour, et surtout beaucoup, beaucoup d'amour. 🍹💛
-
-Je ne sais pas si tu t'en rends compte, mais tu as un superpouvoir : même quand les journées sont lourdes, quand les choses ne tournent pas rond, il suffit que je pense à toi, à ton sourire, à une de tes petites phrases, pour que je retrouve le moral. Tu es un peu comme mon bouton "reset bonheur".
-
-Et je sais aussi que tes journées ne sont pas toujours faciles. Parfois, tu portes des choses que personne ne voit, des peines, des inquiétudes, des moments de fatigue émotionnelle… et pourtant, malgré tout ça, tu arrives à m'apporter tellement de bonheur, tellement de lumière. Ça me touche profondément, et ça me donne encore plus envie d'être là pour toi.
-
-J'aimerais être celui sur qui tu peux te reposer émotionnellement, à qui tu peux raconter tous tes problèmes sans crainte, celui qui t'aide à sentir que tu es en sécurité, écoutée et soutenue. Je veux être à la hauteur de tout ce que tu m'apportes : un pilier quand tu en as besoin, un soutien quand les moments sont difficiles, et quelqu'un sur qui tu peux toujours compter.
-
-Tu sais, parfois je me demande comment j'ai pu avoir cette chance de te rencontrer. Toi et moi, ça sonne comme une chanson qu'on aime écouter en boucle sans jamais se lasser. Et si un jour on sort un album, je vote pour que le titre soit « Main dans la main, version originale ».
-
-Mais soyons honnêtes : être avec toi, ce n'est pas juste des mots doux et des moments parfaits (même si on en a plein !). C'est aussi des fous rires improbables, des discussions qui partent dans tous les sens, des projets un peu fous, et parfois même des mini-désaccords qui finissent toujours par des sourires. Et je crois que c'est ça, la vraie richesse : on vit tout, mais toujours ensemble, toujours avec cette complicité qui nous appartient.
-
-Je t'aime non seulement pour ce que tu es, mais aussi pour ce que je deviens à tes côtés : plus fort, plus motivé, plus rêveur, et surtout plus heureux. Et si parfois je me projette dans l'avenir, c'est parce que je sais que tu en fais partie.
-
-Alors oui, je veux qu'on continue à travailler dur, à se battre pour nos rêves, à construire pas à pas. Parce que le vrai but, ce n'est pas juste d'arriver quelque part : c'est d'y aller avec toi. Et je sais qu'un jour, on regardera en arrière en se disant : "Tu te souviens de tout ce qu'on a traversé ? Eh bien regarde où on est aujourd'hui !"
-
-Et même si la vie est parfois compliquée, je crois profondément que notre histoire, c'est une lumière qui ne s'éteint pas. Tu es mon espoir, mon énergie, ma joie. Et tu seras toujours celle à qui je veux écrire des lettres trop longues, qui mélangent un peu d'amour, d'humour, de promesses, et même quelques bêtises.
-
-Alors voilà, N'na Maninka Mousso : merci d'exister, merci d'être toi, merci d'être celle que tu es avec moi. Et prépare-toi, parce que le meilleur reste à venir. 🌟
-
-Toujours ton plus grand fan, ton complice, et celui qui t'aime plus qu'il n'arrive parfois à le dire,
-Ton panda préféré bg Saïd 💕"""
-            
-            birthday_surprise = BirthdaySurprise(
-                title="Lettre spéciale d'anniversaire",
-                content=surprise_content,
-                surprise_type="letter",
-                reveal_date=date(2025, 9, 27),
-                is_revealed=False
-            )
-            db.session.add(birthday_surprise)
-            db.session.commit()
-            print("Surprise d'anniversaire créée!")
-        
-        # Créer les utilisateurs avec les nouveaux champs
-        if not User.query.first():
-            user1 = User(username="said")
-            user1.set_password("La lune est belle ce soir")
-            user2 = User(username="fanta")
-            user2.set_password("Elle a toujours été belle")
-            db.session.add(user1)
-            db.session.add(user2)
-            db.session.commit()
-            print("Utilisateurs créés!")
-        else:
-            # Migrer les anciens utilisateurs si nécessaire
-            users = User.query.all()
-            for user in users:
-                if not hasattr(user, 'password_hash') or user.password_hash is None:
-                    if user.username == "said":
-                        user.set_password("La lune est belle ce soir")
-                    elif user.username == "fanta":
-                        user.set_password("Elle a toujours été belle")
-            db.session.commit()
+    # Configuration pour la production
+    port = int(os.environ.get('PORT', 5000))
+    debug = os.environ.get('FLASK_ENV') == 'development'
     
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host='0.0.0.0', port=port, debug=debug)
