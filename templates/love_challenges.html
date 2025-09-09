@@ -2,12 +2,12 @@
 {% block content %}
 <div class="challenges-container">
     <div class="challenges-header">
-        <h1>🎯 Défis d'Amour</h1>
-        <p>Des petites missions romantiques pour nous rapprocher encore plus</p>
+        <h1>🎯 Défis</h1>
+        <p>Des petites missions pour nous rapprocher encore plus</p>
         <div class="points-display">
             <div class="points-circle">
                 <span class="points-number">{{ total_points }}</span>
-                <span class="points-label">Points d'amour</span>
+                <span class="points-label">Points de défi</span>
             </div>
         </div>
     </div>
@@ -77,12 +77,12 @@
 
     <!-- Récompenses -->
     <div class="rewards-section">
-        <h2>🏆 Récompenses d'amour</h2>
+        <h2>🏆 Récompenses de défi</h2>
         <div class="rewards-grid">
             <div class="reward-card {% if total_points >= 50 %}unlocked{% endif %}">
                 <div class="reward-icon">💖</div>
-                <h3>Cœur Tendre</h3>
-                <p>50 points d'amour</p>
+                <h3>Aura +1000</h3>
+                <p>50 points pour toi</p>
                 {% if total_points >= 50 %}
                     <div class="reward-status unlocked">Débloqué ! 🎉</div>
                 {% else %}
@@ -92,8 +92,8 @@
             
             <div class="reward-card {% if total_points >= 100 %}unlocked{% endif %}">
                 <div class="reward-icon">🌟</div>
-                <h3>Étoile Brillante</h3>
-                <p>100 points d'amour</p>
+                <h3>Aura +2000 bg</h3>
+                <p>100 points tu assures dhé</p>
                 {% if total_points >= 100 %}
                     <div class="reward-status unlocked">Débloqué ! 🎉</div>
                 {% else %}
@@ -103,8 +103,8 @@
             
             <div class="reward-card {% if total_points >= 200 %}unlocked{% endif %}">
                 <div class="reward-icon">👑</div>
-                <h3>Reine de Mon Cœur</h3>
-                <p>200 points d'amour</p>
+                <h3>Attends on te donne la couronne</h3>
+                <p>200 points aura rime avec Fanta même</p>
                 {% if total_points >= 200 %}
                     <div class="reward-status unlocked">Débloqué ! 🎉</div>
                 {% else %}

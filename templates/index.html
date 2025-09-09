@@ -3,11 +3,11 @@
 <div class="header-container">
     <h1>💌 {{ personal_greeting }} 💌</h1>
     <div class="user-welcome">
-        <span class="username">{{ user }}</span>, tu as visité notre jardin secret <span class="visit-count">{{ visit_count }}</span> fois 💖
+        <span class="username">{{ user }}</span>, tu as visité ton jardin secret <span class="visit-count">{{ visit_count }}</span> fois 
         {% if unread_letters > 0 %}
             <div class="notification-badge">
                 <a href="{{ url_for('letters') }}" class="unread-letters">
-                    💌 {{ unread_letters }} lettre{{ 's' if unread_letters > 1 else '' }} d'amour non lue{{ 's' if unread_letters > 1 else '' }}
+                    💌 {{ unread_letters }} lettre{{ 's' if unread_letters > 1 else '' }} non lue{{ 's' if unread_letters > 1 else '' }}
                 </a>
             </div>
         {% endif %}
@@ -16,7 +16,7 @@
     <!-- Citation d'amour du jour -->
     <div class="daily-quote">
         <p class="love-quote">"{{ love_quote }}"</p>
-        <small>💝 Citation d'amour du jour</small>
+        <small>💝 Citation du jour</small>
     </div>
     
     <!-- Statistiques rapides -->
@@ -130,7 +130,7 @@
         </div>
     {% else %}
         <div class="no-messages">
-            <p>💝 Aucun message d'amour encore... Sois le premier à écrire quelque chose de doux !</p>
+            <p>💝 Aucun message encore... patience patience !</p>
         </div>
     {% endif %}
 </div>

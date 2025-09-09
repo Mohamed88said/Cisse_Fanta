@@ -27,37 +27,37 @@ login_manager.login_view = 'login'
 
 # --- Messages personnalisés pour Fanta ---
 FANTA_MESSAGES = [
-    "Ma princesse aux yeux d'étoiles ✨",
-    "Mon cœur qui bat sous les étoiles 💫",
-    "Ma lune qui illumine mes nuits 🌙",
-    "Mon étoile filante d'amour ⭐",
-    "Ma douce mélodie nocturne 🎵",
-    "Mon rêve devenu réalité 💝",
-    "Ma source de bonheur infini 🌸",
-    "Mon soleil dans l'obscurité ☀️"
+    "La plus gentille et attentionnée ✨",
+    "La plus belle qui soit 💫",
+    "La plus mature 🌙",
+    "Gazelle ( okay ça c'est too much je sais) ⭐",
+    "Celle qui frodonne et te fais oublier tes problèmes 🎵",
+    "Blessure sucrée ( tu vas pas dire tu connais pas mes disquettes) 💝",
+    "N'oublie pas de prendre soin de toi aujourd'hui 🌸",
+    "Si on se dispute où qu'on arrive à ne pas parler n'oublie pas que la lune est belle ce soir☀️"
 ]
 
 SAID_MESSAGES = [
-    "Mon protecteur des étoiles 🛡️",
-    "Mon prince charmant 👑",
-    "Mon cœur qui bat pour moi 💖",
-    "Mon héros du quotidien 🦸",
-    "Ma force dans la tempête ⚡",
-    "Mon compagnon d'éternité 🌟",
-    "Mon amour sans limites 💕",
-    "Mon âme sœur trouvée 💫"
+    "BG🛡️",
+    "Là j'écris mais c'est toi qui est sensé écrire ça 👑",
+    "Je sais pas quoi me dire 💖",
+    "Saïd 🦸",
+    "Batman⚡",
+    "Eleveur de chat en masse🌟",
+    "C'est moi  ",
+    "En tout cas voilà  💫"
 ]
 
 # --- Citations d'amour personnalisées ---
 LOVE_QUOTES = [
-    "Dans tes yeux, j'ai trouvé mon univers entier",
-    "Chaque battement de mon cœur murmure ton nom",
-    "Tu es la poésie que mon âme a toujours cherchée",
-    "Avec toi, chaque jour est une nouvelle étoile qui naît",
-    "Tu es ma prière exaucée sous le ciel étoilé",
-    "Dans tes bras, j'ai trouvé ma maison",
-    "Tu es la mélodie que mon cœur fredonne en silence",
-    "Aimer, c'est regarder ensemble dans la même direction vers les étoiles"
+    "Qu'est-ce que je te remercie d'être dans ma vie",
+    "Si le monde voyais la bonne personne que tu es tu serais une star",
+    "1 2 3 Souris ",
+    "Respire et ralenti un peu tu as le droit de souffler aussi",
+    "Te choisir c'est ne plus choisir les autres",
+    "Ton plus grand fan",
+    "hellooooooo",
+    "Femme de chance"
 ]
 
 # --- Modèle User ---
@@ -180,7 +180,7 @@ def get_personalized_greeting(username):
     
     # Message spécial d'anniversaire
     if username == "fanta" and today.month == 9 and today.day == 27:
-        return "🎉 JOYEUX ANNIVERSAIRE MA PRINCESSE ! 🎂✨"
+        return "🎉 JOYEUX ANNIVERSAIRE LA BOSS 22ans ! 🎂✨"
     
     if username == "fanta":
         return random.choice(FANTA_MESSAGES)
@@ -202,7 +202,7 @@ def create_special_message_if_needed():
         
         if not existing_birthday:
             birthday_message = Phrase(
-                texte=f"🎉 JOYEUX ANNIVERSAIRE MA N'NA MANINKA MOUSSO ! 🎂 Aujourd'hui, c'est ton jour spécial et je veux que le monde entier sache à quel point tu es extraordinaire ! Tu illumines ma vie chaque jour. Bon anniversaire mon amour ! 💖✨",
+                texte=f"🎉 JOYEUX ANNIVERSAIRE MA N'NA MANINKA MOUSSO ! 🎂 Aujourd'hui, c'est ton jour spécial et je veux que le monde entier sache à quel point tu es extraordinaire ! Tu illumines ma vie chaque jour. Bon anniversaire à toi! 💖✨",
                 couleur='#FFD700',
                 auteur='Saïd',
                 is_special=True,
@@ -333,9 +333,9 @@ def get_login_hint(attempts):
     hints = {
         0: "",
         1: "💡 Indice : Pense à une déclaration d'amour japonaise...",
-        2: "💡 Indice : C'est une réponse à un compliment sur la beauté...",
-        3: "💡 Indice : Ça commence par 'Oui c'est vrai...'",
-        4: "💡 Indice : La réponse complète est 'Oui c'est vrai, elle est magnifique'"
+        2: "💡 Indice : C'est une réponse à une déclaration ...",
+        3: "💡 Indice : Ça commence par 'Elle a toujours...'",
+        4: "💡 Indice : La réponse complète est 'Elle a toujours été belle'"
     }
     return hints.get(min(attempts, 4), hints[4])
 
@@ -365,7 +365,7 @@ def login():
                 return redirect(url_for('index'))
         
         elif username == "fanta":
-            if password == "Oui c'est vrai, elle est magnifique":
+            if password == "Elle a toujours été belle":
                 user = User.query.filter_by(username=username).first()
                 if user:
                     user.last_login = datetime.utcnow()
@@ -431,7 +431,7 @@ def index():
         db.session.add(nouvelle_phrase)
         db.session.commit()
         log_activity(current_user.username, 'message_added', f'Message: {texte[:50]}...')
-        flash('Votre message a été ajouté avec succès! 💖', 'success')
+        flash('Ton message a été ajouté avec succès! 💖', 'success')
         return redirect(url_for('index'))
     
     # Pagination
@@ -513,7 +513,7 @@ def write_letter():
         db.session.commit()
         
         log_activity(current_user.username, 'letter_sent', f'À {recipient}: {title}')
-        flash(f'Votre lettre d\'amour a été envoyée à {recipient}! 💌', 'success')
+        flash(f'Ta lettre d\'amour a été envoyée à {recipient}! 💌', 'success')
         return redirect(url_for('letters'))
     
     # Déterminer le destinataire
@@ -530,7 +530,7 @@ def read_letter(letter_id):
     
     # Vérifier que l'utilisateur peut lire cette lettre
     if letter.recipient != current_user.username and letter.sender != current_user.username:
-        flash('Vous ne pouvez pas lire cette lettre! 🚫', 'error')
+        flash('Tu ne pouvez pas lire cette lettre! 🚫', 'error')
         return redirect(url_for('letters'))
     
     # Marquer comme lue si c'est le destinataire
@@ -583,7 +583,7 @@ def add_memory():
         db.session.commit()
         
         log_activity(current_user.username, 'memory_added', f'Souvenir: {title}')
-        flash('Votre souvenir a été ajouté avec succès! 💝', 'success')
+        flash('Ton souvenir a été ajouté avec succès! 💝', 'success')
         return redirect(url_for('memories'))
     
     return render_template('add_memory.html', user=current_user.username)
@@ -630,7 +630,7 @@ def supprimer_phrase(phrase_id):
     phrase = Phrase.query.get_or_404(phrase_id)
     # Vérifier que l'utilisateur peut supprimer ce message
     if phrase.auteur != current_user.username:
-        flash('Vous ne pouvez supprimer que vos propres messages! 🚫', 'error')
+        flash('Tu ne peux supprimer que tes propres messages! 🚫', 'error')
         return redirect(url_for('index'))
     
     log_activity(current_user.username, 'message_deleted', f'Message: {phrase.texte[:50]}...')
@@ -718,7 +718,7 @@ def supprimer_photo(photo_id):
     
     # Vérifier que l'utilisateur peut supprimer cette photo
     if photo.auteur != current_user.username:
-        flash('Vous ne pouvez supprimer que vos propres photos! 🚫', 'error')
+        flash('Tu ne peux supprimer que tes propres photos! 🚫', 'error')
         return redirect(url_for('galerie'))
     
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], photo.filename)
@@ -876,7 +876,7 @@ def birthday_surprise():
 
 Ma chère N'na Maninka Mousso,
 
-Tu sais, chaque fois que je prends la plume – enfin, dans ce cas le clavier – pour t'écrire, j'ai l'impression que je suis en train de mélanger un cocktail (dédicace à mon côté barman) à ton nom : un peu de douceur, une bonne dose de folie, une pincée d'humour, et surtout beaucoup, beaucoup d'amour. 🍹💛
+Tu sais, chaque fois que je prends la plume enfin, dans ce cas le clavier pour t'écrire, j'ai l'impression que je suis en train de mélanger un cocktail (dédicace à mon côté barman haha ) à ton nom : un peu de douceur, une bonne dose de folie, une pincée d'humour, et surtout beaucoup, beaucoup d'amour. 🍹💛
 
 Je ne sais pas si tu t'en rends compte, mais tu as un superpouvoir : même quand les journées sont lourdes, quand les choses ne tournent pas rond, il suffit que je pense à toi, à ton sourire, à une de tes petites phrases, pour que je retrouve le moral. Tu es un peu comme mon bouton "reset bonheur".
 
@@ -892,9 +892,9 @@ Je t'aime non seulement pour ce que tu es, mais aussi pour ce que je deviens à 
 
 Alors oui, je veux qu'on continue à travailler dur, à se battre pour nos rêves, à construire pas à pas. Parce que le vrai but, ce n'est pas juste d'arriver quelque part : c'est d'y aller avec toi. Et je sais qu'un jour, on regardera en arrière en se disant : "Tu te souviens de tout ce qu'on a traversé ? Eh bien regarde où on est aujourd'hui !"
 
-Et même si la vie est parfois compliquée, je crois profondément que notre histoire, c'est une lumière qui ne s'éteint pas. Tu es mon espoir, mon énergie, ma joie. Et tu seras toujours celle à qui je veux écrire des lettres trop longues, qui mélangent un peu tout : amour, humour, promesses, et même quelques bêtises.
+Et même si la vie est parfois compliquée, je crois profondément que notre histoire, c'est une lumière qui ne s'éteint pas. Tu es mon espoir, mon énergie, ma joie. Et tu seras toujours celle à qui je veux écrire des lettres trop longues, qui mélangent un peu d'amour, d'humour, de promesses, et même quelques bêtises.
 
-Alors voilà, ma N'na Maninka Mousso : merci d'exister, merci d'être toi, merci d'être avec moi. Et prépare-toi, parce que le meilleur reste à venir. 🌟
+Alors voilà, N'na Maninka Mousso : merci d'exister, merci d'être toi, merci d'être celle que tu es avec moi. Et prépare-toi, parce que le meilleur reste à venir. 🌟
 
 Toujours ton plus grand fan, ton complice, et celui qui t'aime plus qu'il n'arrive parfois à le dire,
 Ton panda préféré bg Saïd 💕"""
@@ -1097,7 +1097,7 @@ if __name__ == '__main__':
 
 Ma chère N'na Maninka Mousso,
 
-Tu sais, chaque fois que je prends la plume – enfin, dans ce cas le clavier – pour t'écrire, j'ai l'impression que je suis en train de mélanger un cocktail (dédicace à mon côté barman) à ton nom : un peu de douceur, une bonne dose de folie, une pincée d'humour, et surtout beaucoup, beaucoup d'amour. 🍹💛
+Tu sais, chaque fois que je prends la plume enfin, dans ce cas le clavier pour t'écrire, j'ai l'impression que je suis en train de mélanger un cocktail (dédicace à mon côté barman haha ) à ton nom : un peu de douceur, une bonne dose de folie, une pincée d'humour, et surtout beaucoup, beaucoup d'amour. 🍹💛
 
 Je ne sais pas si tu t'en rends compte, mais tu as un superpouvoir : même quand les journées sont lourdes, quand les choses ne tournent pas rond, il suffit que je pense à toi, à ton sourire, à une de tes petites phrases, pour que je retrouve le moral. Tu es un peu comme mon bouton "reset bonheur".
 
@@ -1113,9 +1113,9 @@ Je t'aime non seulement pour ce que tu es, mais aussi pour ce que je deviens à 
 
 Alors oui, je veux qu'on continue à travailler dur, à se battre pour nos rêves, à construire pas à pas. Parce que le vrai but, ce n'est pas juste d'arriver quelque part : c'est d'y aller avec toi. Et je sais qu'un jour, on regardera en arrière en se disant : "Tu te souviens de tout ce qu'on a traversé ? Eh bien regarde où on est aujourd'hui !"
 
-Et même si la vie est parfois compliquée, je crois profondément que notre histoire, c'est une lumière qui ne s'éteint pas. Tu es mon espoir, mon énergie, ma joie. Et tu seras toujours celle à qui je veux écrire des lettres trop longues, qui mélangent un peu tout : amour, humour, promesses, et même quelques bêtises.
+Et même si la vie est parfois compliquée, je crois profondément que notre histoire, c'est une lumière qui ne s'éteint pas. Tu es mon espoir, mon énergie, ma joie. Et tu seras toujours celle à qui je veux écrire des lettres trop longues, qui mélangent un peu d'amour, d'humour, de promesses, et même quelques bêtises.
 
-Alors voilà, ma N'na Maninka Mousso : merci d'exister, merci d'être toi, merci d'être avec moi. Et prépare-toi, parce que le meilleur reste à venir. 🌟
+Alors voilà, N'na Maninka Mousso : merci d'exister, merci d'être toi, merci d'être celle que tu es avec moi. Et prépare-toi, parce que le meilleur reste à venir. 🌟
 
 Toujours ton plus grand fan, ton complice, et celui qui t'aime plus qu'il n'arrive parfois à le dire,
 Ton panda préféré bg Saïd 💕"""
@@ -1136,7 +1136,7 @@ Ton panda préféré bg Saïd 💕"""
             user1 = User(username="said")
             user1.set_password("La lune est belle ce soir")
             user2 = User(username="fanta")
-            user2.set_password("Oui c'est vrai, elle est magnifique")
+            user2.set_password("Elle a toujours été belle")
             db.session.add(user1)
             db.session.add(user2)
             db.session.commit()
@@ -1149,7 +1149,7 @@ Ton panda préféré bg Saïd 💕"""
                     if user.username == "said":
                         user.set_password("La lune est belle ce soir")
                     elif user.username == "fanta":
-                        user.set_password("Oui c'est vrai, elle est magnifique")
+                        user.set_password("Elle a toujours été belle")
             db.session.commit()
     
     app.run(host="0.0.0.0", port=5000)
