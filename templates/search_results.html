@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="header-container">
+    <h1>🔍 Résultats de recherche</h1>
+    {% if query %}
+        <p>Recherche pour: "<strong>{{ query }}</strong>"</p>
+    {% endif %}
+</div>
+
+<div class="search-container">
+    <form method="GET" action="{{ url_for('search') }}" class="search-form">
+        <input type="text" name="q" value="{{ query }}" placeholder="Rechercher dans les messages..." class="search-input">
+        <button type="submit" class="btn btn-search">🔍</button>
+    </form>
+</div>
+
+<div class="navigation-links">
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">← Retour à l'accueil</a>
+</div>
+
+<div class="messages-container">
+    {% if phrases %}
+        <div class="search-results-info">
+            <p>{{ phrases|length }} résultat(s) trouvé(s)</p>
+        </div>
+        
+        <div class="messages-list">
+            {% for phrase in phrases %}
+                <div class="message-card" style="background-color: {{ phrase.couleur }};">
+                    <div class="message-header">
+                        <span class="message-date">{{ phrase.date.strftime('%d/%m/%Y à %H:%M') }}</span>
+                        <span class="message-author">par {{ phrase.auteur }}</span>
+                        <div class="message-actions">
+                            <a href="{{ url_for('toggle_favori', phrase_id=phrase.id) }}" 
+                               class="favorite-btn {% if phrase.est_favori %}favori{% endif %}">
+                                ⭐
+                            </a>
+                            <button onclick="likePhrase({{ phrase.id }})" class="like-btn">
+                                ❤️ <span id="likes-{{ phrase.id }}">{{ phrase.likes or 0 }}</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="message-content">
+                        {{ phrase.texte }}
+                    </div>
+                    {% if phrase.tags %}
+                        <div class="message-tags">
+                            {% for tag in phrase.tags.split(',') %}
+                                <span class="tag">#{{ tag.strip() }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    {% if phrase.est_favori %}
+                        <div class="favorite-badge">Favori 💫</div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="no-messages">
+            {% if query %}
+                <p>🔍 Aucun résultat trouvé pour "{{ query }}"</p>
+                <p>Essayez avec d'autres mots-clés...</p>
+            {% else %}
+                <p>🔍 Entrez un terme de recherche pour commencer</p>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+
+<script>
+// Fonction pour liker un message
+function likePhrase(phraseId) {
+    fetch(`/like_phrase/${phraseId}`, {
+        method: 'GET',
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById(`likes-${phraseId}`).textContent = data.likes;
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+    });
+}
+</script>
+{% endblock %}

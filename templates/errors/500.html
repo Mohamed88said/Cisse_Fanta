@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="error-container">
+    <div class="error-content">
+        <h1 class="error-code">500</h1>
+        <h2 class="error-title">💫 Erreur interne</h2>
+        <p class="error-message">
+            Une petite étoile filante a perturbé notre système...<br>
+            Nous travaillons à réparer cela rapidement!
+        </p>
+        <div class="error-actions">
+            <a href="{{ url_for('index') }}" class="btn btn-primary">🏠 Retour à l'accueil</a>
+            <a href="javascript:location.reload()" class="btn btn-secondary">🔄 Réessayer</a>
+        </div>
+    </div>
+    
+    <div class="error-illustration">
+        <div class="broken-star">💥</div>
+        <div class="sad-moon">🌙</div>
+    </div>
+</div>
+
+<style>
+.error-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.error-content {
+    max-width: 600px;
+    margin-bottom: 40px;
+}
+
+.error-code {
+    font-size: 8em;
+    font-weight: bold;
+    background: linear-gradient(45deg, #e74c3c, #c0392b);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 20px;
+    text-shadow: var(--text-shadow);
+}
+
+.error-title {
+    font-size: 2.5em;
+    color: var(--moonlight-silver);
+    margin-bottom: 20px;
+    text-shadow: var(--text-shadow);
+}
+
+.error-message {
+    font-size: 1.3em;
+    color: var(--lavender-blush);
+    margin-bottom: 40px;
+    line-height: 1.6;
+}
+
+.error-actions {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.error-illustration {
+    position: relative;
+    width: 200px;
+    height: 200px;
+}
+
+.broken-star, .sad-moon {
+    position: absolute;
+    font-size: 3em;
+    animation: shake 2s ease-in-out infinite;
+}
+
+.broken-star {
+    top: 20px;
+    left: 30px;
+    animation-delay: 0s;
+}
+
+.sad-moon {
+    bottom: 20px;
+    right: 30px;
+    animation-delay: 1s;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+@media (max-width: 768px) {
+    .error-code {
+        font-size: 5em;
+    }
+    
+    .error-title {
+        font-size: 2em;
+    }
+    
+    .error-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .btn {
+        width: 100%;
+        max-width: 300px;
+    }
+}
+</style>
+{% endblock %}

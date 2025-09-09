@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="header-container">
+    <h1>📊 Statistiques de notre jardin secret</h1>
+    <p>Découvrez l'évolution de votre histoire d'amour</p>
+</div>
+
+<div class="navigation-links">
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">← Retour à l'accueil</a>
+</div>
+
+<div class="stats-container">
+    <!-- Statistiques générales -->
+    <div class="stats-section">
+        <h2>📈 Vue d'ensemble</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">💌</div>
+                <div class="stat-info">
+                    <div class="stat-number">{{ total_messages }}</div>
+                    <div class="stat-label">Messages d'amour</div>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">📸</div>
+                <div class="stat-info">
+                    <div class="stat-number">{{ total_photos }}</div>
+                    <div class="stat-label">Photos partagées</div>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">⭐</div>
+                <div class="stat-info">
+                    <div class="stat-number">{{ favoris_count }}</div>
+                    <div class="stat-label">Messages favoris</div>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">💝</div>
+                <div class="stat-info">
+                    <div class="stat-number">{{ ((total_messages + total_photos) / 30) | round(1) }}</div>
+                    <div class="stat-label">Partages par mois</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Messages par utilisateur -->
+    <div class="stats-section">
+        <h2>💌 Messages par personne</h2>
+        <div class="user-stats">
+            {% for user_stat in messages_by_user %}
+                <div class="user-stat-item">
+                    <div class="user-name">{{ user_stat.auteur }}</div>
+                    <div class="user-bar">
+                        <div class="user-bar-fill" style="width: {{ (user_stat.count / total_messages * 100) if total_messages > 0 else 0 }}%"></div>
+                    </div>
+                    <div class="user-count">{{ user_stat.count }} messages</div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Photos par utilisateur -->
+    {% if photos_by_user %}
+    <div class="stats-section">
+        <h2>📸 Photos par personne</h2>
+        <div class="user-stats">
+            {% for user_stat in photos_by_user %}
+                <div class="user-stat-item">
+                    <div class="user-name">{{ user_stat.auteur }}</div>
+                    <div class="user-bar">
+                        <div class="user-bar-fill" style="width: {{ (user_stat.count / total_photos * 100) if total_photos > 0 else 0 }}%"></div>
+                    </div>
+                    <div class="user-count">{{ user_stat.count }} photos</div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Activité récente -->
+    <div class="stats-section">
+        <h2>🕒 Activité récente</h2>
+        <div class="activity-list">
+            {% for activity in recent_activity %}
+                <div class="activity-item">
+                    <div class="activity-icon">
+                        {% if activity.action == 'login' %}🔐
+                        {% elif activity.action == 'message_added' %}💌
+                        {% elif activity.action == 'photo_uploaded' %}📸
+                        {% elif activity.action == 'phrase_liked' %}❤️
+                        {% elif activity.action == 'photo_liked' %}❤️
+                        {% elif activity.action == 'mood_checked' %}🌷
+                        {% elif activity.action == 'search' %}🔍
+                        {% else %}📝
+                        {% endif %}
+                    </div>
+                    <div class="activity-info">
+                        <div class="activity-user">{{ activity.user }}</div>
+                        <div class="activity-description">
+                            {% if activity.action == 'login' %}s'est connecté(e)
+                            {% elif activity.action == 'message_added' %}a ajouté un message
+                            {% elif activity.action == 'photo_uploaded' %}a uploadé une photo
+                            {% elif activity.action == 'phrase_liked' %}a liké un message
+                            {% elif activity.action == 'photo_liked' %}a liké une photo
+                            {% elif activity.action == 'mood_checked' %}a vérifié son humeur
+                            {% elif activity.action == 'search' %}a effectué une recherche
+                            {% else %}{{ activity.action }}
+                            {% endif %}
+                        </div>
+                        {% if activity.details %}
+                            <div class="activity-details">{{ activity.details }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="activity-date">{{ activity.date.strftime('%d/%m à %H:%M') }}</div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Messages inspirants -->
+    <div class="stats-section">
+        <h2>💝 Votre histoire en chiffres</h2>
+        <div class="love-stats">
+            <div class="love-stat">
+                <p>Vous avez partagé <strong>{{ total_messages + total_photos }}</strong> moments précieux ensemble</p>
+            </div>
+            <div class="love-stat">
+                <p>Cela représente <strong>{{ ((total_messages + total_photos) * 2) | round }}</strong> minutes de bonheur partagé</p>
+            </div>
+            <div class="love-stat">
+                <p>Votre amour grandit chaque jour un peu plus 💕</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

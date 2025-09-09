@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import os
 from werkzeug.utils import secure_filename
@@ -8,12 +9,14 @@ import random
 import json
 from datetime import datetime, date
 from datetime import timedelta
+import secrets
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
-app.config['SECRET_KEY'] = 'supersecretkey'  # Clé secrète pour la session
+app.config['SECRET_KEY'] = secrets.token_hex(32)  # Clé secrète sécurisée
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
-app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif'}
+app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 db = SQLAlchemy(app)
 
 # --- Authentification ---
@@ -25,7 +28,15 @@ login_manager.login_view = 'login'
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
-    password = db.Column(db.String(50), nullable=False)
+    password_hash = db.Column(db.String(128), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    last_login = db.Column(db.DateTime)
+    
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+    
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
 
 # --- Modèle Phrase ---
 class Phrase(db.Model):
@@ -35,6 +46,8 @@ class Phrase(db.Model):
     couleur = db.Column(db.String(20), default='#ffffff')
     est_favori = db.Column(db.Boolean, default=False)
     auteur = db.Column(db.String(50), default='Anonyme')
+    likes = db.Column(db.Integer, default=0)
+    tags = db.Column(db.String(200))  # Tags séparés par des virgules
 
 # --- Modèle Photo ---
 class Photo(db.Model):
@@ -43,6 +56,8 @@ class Photo(db.Model):
     legende = db.Column(db.String(200))
     date = db.Column(db.DateTime, default=datetime.utcnow)
     auteur = db.Column(db.String(50), default='Anonyme')
+    likes = db.Column(db.Integer, default=0)
+    file_size = db.Column(db.Integer)  # Taille du fichier en bytes
 
 # --- Modèle MoodJournal ---
 class MoodJournal(db.Model):
@@ -51,6 +66,14 @@ class MoodJournal(db.Model):
     mood = db.Column(db.String(20), nullable=False)
     date = db.Column(db.Date, default=date.today)
     verse_shown = db.Column(db.String(10), nullable=False)
+
+# --- Nouveau modèle pour les statistiques ---
+class Statistics(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user = db.Column(db.String(50), nullable=False)
+    action = db.Column(db.String(50), nullable=False)  # 'message_added', 'photo_uploaded', etc.
+    date = db.Column(db.DateTime, default=datetime.utcnow)
+    details = db.Column(db.String(200))
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -61,39 +84,68 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
 def upgrade_database():
-    """Met à jour la structure de la base de données si nécessaire"""
+    """Met à jour la structure de la base de données avec gestion d'erreurs améliorée"""
     try:
-        # Vérifie si la table phrase a la colonne couleur
         with app.app_context():
-            # Crée toutes les tables si elles n'existent pas
             db.create_all()
             
-            # Vérifie et ajoute les colonnes manquantes à la table phrase
             from sqlalchemy import inspect, text
             inspector = inspect(db.engine)
-            columns = [col['name'] for col in inspector.get_columns('phrase')]
             
-            if 'couleur' not in columns:
-                print("Ajout de la colonne couleur...")
-                db.session.execute(text('ALTER TABLE phrase ADD COLUMN couleur VARCHAR(20) DEFAULT "#ffffff"'))
+            # Vérification et ajout des colonnes manquantes pour la table phrase
+            if inspector.has_table('phrase'):
+                columns = [col['name'] for col in inspector.get_columns('phrase')]
+                
+                if 'couleur' not in columns:
+                    db.session.execute(text('ALTER TABLE phrase ADD COLUMN couleur VARCHAR(20) DEFAULT "#ffffff"'))
+                if 'est_favori' not in columns:
+                    db.session.execute(text('ALTER TABLE phrase ADD COLUMN est_favori BOOLEAN DEFAULT FALSE'))
+                if 'auteur' not in columns:
+                    db.session.execute(text('ALTER TABLE phrase ADD COLUMN auteur VARCHAR(50) DEFAULT "Anonyme"'))
+                if 'likes' not in columns:
+                    db.session.execute(text('ALTER TABLE phrase ADD COLUMN likes INTEGER DEFAULT 0'))
+                if 'tags' not in columns:
+                    db.session.execute(text('ALTER TABLE phrase ADD COLUMN tags VARCHAR(200)'))
             
-            if 'est_favori' not in columns:
-                print("Ajout de la colonne est_favori...")
-                db.session.execute(text('ALTER TABLE phrase ADD COLUMN est_favori BOOLEAN DEFAULT FALSE'))
+            # Vérification et ajout des colonnes manquantes pour la table photo
+            if inspector.has_table('photo'):
+                photo_columns = [col['name'] for col in inspector.get_columns('photo')]
+                if 'likes' not in photo_columns:
+                    db.session.execute(text('ALTER TABLE photo ADD COLUMN likes INTEGER DEFAULT 0'))
+                if 'file_size' not in photo_columns:
+                    db.session.execute(text('ALTER TABLE photo ADD COLUMN file_size INTEGER'))
             
-            if 'auteur' not in columns:
-                print("Ajout de la colonne auteur...")
-                db.session.execute(text('ALTER TABLE phrase ADD COLUMN auteur VARCHAR(50) DEFAULT "Anonyme"'))
+            # Vérification et ajout des colonnes manquantes pour la table user
+            if inspector.has_table('user'):
+                user_columns = [col['name'] for col in inspector.get_columns('user')]
+                if 'password_hash' not in user_columns:
+                    db.session.execute(text('ALTER TABLE user ADD COLUMN password_hash VARCHAR(128)'))
+                if 'created_at' not in user_columns:
+                    db.session.execute(text('ALTER TABLE user ADD COLUMN created_at DATETIME'))
+                if 'last_login' not in user_columns:
+                    db.session.execute(text('ALTER TABLE user ADD COLUMN last_login DATETIME'))
             
             db.session.commit()
             print("Base de données mise à jour avec succès!")
             
     except Exception as e:
         print(f"Erreur lors de la mise à jour de la base: {e}")
-        # En cas d'erreur, on recrée tout
-        db.drop_all()
-        db.create_all()
-        print("Base de données recréée!")
+        db.session.rollback()
+        try:
+            db.create_all()
+            print("Tables créées avec succès!")
+        except Exception as e2:
+            print(f"Erreur critique: {e2}")
+
+def log_activity(user, action, details=None):
+    """Enregistre l'activité de l'utilisateur"""
+    try:
+        stat = Statistics(user=user, action=action, details=details)
+        db.session.add(stat)
+        db.session.commit()
+    except Exception as e:
+        print(f"Erreur lors de l'enregistrement de l'activité: {e}")
+        db.session.rollback()
 
 # Fonctions utilitaires pour le mood
 def load_mood_data():
@@ -138,22 +190,29 @@ def login():
         if username == "said" and password == "La lune est belle ce soir":
             user = User.query.filter_by(username=username).first()
             if user:
+                user.last_login = datetime.utcnow()
+                db.session.commit()
                 login_user(user)
                 session.pop('login_attempts', None)
                 session.pop('last_username', None)
+                log_activity(username, 'login', 'Connexion réussie')
                 return redirect(url_for('index'))
         
         elif username == "fanta":
             if password == "Oui c'est vrai, elle est magnifique":
                 user = User.query.filter_by(username=username).first()
                 if user:
+                    user.last_login = datetime.utcnow()
+                    db.session.commit()
                     login_user(user)
                     session.pop('login_attempts', None)
                     session.pop('last_username', None)
+                    log_activity(username, 'login', 'Connexion réussie')
                     return redirect(url_for('index'))
             else:
                 # Incrémenter le compteur d'essais pour Fanta
                 session['login_attempts'] = session.get('login_attempts', 0) + 1
+                log_activity(username, 'failed_login', f'Tentative {session["login_attempts"]}')
                 flash(f"Mot de passe incorrect. {get_login_hint(session['login_attempts'])}", 'error')
                 return render_template('login.html', 
                                     hint=get_login_hint(session['login_attempts']),
@@ -173,8 +232,10 @@ def login():
 @login_required
 def logout():
     logout_user()
+    log_activity(current_user.username if current_user.is_authenticated else 'unknown', 'logout')
     session.pop('login_attempts', None)
     session.pop('last_username', None)
+    flash('Déconnexion réussie. À bientôt! 👋', 'info')
     return redirect(url_for('login'))
 
 @app.route('/', methods=['GET', 'POST'])
@@ -182,15 +243,59 @@ def logout():
 def index():
     if request.method == 'POST':
         texte = request.form['texte']
+        if len(texte.strip()) == 0:
+            flash('Le message ne peut pas être vide! 📝', 'error')
+            return redirect(url_for('index'))
+        
+        if len(texte) > 500:
+            flash('Le message est trop long (maximum 500 caractères)! ✂️', 'error')
+            return redirect(url_for('index'))
+            
         couleur = request.form.get('couleur', '#ffffff')
-        nouvelle_phrase = Phrase(texte=texte, couleur=couleur, auteur=current_user.username)
+        tags = request.form.get('tags', '')
+        
+        nouvelle_phrase = Phrase(
+            texte=texte, 
+            couleur=couleur, 
+            auteur=current_user.username,
+            tags=tags
+        )
         db.session.add(nouvelle_phrase)
         db.session.commit()
+        log_activity(current_user.username, 'message_added', f'Message: {texte[:50]}...')
         flash('Votre message a été ajouté avec succès! 💖', 'success')
         return redirect(url_for('index'))
     
-    phrases = Phrase.query.order_by(Phrase.date.desc()).all()
-    return render_template('index.html', phrases=phrases, user=current_user.username)
+    # Pagination
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
+    phrases = Phrase.query.order_by(Phrase.date.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+    
+    # Statistiques
+    total_messages = Phrase.query.count()
+    total_photos = Photo.query.count()
+    favoris_count = Phrase.query.filter_by(est_favori=True).count()
+    
+    return render_template('index.html', 
+                         phrases=phrases.items, 
+                         pagination=phrases,
+                         user=current_user.username,
+                         stats={
+                             'total_messages': total_messages,
+                             'total_photos': total_photos,
+                             'favoris_count': favoris_count
+                         })
+
+@app.route('/like_phrase/<int:phrase_id>')
+@login_required
+def like_phrase(phrase_id):
+    phrase = Phrase.query.get_or_404(phrase_id)
+    phrase.likes += 1
+    db.session.commit()
+    log_activity(current_user.username, 'phrase_liked', f'Phrase ID: {phrase_id}')
+    return jsonify({'likes': phrase.likes})
 
 @app.route('/favori/<int:phrase_id>')
 @login_required
@@ -198,12 +303,20 @@ def toggle_favori(phrase_id):
     phrase = Phrase.query.get_or_404(phrase_id)
     phrase.est_favori = not phrase.est_favori
     db.session.commit()
+    action = 'added_to_favorites' if phrase.est_favori else 'removed_from_favorites'
+    log_activity(current_user.username, action, f'Phrase ID: {phrase_id}')
     return redirect(url_for('index'))
 
 @app.route('/supprimer/<int:phrase_id>')
 @login_required
 def supprimer_phrase(phrase_id):
     phrase = Phrase.query.get_or_404(phrase_id)
+    # Vérifier que l'utilisateur peut supprimer ce message
+    if phrase.auteur != current_user.username:
+        flash('Vous ne pouvez supprimer que vos propres messages! 🚫', 'error')
+        return redirect(url_for('index'))
+    
+    log_activity(current_user.username, 'message_deleted', f'Message: {phrase.texte[:50]}...')
     db.session.delete(phrase)
     db.session.commit()
     flash('Message supprimé avec succès', 'info')
@@ -212,8 +325,24 @@ def supprimer_phrase(phrase_id):
 @app.route('/galerie')
 @login_required
 def galerie():
-    photos = Photo.query.order_by(Photo.date.desc()).all()
-    return render_template('galerie.html', photos=photos, user=current_user.username)
+    page = request.args.get('page', 1, type=int)
+    per_page = 12
+    photos = Photo.query.order_by(Photo.date.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+    return render_template('galerie.html', 
+                         photos=photos.items, 
+                         pagination=photos,
+                         user=current_user.username)
+
+@app.route('/like_photo/<int:photo_id>')
+@login_required
+def like_photo(photo_id):
+    photo = Photo.query.get_or_404(photo_id)
+    photo.likes += 1
+    db.session.commit()
+    log_activity(current_user.username, 'photo_liked', f'Photo ID: {photo_id}')
+    return jsonify({'likes': photo.likes})
 
 @app.route('/upload', methods=['POST'])
 @login_required
@@ -231,14 +360,34 @@ def upload_file():
     
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
+        # Ajouter un timestamp pour éviter les conflits de noms
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_')
+        filename = timestamp + filename
+        
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+        
+        # Vérifier la taille du fichier
+        file.seek(0, os.SEEK_END)
+        file_size = file.tell()
+        file.seek(0)
+        
+        if file_size > app.config['MAX_CONTENT_LENGTH']:
+            flash('Le fichier est trop volumineux (maximum 16MB)! 📏', 'error')
+            return redirect(url_for('galerie'))
+        
         file.save(filepath)
         
-        nouvelle_photo = Photo(filename=filename, legende=legende, auteur=current_user.username)
+        nouvelle_photo = Photo(
+            filename=filename, 
+            legende=legende, 
+            auteur=current_user.username,
+            file_size=file_size
+        )
         db.session.add(nouvelle_photo)
         db.session.commit()
         
+        log_activity(current_user.username, 'photo_uploaded', f'Photo: {filename}')
         flash('Photo ajoutée avec succès! 📸', 'success')
         return redirect(url_for('galerie'))
     
@@ -249,9 +398,20 @@ def upload_file():
 @login_required
 def supprimer_photo(photo_id):
     photo = Photo.query.get_or_404(photo_id)
+    
+    # Vérifier que l'utilisateur peut supprimer cette photo
+    if photo.auteur != current_user.username:
+        flash('Vous ne pouvez supprimer que vos propres photos! 🚫', 'error')
+        return redirect(url_for('galerie'))
+    
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], photo.filename)
     if os.path.exists(filepath):
-        os.remove(filepath)
+        try:
+            os.remove(filepath)
+        except OSError as e:
+            print(f"Erreur lors de la suppression du fichier: {e}")
+    
+    log_activity(current_user.username, 'photo_deleted', f'Photo: {photo.filename}')
     db.session.delete(photo)
     db.session.commit()
     flash('Photo supprimée avec succès', 'info')
@@ -299,33 +459,110 @@ def mood():
         new_entry = MoodJournal(
             username=current_user.username,
             mood=selected_mood,
-            date=date.today(), # On s'assure d'enregistrer la date du jour
-            verse_shown=selected_verse['verse_id']
+            date=date.today(),
+            verse_shown=selected_verse.get('verse_id', f"{selected_verse.get('type', 'unknown')}-{selected_verse.get('source', 'unknown')}")
         )
         db.session.add(new_entry)
         db.session.commit()
+        
+        log_activity(current_user.username, 'mood_checked', f'Mood: {selected_mood}')
         
         return render_template('mood_result.html', 
                              mood=selected_mood, 
                              verse=selected_verse,
                              user=current_user.username)
     
-    # On rend simplement le template mood.html sans lui passer la variable 'already_answered'
     return render_template('mood.html', user=current_user.username)
+
+@app.route('/search')
+@login_required
+def search():
+    query = request.args.get('q', '')
+    if query:
+        phrases = Phrase.query.filter(
+            Phrase.texte.contains(query) | 
+            Phrase.tags.contains(query)
+        ).order_by(Phrase.date.desc()).all()
+        log_activity(current_user.username, 'search', f'Query: {query}')
+    else:
+        phrases = []
+    
+    return render_template('search_results.html', 
+                         phrases=phrases, 
+                         query=query,
+                         user=current_user.username)
+
+@app.route('/stats')
+@login_required
+def stats():
+    # Statistiques générales
+    total_messages = Phrase.query.count()
+    total_photos = Photo.query.count()
+    favoris_count = Phrase.query.filter_by(est_favori=True).count()
+    
+    # Messages par utilisateur
+    messages_by_user = db.session.query(
+        Phrase.auteur, 
+        db.func.count(Phrase.id).label('count')
+    ).group_by(Phrase.auteur).all()
+    
+    # Photos par utilisateur
+    photos_by_user = db.session.query(
+        Photo.auteur, 
+        db.func.count(Photo.id).label('count')
+    ).group_by(Photo.auteur).all()
+    
+    # Activité récente
+    recent_activity = Statistics.query.order_by(
+        Statistics.date.desc()
+    ).limit(20).all()
+    
+    return render_template('stats.html',
+                         total_messages=total_messages,
+                         total_photos=total_photos,
+                         favoris_count=favoris_count,
+                         messages_by_user=messages_by_user,
+                         photos_by_user=photos_by_user,
+                         recent_activity=recent_activity,
+                         user=current_user.username)
+
+@app.errorhandler(404)
+def not_found_error(error):
+    return render_template('errors/404.html'), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    db.session.rollback()
+    return render_template('errors/500.html'), 500
+
+@app.errorhandler(413)
+def too_large(error):
+    flash('Le fichier est trop volumineux! 📏', 'error')
+    return redirect(url_for('galerie'))
 
 if __name__ == '__main__':
     with app.app_context():
-        # Met à jour la base de données avant de démarrer
         upgrade_database()
         
-        # ✅ Crée les utilisateurs si la base est vide
+        # Créer les utilisateurs avec les nouveaux champs
         if not User.query.first():
-            user1 = User(username="said", password="La lune est belle ce soir")
-            user2 = User(username="fanta", password="Oui c'est vrai, elle est magnifique")
+            user1 = User(username="said")
+            user1.set_password("La lune est belle ce soir")
+            user2 = User(username="fanta")
+            user2.set_password("Oui c'est vrai, elle est magnifique")
             db.session.add(user1)
             db.session.add(user2)
             db.session.commit()
             print("Utilisateurs créés!")
+        else:
+            # Migrer les anciens utilisateurs si nécessaire
+            users = User.query.all()
+            for user in users:
+                if not hasattr(user, 'password_hash') or user.password_hash is None:
+                    if user.username == "said":
+                        user.set_password("La lune est belle ce soir")
+                    elif user.username == "fanta":
+                        user.set_password("Oui c'est vrai, elle est magnifique")
+            db.session.commit()
     
-if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)

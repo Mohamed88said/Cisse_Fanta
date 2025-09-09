@@ -5,6 +5,30 @@
     <div class="user-welcome">
         Bienvenue, <span class="username">{{ user }}</span>! 💖
     </div>
+    
+    <!-- Statistiques rapides -->
+    <div class="stats-quick">
+        <div class="stat-item">
+            <span class="stat-number">{{ stats.total_messages }}</span>
+            <span class="stat-label">Messages</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-number">{{ stats.total_photos }}</span>
+            <span class="stat-label">Photos</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-number">{{ stats.favoris_count }}</span>
+            <span class="stat-label">Favoris</span>
+        </div>
+    </div>
+</div>
+
+<!-- Barre de recherche -->
+<div class="search-container">
+    <form method="GET" action="{{ url_for('search') }}" class="search-form">
+        <input type="text" name="q" placeholder="Rechercher dans les messages..." class="search-input">
+        <button type="submit" class="btn btn-search">🔍</button>
+    </form>
 </div>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
@@ -30,6 +54,9 @@
                                class="favorite-btn {% if phrase.est_favori %}favori{% endif %}">
                                 ⭐
                             </a>
+                            <button onclick="likePhrase({{ phrase.id }})" class="like-btn">
+                                ❤️ <span id="likes-{{ phrase.id }}">{{ phrase.likes or 0 }}</span>
+                            </button>
                             <a href="{{ url_for('supprimer_phrase', phrase_id=phrase.id) }}" 
                                class="delete-btn" onclick="return confirm('Supprimer ce message?')">
                                 🗑️
@@ -39,11 +66,43 @@
                     <div class="message-content">
                         {{ phrase.texte }}
                     </div>
+                    {% if phrase.tags %}
+                        <div class="message-tags">
+                            {% for tag in phrase.tags.split(',') %}
+                                <span class="tag">#{{ tag.strip() }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
                     {% if phrase.est_favori %}
                         <div class="favorite-badge">Favori 💫</div>
                     {% endif %}
                 </div>
             {% endfor %}
+            
+            <!-- Pagination -->
+            {% if pagination.pages > 1 %}
+                <div class="pagination">
+                    {% if pagination.has_prev %}
+                        <a href="{{ url_for('index', page=pagination.prev_num) }}" class="btn btn-secondary">← Précédent</a>
+                    {% endif %}
+                    
+                    {% for page_num in pagination.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != pagination.page %}
+                                <a href="{{ url_for('index', page=page_num) }}" class="btn btn-outline">{{ page_num }}</a>
+                            {% else %}
+                                <span class="btn btn-primary current-page">{{ page_num }}</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="pagination-ellipsis">…</span>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if pagination.has_next %}
+                        <a href="{{ url_for('index', page=pagination.next_num) }}" class="btn btn-secondary">Suivant →</a>
+                    {% endif %}
+                </div>
+            {% endif %}
         </div>
     {% else %}
         <div class="no-messages">
@@ -55,11 +114,19 @@
 <div class="add-message-section" id="ajouter">
     <h2>➕ Ajouter un message spécial</h2>
     <form method="POST" action="{{ url_for('index') }}" class="message-form">
-        <textarea name="texte" placeholder="Écrivez votre mot doux ici..." required></textarea>
+        <textarea name="texte" placeholder="Écrivez votre mot doux ici (max 500 caractères)..." required maxlength="500"></textarea>
+        <div class="char-counter">
+            <span id="char-count">0</span>/500 caractères
+        </div>
         
         <div class="color-picker">
             <label>Couleur de fond:</label>
             <input type="color" name="couleur" value="#ffdde1">
+        </div>
+        
+        <div class="tags-input">
+            <label>Tags (séparés par des virgules):</label>
+            <input type="text" name="tags" placeholder="amour, bonheur, souvenir..." class="form-input">
         </div>
         
         <button type="submit" class="btn btn-primary">💖 Publier le message</button>
@@ -68,7 +135,45 @@
 
 <div class="navigation-links">
     <a href="{{ url_for('galerie') }}" class="btn btn-secondary">📸 Voir la galerie photo</a>
-    <a href="/mood" class="btn btn-info">🌷 Humeur du jour</a>
+    <a href="{{ url_for('mood') }}" class="btn btn-info">🌷 Humeur du jour</a>
+    <a href="{{ url_for('stats') }}" class="btn btn-accent">📊 Statistiques</a>
     <a href="{{ url_for('logout') }}" class="btn btn-logout">🚪 Déconnexion</a>
 </div>
+
+<script>
+// Compteur de caractères
+document.addEventListener('DOMContentLoaded', function() {
+    const textarea = document.querySelector('textarea[name="texte"]');
+    const charCount = document.getElementById('char-count');
+    
+    if (textarea && charCount) {
+        textarea.addEventListener('input', function() {
+            const count = this.value.length;
+            charCount.textContent = count;
+            
+            if (count > 450) {
+                charCount.style.color = '#e74c3c';
+            } else if (count > 400) {
+                charCount.style.color = '#f39c12';
+            } else {
+                charCount.style.color = '#27ae60';
+            }
+        });
+    }
+});
+
+// Fonction pour liker un message
+function likePhrase(phraseId) {
+    fetch(`/like_phrase/${phraseId}`, {
+        method: 'GET',
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById(`likes-${phraseId}`).textContent = data.likes;
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+    });
+}
+</script>
 {% endblock %}
