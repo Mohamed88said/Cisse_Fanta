@@ -1,0 +1,317 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="header-container">
+    <h1>💌 Lettre d'Amour</h1>
+    <p>Un message du cœur</p>
+</div>
+
+<div class="navigation-links">
+    <a href="{{ url_for('letters') }}" class="btn btn-secondary">← Retour aux lettres</a>
+</div>
+
+<div class="read-letter-container">
+    <div class="letter-envelope">
+        <div class="envelope-flap"></div>
+        <div class="envelope-body">
+            <div class="letter-content">
+                <div class="letter-header">
+                    <h2>{{ letter.title }}</h2>
+                    <div class="letter-meta">
+                        <p><strong>De :</strong> {{ letter.sender|title }}</p>
+                        <p><strong>À :</strong> {{ letter.recipient|title }}</p>
+                        <p><strong>Date :</strong> {{ letter.created_at.strftime('%d %B %Y à %H:%M') }}</p>
+                    </div>
+                </div>
+                
+                <div class="letter-body">
+                    {{ letter.content|replace('\n', '<br>')|safe }}
+                </div>
+                
+                <div class="letter-signature">
+                    <p>Avec tout mon amour,</p>
+                    <p class="signature">{{ letter.sender|title }} 💖</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% if letter.recipient == user %}
+    <div class="letter-actions">
+        <button onclick="showHeartAnimation()" class="btn btn-romantic">💖 J'adore cette lettre</button>
+        <button onclick="window.print()" class="btn btn-secondary">🖨️ Imprimer</button>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Animation de cœurs -->
+<div id="hearts-container"></div>
+
+<style>
+.read-letter-container {
+    max-width: 700px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.letter-envelope {
+    position: relative;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+    transform-style: preserve-3d;
+    perspective: 1000px;
+}
+
+.envelope-flap {
+    position: absolute;
+    top: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 100px solid transparent;
+    border-right: 100px solid transparent;
+    border-bottom: 60px solid var(--rose-quartz);
+    z-index: 2;
+}
+
+.envelope-flap::after {
+    content: '💌';
+    position: absolute;
+    top: 20px;
+    left: -10px;
+    font-size: 1.5em;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.envelope-body {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 10px;
+    padding: 0;
+    overflow: hidden;
+    border: 2px solid rgba(248, 198, 208, 0.3);
+}
+
+.letter-content {
+    padding: 40px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(248, 198, 208, 0.05));
+    min-height: 400px;
+}
+
+.letter-header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid rgba(248, 198, 208, 0.3);
+}
+
+.letter-header h2 {
+    color: var(--deep-purple);
+    font-family: 'Dancing Script', cursive;
+    font-size: 2.2em;
+    margin-bottom: 15px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.letter-meta {
+    color: var(--twilight-blue);
+    font-size: 0.9em;
+    opacity: 0.8;
+}
+
+.letter-meta p {
+    margin: 5px 0;
+}
+
+.letter-body {
+    color: var(--deep-purple);
+    font-size: 1.1em;
+    line-height: 1.8;
+    margin-bottom: 30px;
+    text-align: justify;
+    font-family: 'Poppins', sans-serif;
+}
+
+.letter-signature {
+    text-align: right;
+    margin-top: 40px;
+    color: var(--deep-purple);
+}
+
+.signature {
+    font-family: 'Dancing Script', cursive;
+    font-size: 1.5em;
+    color: var(--rose-quartz);
+    margin-top: 10px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.letter-actions {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+#hearts-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+.floating-heart {
+    position: absolute;
+    font-size: 2em;
+    color: var(--rose-quartz);
+    animation: floatUp 3s ease-out forwards;
+    pointer-events: none;
+}
+
+@keyframes floatUp {
+    0% {
+        opacity: 1;
+        transform: translateY(0) scale(1) rotate(0deg);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-200px) scale(1.5) rotate(360deg);
+    }
+}
+
+/* Animation d'ouverture de l'enveloppe */
+.letter-envelope {
+    animation: openEnvelope 1s ease-out;
+}
+
+@keyframes openEnvelope {
+    0% {
+        transform: rotateY(-10deg) scale(0.9);
+        opacity: 0;
+    }
+    50% {
+        transform: rotateY(5deg) scale(1.05);
+    }
+    100% {
+        transform: rotateY(0deg) scale(1);
+        opacity: 1;
+    }
+}
+
+/* Style d'impression */
+@media print {
+    .navigation-links,
+    .letter-actions,
+    .envelope-flap {
+        display: none !important;
+    }
+    
+    .letter-envelope {
+        box-shadow: none;
+        border: 2px solid #333;
+    }
+    
+    .letter-content {
+        color: #000 !important;
+    }
+    
+    .letter-header h2,
+    .signature {
+        color: #333 !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .read-letter-container {
+        margin: 0 15px;
+    }
+    
+    .letter-envelope {
+        padding: 20px;
+    }
+    
+    .letter-content {
+        padding: 25px;
+    }
+    
+    .letter-header h2 {
+        font-size: 1.8em;
+    }
+    
+    .envelope-flap {
+        border-left-width: 80px;
+        border-right-width: 80px;
+        border-bottom-width: 50px;
+    }
+    
+    .letter-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .btn {
+        width: 100%;
+        max-width: 300px;
+    }
+}
+</style>
+
+<script>
+function showHeartAnimation() {
+    const container = document.getElementById('hearts-container');
+    const hearts = ['💖', '💕', '💗', '💝', '❤️', '💘'];
+    
+    for (let i = 0; i < 15; i++) {
+        setTimeout(() => {
+            const heart = document.createElement('div');
+            heart.className = 'floating-heart';
+            heart.textContent = hearts[Math.floor(Math.random() * hearts.length)];
+            
+            // Position aléatoire
+            heart.style.left = Math.random() * window.innerWidth + 'px';
+            heart.style.top = window.innerHeight + 'px';
+            
+            // Délai d'animation aléatoire
+            heart.style.animationDelay = Math.random() * 0.5 + 's';
+            
+            container.appendChild(heart);
+            
+            // Supprimer le cœur après l'animation
+            setTimeout(() => {
+                if (heart.parentNode) {
+                    heart.parentNode.removeChild(heart);
+                }
+            }, 3500);
+        }, i * 100);
+    }
+    
+    // Animation du bouton
+    const btn = event.target;
+    btn.style.transform = 'scale(1.2)';
+    btn.style.background = 'linear-gradient(135deg, #e74c3c, #c0392b)';
+    setTimeout(() => {
+        btn.style.transform = '';
+        btn.style.background = '';
+    }, 300);
+}
+
+// Animation d'entrée
+document.addEventListener('DOMContentLoaded', function() {
+    const letterContent = document.querySelector('.letter-content');
+    letterContent.style.opacity = '0';
+    letterContent.style.transform = 'translateY(20px)';
+    
+    setTimeout(() => {
+        letterContent.style.transition = 'all 0.8s ease-out';
+        letterContent.style.opacity = '1';
+        letterContent.style.transform = 'translateY(0)';
+    }, 500);
+});
+</script>
+{% endblock %}

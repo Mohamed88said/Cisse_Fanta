@@ -1,0 +1,402 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="header-container">
+    <h1>✨ Ajouter un Souvenir Précieux</h1>
+    <p>Immortalisez un moment spécial de votre histoire</p>
+</div>
+
+<div class="navigation-links">
+    <a href="{{ url_for('memories') }}" class="btn btn-secondary">← Retour aux souvenirs</a>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="flash-messages">
+            {% for category, message in messages %}
+                <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
+
+<div class="add-memory-container">
+    <div class="memory-form-card">
+        <div class="form-header">
+            <h2>📝 Racontez votre souvenir</h2>
+            <p>Chaque moment compte dans votre belle histoire</p>
+        </div>
+        
+        <form method="POST" class="memory-form">
+            <div class="form-group">
+                <label for="title">Titre du souvenir :</label>
+                <input type="text" name="title" id="title" placeholder="Ex: Notre premier rendez-vous, Voyage à Paris..." required maxlength="100" class="form-input">
+            </div>
+            
+            <div class="form-group">
+                <label for="date_memory">Date du souvenir :</label>
+                <input type="date" name="date_memory" id="date_memory" required class="form-input">
+            </div>
+            
+            <div class="form-group">
+                <label for="description">Description du souvenir :</label>
+                <textarea name="description" id="description" placeholder="Décrivez ce moment précieux... Où étiez-vous ? Que s'est-il passé ? Qu'avez-vous ressenti ?" required class="form-textarea"></textarea>
+                <div class="char-counter">
+                    <span id="char-count">0</span> caractères
+                </div>
+            </div>
+            
+            <div class="form-group checkbox-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" name="is_anniversary" id="is_anniversary">
+                    <span class="checkmark"></span>
+                    <span class="checkbox-text">🎉 C'est un anniversaire spécial (première fois, date importante...)</span>
+                </label>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-memory btn-large">💝 Sauvegarder ce souvenir</button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Suggestions de souvenirs -->
+    <div class="memory-suggestions">
+        <h3>💡 Idées de souvenirs à immortaliser</h3>
+        <div class="suggestions-list">
+            <div class="suggestion-item" onclick="fillSuggestion('Premier rendez-vous', 'Notre toute première rencontre...')">
+                <span class="suggestion-icon">💕</span>
+                <span class="suggestion-text">Premier rendez-vous</span>
+            </div>
+            <div class="suggestion-item" onclick="fillSuggestion('Premier je t\'aime', 'Le moment où nous nous sommes dit je t\'aime pour la première fois...')">
+                <span class="suggestion-icon">❤️</span>
+                <span class="suggestion-text">Premier "je t'aime"</span>
+            </div>
+            <div class="suggestion-item" onclick="fillSuggestion('Voyage ensemble', 'Notre voyage à...')">
+                <span class="suggestion-icon">✈️</span>
+                <span class="suggestion-text">Voyage ensemble</span>
+            </div>
+            <div class="suggestion-item" onclick="fillSuggestion('Moment drôle', 'Ce moment où nous avons ri aux éclats...')">
+                <span class="suggestion-icon">😂</span>
+                <span class="suggestion-text">Moment drôle</span>
+            </div>
+            <div class="suggestion-item" onclick="fillSuggestion('Soirée romantique', 'Cette soirée magique où...')">
+                <span class="suggestion-icon">🌙</span>
+                <span class="suggestion-text">Soirée romantique</span>
+            </div>
+            <div class="suggestion-item" onclick="fillSuggestion('Cadeau spécial', 'Quand tu m\'as offert...')">
+                <span class="suggestion-icon">🎁</span>
+                <span class="suggestion-text">Cadeau spécial</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.add-memory-container {
+    max-width: 800px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+}
+
+.memory-form-card {
+    background: rgba(30, 26, 77, 0.7);
+    backdrop-filter: blur(15px);
+    border-radius: 25px;
+    padding: 40px;
+    box-shadow: var(--card-shadow);
+    border: 1px solid rgba(236, 240, 241, 0.1);
+}
+
+.form-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.form-header h2 {
+    color: var(--rose-quartz);
+    font-size: 2em;
+    margin-bottom: 10px;
+    text-shadow: var(--text-shadow);
+}
+
+.form-header p {
+    color: var(--moonlight-silver);
+    opacity: 0.9;
+    font-size: 1.1em;
+}
+
+.memory-form {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.form-group label {
+    color: var(--moonlight-silver);
+    font-weight: 600;
+    font-size: 1.1em;
+}
+
+.form-input {
+    padding: 15px;
+    border: 2px solid rgba(236, 240, 241, 0.2);
+    border-radius: 10px;
+    font-size: 1.1em;
+    background: rgba(10, 17, 40, 0.6);
+    color: var(--moonlight-silver);
+    transition: var(--transition);
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--rose-quartz);
+    box-shadow: 0 0 15px rgba(248, 198, 208, 0.3);
+    background: rgba(10, 17, 40, 0.8);
+}
+
+.form-textarea {
+    min-height: 150px;
+    padding: 20px;
+    border: 2px solid rgba(236, 240, 241, 0.2);
+    border-radius: 15px;
+    font-size: 1.1em;
+    line-height: 1.6;
+    background: rgba(10, 17, 40, 0.6);
+    color: var(--moonlight-silver);
+    font-family: 'Poppins', sans-serif;
+    resize: vertical;
+    transition: var(--transition);
+}
+
+.form-textarea:focus {
+    outline: none;
+    border-color: var(--rose-quartz);
+    box-shadow: 0 0 15px rgba(248, 198, 208, 0.3);
+    background: rgba(10, 17, 40, 0.8);
+}
+
+.char-counter {
+    text-align: right;
+    color: var(--moonlight-silver);
+    font-size: 0.9em;
+    opacity: 0.7;
+}
+
+.checkbox-group {
+    flex-direction: row;
+    align-items: center;
+    gap: 15px;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    cursor: pointer;
+    color: var(--moonlight-silver);
+    font-size: 1.1em;
+}
+
+.checkbox-label input[type="checkbox"] {
+    display: none;
+}
+
+.checkmark {
+    width: 25px;
+    height: 25px;
+    border: 2px solid rgba(236, 240, 241, 0.3);
+    border-radius: 5px;
+    background: rgba(10, 17, 40, 0.6);
+    position: relative;
+    transition: var(--transition);
+}
+
+.checkbox-label input[type="checkbox"]:checked + .checkmark {
+    background: linear-gradient(135deg, var(--rose-quartz), var(--mystic-purple));
+    border-color: var(--rose-quartz);
+}
+
+.checkbox-label input[type="checkbox"]:checked + .checkmark::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-weight: bold;
+    font-size: 1.2em;
+}
+
+.checkbox-text {
+    flex: 1;
+}
+
+.form-actions {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.btn-memory {
+    background: linear-gradient(135deg, var(--mystic-purple), var(--rose-quartz));
+    color: white;
+    box-shadow: 0 8px 20px rgba(142, 68, 173, 0.4);
+    font-size: 1.2em;
+    padding: 18px 35px;
+}
+
+.btn-memory:hover {
+    transform: translateY(-5px) scale(1.05);
+    box-shadow: 0 15px 30px rgba(142, 68, 173, 0.6);
+}
+
+.memory-suggestions {
+    background: rgba(10, 17, 40, 0.6);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: var(--card-shadow);
+    border: 1px solid rgba(236, 240, 241, 0.1);
+}
+
+.memory-suggestions h3 {
+    color: var(--starlight-gold);
+    text-align: center;
+    margin-bottom: 25px;
+    font-size: 1.5em;
+    text-shadow: var(--text-shadow);
+}
+
+.suggestions-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.suggestion-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px;
+    background: rgba(30, 26, 77, 0.6);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: var(--transition);
+    border: 2px solid rgba(236, 240, 241, 0.1);
+}
+
+.suggestion-item:hover {
+    transform: translateY(-3px);
+    border-color: var(--rose-quartz);
+    background: rgba(30, 26, 77, 0.8);
+    box-shadow: 0 8px 20px rgba(248, 198, 208, 0.3);
+}
+
+.suggestion-icon {
+    font-size: 1.5em;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.suggestion-text {
+    color: var(--moonlight-silver);
+    font-weight: 500;
+}
+
+@media (max-width: 768px) {
+    .add-memory-container {
+        gap: 25px;
+    }
+    
+    .memory-form-card {
+        padding: 25px;
+    }
+    
+    .form-header h2 {
+        font-size: 1.6em;
+    }
+    
+    .suggestions-list {
+        grid-template-columns: 1fr;
+    }
+    
+    .checkbox-group {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const textarea = document.getElementById('description');
+    const charCount = document.getElementById('char-count');
+    const dateInput = document.getElementById('date_memory');
+    
+    // Compteur de caractères
+    if (textarea && charCount) {
+        function updateCharCount() {
+            const count = textarea.value.length;
+            charCount.textContent = count;
+            
+            if (count > 1500) {
+                charCount.style.color = '#e74c3c';
+            } else if (count > 1000) {
+                charCount.style.color = '#f39c12';
+            } else {
+                charCount.style.color = '#27ae60';
+            }
+        }
+        
+        textarea.addEventListener('input', updateCharCount);
+        updateCharCount();
+    }
+    
+    // Définir la date d'aujourd'hui par défaut
+    if (dateInput) {
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.value = today;
+    }
+});
+
+function fillSuggestion(title, description) {
+    const titleInput = document.getElementById('title');
+    const descriptionTextarea = document.getElementById('description');
+    
+    if (titleInput.value === '') {
+        titleInput.value = title;
+    }
+    
+    if (descriptionTextarea.value === '') {
+        descriptionTextarea.value = description;
+        
+        // Mettre à jour le compteur de caractères
+        const event = new Event('input');
+        descriptionTextarea.dispatchEvent(event);
+    }
+    
+    // Animation de confirmation
+    const suggestionItems = document.querySelectorAll('.suggestion-item');
+    suggestionItems.forEach(item => {
+        if (item.textContent.includes(title)) {
+            item.style.transform = 'scale(0.95)';
+            item.style.background = 'rgba(39, 174, 96, 0.3)';
+            setTimeout(() => {
+                item.style.transform = '';
+                item.style.background = '';
+            }, 300);
+        }
+    });
+    
+    // Focus sur le textarea pour continuer l'écriture
+    descriptionTextarea.focus();
+    descriptionTextarea.setSelectionRange(descriptionTextarea.value.length, descriptionTextarea.value.length);
+}
+</script>
+{% endblock %}

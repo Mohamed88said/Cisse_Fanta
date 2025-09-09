@@ -1162,6 +1162,157 @@ textarea:focus {
     text-shadow: var(--text-shadow);
 }
 
+.visit-count {
+    background: linear-gradient(45deg, var(--starlight-gold), var(--warning-orange));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: bold;
+    text-shadow: var(--text-shadow);
+}
+
+.notification-badge {
+    margin-top: 15px;
+    text-align: center;
+}
+
+.unread-letters {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--rose-quartz), var(--mystic-purple));
+    color: white;
+    padding: 12px 25px;
+    border-radius: 25px;
+    text-decoration: none;
+    font-weight: 600;
+    box-shadow: 0 5px 15px rgba(248, 198, 208, 0.4);
+    transition: var(--transition);
+    animation: gentlePulse 2s ease-in-out infinite;
+}
+
+.unread-letters:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 10px 25px rgba(248, 198, 208, 0.6);
+    text-decoration: none;
+    color: white;
+}
+
+@keyframes gentlePulse {
+    0%, 100% { box-shadow: 0 5px 15px rgba(248, 198, 208, 0.4); }
+    50% { box-shadow: 0 8px 20px rgba(248, 198, 208, 0.6); }
+}
+
+.daily-quote {
+    background: rgba(10, 17, 40, 0.6);
+    border-radius: 20px;
+    padding: 25px;
+    margin: 25px 0;
+    text-align: center;
+    border: 2px solid rgba(248, 198, 208, 0.3);
+    backdrop-filter: blur(10px);
+}
+
+.love-quote {
+    font-size: 1.3em;
+    font-style: italic;
+    color: var(--lavender-blush);
+    margin-bottom: 10px;
+    text-shadow: var(--text-shadow);
+    line-height: 1.6;
+}
+
+.daily-quote small {
+    color: var(--rose-quartz);
+    font-weight: 600;
+    opacity: 0.9;
+}
+
+.special-stat {
+    background: linear-gradient(135deg, rgba(248, 198, 208, 0.2), rgba(241, 196, 15, 0.2));
+    border: 2px solid var(--rose-quartz);
+    animation: specialGlow 3s ease-in-out infinite;
+}
+
+@keyframes specialGlow {
+    0%, 100% { box-shadow: 0 0 15px rgba(248, 198, 208, 0.3); }
+    50% { box-shadow: 0 0 25px rgba(248, 198, 208, 0.5); }
+}
+
+.special-message {
+    position: relative;
+    border: 2px solid var(--starlight-gold) !important;
+    background: linear-gradient(135deg, rgba(241, 196, 15, 0.1), rgba(248, 198, 208, 0.1)) !important;
+    overflow: hidden;
+}
+
+.special-message::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+.special-badge {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, var(--starlight-gold), var(--warning-orange));
+    color: var(--midnight-blue);
+    padding: 8px 20px;
+    border-radius: 20px;
+    font-size: 0.9em;
+    font-weight: bold;
+    box-shadow: 0 4px 15px rgba(241, 196, 15, 0.4);
+    animation: floatBadge 2s ease-in-out infinite;
+}
+
+@keyframes floatBadge {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(-5px); }
+}
+
+.btn-romantic {
+    background: linear-gradient(135deg, var(--rose-quartz), var(--mystic-purple));
+    color: white;
+    box-shadow: 0 8px 20px rgba(248, 198, 208, 0.4);
+}
+
+.btn-romantic:hover {
+    transform: translateY(-5px) scale(1.05);
+    box-shadow: 0 15px 30px rgba(248, 198, 208, 0.6);
+}
+
+.btn-memory {
+    background: linear-gradient(135deg, var(--mystic-purple), var(--rose-quartz));
+    color: white;
+    box-shadow: 0 8px 20px rgba(142, 68, 173, 0.4);
+}
+
+.btn-memory:hover {
+    transform: translateY(-5px) scale(1.05);
+    box-shadow: 0 15px 30px rgba(142, 68, 173, 0.6);
+}
+
+.btn-customize {
+    background: linear-gradient(135deg, var(--accent-purple), var(--mystic-purple));
+    color: white;
+    box-shadow: 0 8px 20px rgba(155, 89, 182, 0.4);
+}
+
+.btn-customize:hover {
+    transform: translateY(-5px) scale(1.05);
+    box-shadow: 0 15px 30px rgba(155, 89, 182, 0.6);
+}
+
 .no-messages {
     text-align: center;
     padding: 50px;

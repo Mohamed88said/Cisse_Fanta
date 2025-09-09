@@ -1,0 +1,532 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="header-container">
+    <h1>🎨 Personnaliser Votre Espace</h1>
+    <p>Rendez ce jardin secret encore plus vôtre</p>
+</div>
+
+<div class="navigation-links">
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">← Retour à l'accueil</a>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="flash-messages">
+            {% for category, message in messages %}
+                <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
+
+<div class="personalize-container">
+    <div class="personalize-card">
+        <div class="card-header">
+            <h2>✨ Vos Préférences</h2>
+            <p>Personnalisez votre expérience pour qu'elle vous ressemble</p>
+        </div>
+        
+        <form method="POST" class="personalize-form">
+            <div class="preference-section">
+                <h3>🎨 Couleurs</h3>
+                <div class="color-preferences">
+                    <div class="form-group">
+                        <label for="favorite_color">Couleur préférée pour vos messages :</label>
+                        <div class="color-picker-container">
+                            <input type="color" name="favorite_color" id="favorite_color" value="{{ current_color }}" class="color-picker">
+                            <div class="color-preview" id="color-preview">
+                                <div class="preview-message">
+                                    <p>Aperçu de votre message</p>
+                                    <small>Avec votre couleur préférée</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="color-presets">
+                        <h4>Couleurs suggérées :</h4>
+                        <div class="preset-colors">
+                            <div class="preset-color" data-color="#ffdde1" style="background: #ffdde1;" title="Rose tendre"></div>
+                            <div class="preset-color" data-color="#e1f5fe" style="background: #e1f5fe;" title="Bleu ciel"></div>
+                            <div class="preset-color" data-color="#f3e5f5" style="background: #f3e5f5;" title="Lavande"></div>
+                            <div class="preset-color" data-color="#fff3e0" style="background: #fff3e0;" title="Pêche"></div>
+                            <div class="preset-color" data-color="#e8f5e8" style="background: #e8f5e8;" title="Vert menthe"></div>
+                            <div class="preset-color" data-color="#fff8e1" style="background: #fff8e1;" title="Jaune doux"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-customize btn-large">💾 Sauvegarder mes préférences</button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Statistiques personnelles -->
+    <div class="personal-stats">
+        <h3>📊 Vos Statistiques Personnelles</h3>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">👤</div>
+                <div class="stat-info">
+                    <div class="stat-label">Votre profil</div>
+                    <div class="stat-value">{{ user|title }}</div>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">🗓️</div>
+                <div class="stat-info">
+                    <div class="stat-label">Membre depuis</div>
+                    <div class="stat-value">{{ current_user.created_at.strftime('%B %Y') if current_user.created_at else 'Récemment' }}</div>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">🔄</div>
+                <div class="stat-info">
+                    <div class="stat-label">Visites</div>
+                    <div class="stat-value">{{ current_user.visit_count or 0 }}</div>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">🕐</div>
+                <div class="stat-info">
+                    <div class="stat-label">Dernière visite</div>
+                    <div class="stat-value">{{ current_user.last_login.strftime('%d/%m à %H:%M') if current_user.last_login else 'Maintenant' }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Conseils de personnalisation -->
+    <div class="personalization-tips">
+        <h3>💡 Conseils de Personnalisation</h3>
+        <div class="tips-list">
+            <div class="tip-item">
+                <span class="tip-icon">🎨</span>
+                <div class="tip-content">
+                    <h4>Choisissez des couleurs qui vous parlent</h4>
+                    <p>Vos couleurs préférées rendront chaque message encore plus spécial et personnel.</p>
+                </div>
+            </div>
+            
+            <div class="tip-item">
+                <span class="tip-icon">💝</span>
+                <div class="tip-content">
+                    <h4>Créez votre propre style</h4>
+                    <p>Utilisez des tags personnalisés pour organiser vos messages selon vos thèmes favoris.</p>
+                </div>
+            </div>
+            
+            <div class="tip-item">
+                <span class="tip-icon">📸</span>
+                <div class="tip-content">
+                    <h4>Ajoutez des photos régulièrement</h4>
+                    <p>Les images rendent vos souvenirs encore plus vivants et précieux.</p>
+                </div>
+            </div>
+            
+            <div class="tip-item">
+                <span class="tip-icon">💌</span>
+                <div class="tip-content">
+                    <h4>Écrivez des lettres d'amour</h4>
+                    <p>Les lettres sont parfaites pour exprimer vos sentiments les plus profonds.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.personalize-container {
+    max-width: 900px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+}
+
+.personalize-card {
+    background: rgba(30, 26, 77, 0.7);
+    backdrop-filter: blur(15px);
+    border-radius: 25px;
+    padding: 40px;
+    box-shadow: var(--card-shadow);
+    border: 1px solid rgba(236, 240, 241, 0.1);
+}
+
+.card-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.card-header h2 {
+    color: var(--rose-quartz);
+    font-size: 2em;
+    margin-bottom: 10px;
+    text-shadow: var(--text-shadow);
+}
+
+.card-header p {
+    color: var(--moonlight-silver);
+    opacity: 0.9;
+    font-size: 1.1em;
+}
+
+.personalize-form {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+}
+
+.preference-section {
+    background: rgba(10, 17, 40, 0.6);
+    border-radius: 20px;
+    padding: 30px;
+    border: 2px solid rgba(236, 240, 241, 0.1);
+}
+
+.preference-section h3 {
+    color: var(--starlight-gold);
+    font-size: 1.5em;
+    margin-bottom: 25px;
+    text-shadow: var(--text-shadow);
+}
+
+.color-preferences {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.form-group label {
+    color: var(--moonlight-silver);
+    font-weight: 600;
+    font-size: 1.1em;
+    margin-bottom: 15px;
+    display: block;
+}
+
+.color-picker-container {
+    display: flex;
+    gap: 25px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.color-picker {
+    width: 80px;
+    height: 80px;
+    border: 3px solid rgba(236, 240, 241, 0.3);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: var(--transition);
+    background: none;
+}
+
+.color-picker:hover {
+    border-color: var(--rose-quartz);
+    transform: scale(1.1);
+    box-shadow: 0 5px 15px rgba(248, 198, 208, 0.4);
+}
+
+.color-preview {
+    flex: 1;
+    min-width: 250px;
+    padding: 20px;
+    border-radius: 15px;
+    transition: var(--transition);
+    border: 2px solid rgba(236, 240, 241, 0.2);
+}
+
+.preview-message {
+    color: var(--deep-purple);
+    text-align: center;
+}
+
+.preview-message p {
+    font-size: 1.2em;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.preview-message small {
+    opacity: 0.8;
+}
+
+.color-presets h4 {
+    color: var(--moonlight-silver);
+    margin-bottom: 15px;
+    font-size: 1em;
+}
+
+.preset-colors {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.preset-color {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 3px solid rgba(236, 240, 241, 0.3);
+    transition: var(--transition);
+    position: relative;
+}
+
+.preset-color:hover {
+    transform: scale(1.2);
+    border-color: var(--rose-quartz);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.preset-color::after {
+    content: attr(title);
+    position: absolute;
+    bottom: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 0.8em;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+}
+
+.preset-color:hover::after {
+    opacity: 1;
+}
+
+.form-actions {
+    text-align: center;
+}
+
+.btn-customize {
+    background: linear-gradient(135deg, var(--accent-purple), var(--mystic-purple));
+    color: white;
+    box-shadow: 0 8px 20px rgba(155, 89, 182, 0.4);
+    font-size: 1.2em;
+    padding: 18px 35px;
+}
+
+.btn-customize:hover {
+    transform: translateY(-5px) scale(1.05);
+    box-shadow: 0 15px 30px rgba(155, 89, 182, 0.6);
+}
+
+.personal-stats {
+    background: rgba(10, 17, 40, 0.6);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: var(--card-shadow);
+    border: 1px solid rgba(236, 240, 241, 0.1);
+}
+
+.personal-stats h3 {
+    color: var(--rose-quartz);
+    text-align: center;
+    margin-bottom: 25px;
+    font-size: 1.5em;
+    text-shadow: var(--text-shadow);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.stat-card {
+    background: rgba(30, 26, 77, 0.6);
+    border-radius: 15px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    transition: var(--transition);
+    border: 2px solid rgba(236, 240, 241, 0.1);
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--rose-quartz);
+    background: rgba(30, 26, 77, 0.8);
+}
+
+.stat-icon {
+    font-size: 2em;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.stat-info {
+    flex: 1;
+}
+
+.stat-label {
+    color: var(--moonlight-silver);
+    font-size: 0.9em;
+    opacity: 0.8;
+    margin-bottom: 5px;
+}
+
+.stat-value {
+    color: var(--starlight-gold);
+    font-size: 1.2em;
+    font-weight: bold;
+    text-shadow: var(--text-shadow);
+}
+
+.personalization-tips {
+    background: rgba(30, 26, 77, 0.7);
+    backdrop-filter: blur(15px);
+    border-radius: 25px;
+    padding: 30px;
+    box-shadow: var(--card-shadow);
+    border: 1px solid rgba(236, 240, 241, 0.1);
+}
+
+.personalization-tips h3 {
+    color: var(--starlight-gold);
+    text-align: center;
+    margin-bottom: 25px;
+    font-size: 1.5em;
+    text-shadow: var(--text-shadow);
+}
+
+.tips-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.tip-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    padding: 20px;
+    background: rgba(10, 17, 40, 0.6);
+    border-radius: 15px;
+    transition: var(--transition);
+    border: 2px solid rgba(236, 240, 241, 0.1);
+}
+
+.tip-item:hover {
+    transform: translateX(10px);
+    border-color: var(--rose-quartz);
+    background: rgba(10, 17, 40, 0.8);
+}
+
+.tip-icon {
+    font-size: 2em;
+    flex-shrink: 0;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.tip-content h4 {
+    color: var(--moonlight-silver);
+    margin-bottom: 8px;
+    font-size: 1.1em;
+}
+
+.tip-content p {
+    color: var(--lavender-blush);
+    line-height: 1.6;
+    opacity: 0.9;
+}
+
+@media (max-width: 768px) {
+    .personalize-container {
+        gap: 25px;
+    }
+    
+    .personalize-card {
+        padding: 25px;
+    }
+    
+    .color-picker-container {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .color-preview {
+        min-width: auto;
+        width: 100%;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .tip-item {
+        flex-direction: column;
+        text-align: center;
+        gap: 15px;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const colorPicker = document.getElementById('favorite_color');
+    const colorPreview = document.getElementById('color-preview');
+    const presetColors = document.querySelectorAll('.preset-color');
+    
+    // Mettre à jour l'aperçu quand la couleur change
+    function updatePreview(color) {
+        colorPreview.style.backgroundColor = color;
+        colorPicker.value = color;
+    }
+    
+    // Écouter les changements du color picker
+    colorPicker.addEventListener('input', function() {
+        updatePreview(this.value);
+    });
+    
+    // Écouter les clics sur les couleurs prédéfinies
+    presetColors.forEach(preset => {
+        preset.addEventListener('click', function() {
+            const color = this.dataset.color;
+            updatePreview(color);
+            
+            // Animation de sélection
+            presetColors.forEach(p => p.classList.remove('selected'));
+            this.classList.add('selected');
+        });
+    });
+    
+    // Initialiser l'aperçu avec la couleur actuelle
+    updatePreview(colorPicker.value);
+    
+    // Animation d'entrée pour les éléments
+    const animatedElements = document.querySelectorAll('.stat-card, .tip-item');
+    animatedElements.forEach((element, index) => {
+        element.style.opacity = '0';
+        element.style.transform = 'translateY(20px)';
+        
+        setTimeout(() => {
+            element.style.transition = 'all 0.6s ease-out';
+            element.style.opacity = '1';
+            element.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
+});
+</script>
+
+<style>
+.preset-color.selected {
+    border-color: var(--starlight-gold) !important;
+    box-shadow: 0 0 15px rgba(241, 196, 15, 0.5) !important;
+    transform: scale(1.2) !important;
+}
+</style>
+{% endblock %}

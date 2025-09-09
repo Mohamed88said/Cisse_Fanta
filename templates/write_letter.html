@@ -1,0 +1,345 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="header-container">
+    <h1>✍️ Écrire une Lettre d'Amour</h1>
+    <p>Laissez votre cœur s'exprimer sur le papier virtuel</p>
+</div>
+
+<div class="navigation-links">
+    <a href="{{ url_for('letters') }}" class="btn btn-secondary">← Retour aux lettres</a>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="flash-messages">
+            {% for category, message in messages %}
+                <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
+
+<div class="write-letter-container">
+    <div class="letter-paper">
+        <div class="paper-header">
+            <h2>💌 Pour {{ recipient|title }}</h2>
+            <p class="paper-date">{{ moment().format('DD MMMM YYYY') if moment else '' }}</p>
+        </div>
+        
+        <form method="POST" class="letter-form">
+            <input type="hidden" name="recipient" value="{{ recipient }}">
+            
+            <div class="form-group">
+                <label for="title">Objet de la lettre :</label>
+                <input type="text" name="title" id="title" placeholder="Un titre pour votre lettre d'amour..." required maxlength="100" class="letter-input">
+            </div>
+            
+            <div class="form-group">
+                <label for="content">Votre message :</label>
+                <textarea name="content" id="content" placeholder="Mon amour,
+
+Laissez votre cœur parler...
+
+Avec tout mon amour,
+{{ user|title }}" required class="letter-textarea"></textarea>
+                <div class="char-counter">
+                    <span id="char-count">0</span> caractères
+                </div>
+            </div>
+            
+            <div class="letter-actions">
+                <button type="submit" class="btn btn-romantic btn-large">💖 Envoyer la lettre</button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Suggestions romantiques -->
+    <div class="romantic-suggestions">
+        <h3>💡 Idées pour votre lettre</h3>
+        <div class="suggestions-grid">
+            <div class="suggestion-card" onclick="addSuggestion(this)">
+                <h4>💝 Souvenir précieux</h4>
+                <p>Partagez un moment spécial que vous avez vécu ensemble</p>
+            </div>
+            <div class="suggestion-card" onclick="addSuggestion(this)">
+                <h4>🌟 Ce que j'aime chez toi</h4>
+                <p>Décrivez ce qui vous fait craquer chez votre moitié</p>
+            </div>
+            <div class="suggestion-card" onclick="addSuggestion(this)">
+                <h4>🔮 Nos rêves d'avenir</h4>
+                <p>Parlez de vos projets et rêves ensemble</p>
+            </div>
+            <div class="suggestion-card" onclick="addSuggestion(this)">
+                <h4>💌 Remerciements</h4>
+                <p>Exprimez votre gratitude pour tout ce qu'elle/il fait</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.write-letter-container {
+    max-width: 800px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+}
+
+.letter-paper {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 198, 208, 0.1));
+    border-radius: 25px;
+    padding: 40px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(236, 240, 241, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.letter-paper::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: linear-gradient(90deg, var(--rose-quartz), var(--starlight-gold), var(--lavender-blush));
+}
+
+.paper-header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid rgba(248, 198, 208, 0.3);
+}
+
+.paper-header h2 {
+    color: var(--deep-purple);
+    font-family: 'Dancing Script', cursive;
+    font-size: 2.5em;
+    margin-bottom: 10px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.paper-date {
+    color: var(--twilight-blue);
+    font-style: italic;
+    opacity: 0.8;
+}
+
+.letter-form {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.form-group label {
+    color: var(--deep-purple);
+    font-weight: 600;
+    font-size: 1.1em;
+}
+
+.letter-input {
+    padding: 15px;
+    border: 2px solid rgba(30, 26, 77, 0.2);
+    border-radius: 10px;
+    font-size: 1.1em;
+    background: rgba(255, 255, 255, 0.8);
+    color: var(--deep-purple);
+    transition: var(--transition);
+}
+
+.letter-input:focus {
+    outline: none;
+    border-color: var(--rose-quartz);
+    box-shadow: 0 0 15px rgba(248, 198, 208, 0.3);
+    background: rgba(255, 255, 255, 0.95);
+}
+
+.letter-textarea {
+    min-height: 300px;
+    padding: 20px;
+    border: 2px solid rgba(30, 26, 77, 0.2);
+    border-radius: 15px;
+    font-size: 1.1em;
+    line-height: 1.8;
+    background: rgba(255, 255, 255, 0.8);
+    color: var(--deep-purple);
+    font-family: 'Poppins', sans-serif;
+    resize: vertical;
+    transition: var(--transition);
+}
+
+.letter-textarea:focus {
+    outline: none;
+    border-color: var(--rose-quartz);
+    box-shadow: 0 0 15px rgba(248, 198, 208, 0.3);
+    background: rgba(255, 255, 255, 0.95);
+}
+
+.char-counter {
+    text-align: right;
+    color: var(--twilight-blue);
+    font-size: 0.9em;
+    opacity: 0.7;
+}
+
+.letter-actions {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.btn-romantic {
+    background: linear-gradient(135deg, var(--rose-quartz), var(--mystic-purple));
+    color: white;
+    box-shadow: 0 8px 20px rgba(248, 198, 208, 0.4);
+    font-size: 1.2em;
+    padding: 18px 35px;
+}
+
+.btn-romantic:hover {
+    transform: translateY(-5px) scale(1.05);
+    box-shadow: 0 15px 30px rgba(248, 198, 208, 0.6);
+}
+
+.romantic-suggestions {
+    background: rgba(30, 26, 77, 0.7);
+    backdrop-filter: blur(15px);
+    border-radius: 25px;
+    padding: 30px;
+    box-shadow: var(--card-shadow);
+    border: 1px solid rgba(236, 240, 241, 0.1);
+}
+
+.romantic-suggestions h3 {
+    color: var(--rose-quartz);
+    text-align: center;
+    margin-bottom: 25px;
+    font-size: 1.5em;
+    text-shadow: var(--text-shadow);
+}
+
+.suggestions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.suggestion-card {
+    background: rgba(10, 17, 40, 0.6);
+    border-radius: 15px;
+    padding: 20px;
+    cursor: pointer;
+    transition: var(--transition);
+    border: 2px solid rgba(236, 240, 241, 0.1);
+    text-align: center;
+}
+
+.suggestion-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--rose-quartz);
+    background: rgba(10, 17, 40, 0.8);
+    box-shadow: 0 10px 25px rgba(248, 198, 208, 0.3);
+}
+
+.suggestion-card h4 {
+    color: var(--starlight-gold);
+    margin-bottom: 10px;
+    font-size: 1.1em;
+}
+
+.suggestion-card p {
+    color: var(--moonlight-silver);
+    font-size: 0.9em;
+    opacity: 0.9;
+    line-height: 1.5;
+}
+
+@media (max-width: 768px) {
+    .write-letter-container {
+        gap: 25px;
+    }
+    
+    .letter-paper {
+        padding: 25px;
+    }
+    
+    .paper-header h2 {
+        font-size: 2em;
+    }
+    
+    .suggestions-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const textarea = document.getElementById('content');
+    const charCount = document.getElementById('char-count');
+    
+    if (textarea && charCount) {
+        function updateCharCount() {
+            const count = textarea.value.length;
+            charCount.textContent = count;
+            
+            if (count > 2000) {
+                charCount.style.color = '#e74c3c';
+            } else if (count > 1500) {
+                charCount.style.color = '#f39c12';
+            } else {
+                charCount.style.color = '#27ae60';
+            }
+        }
+        
+        textarea.addEventListener('input', updateCharCount);
+        updateCharCount(); // Initial count
+    }
+});
+
+function addSuggestion(card) {
+    const textarea = document.getElementById('content');
+    const title = card.querySelector('h4').textContent;
+    
+    let suggestion = '';
+    
+    switch(title) {
+        case '💝 Souvenir précieux':
+            suggestion = '\n\nJe me souviens encore de ce moment magique où... [Décrivez votre souvenir préféré ensemble]\n\n';
+            break;
+        case '🌟 Ce que j\'aime chez toi':
+            suggestion = '\n\nCe que j\'adore chez toi, c\'est... [Listez les qualités qui vous font craquer]\n\n';
+            break;
+        case '🔮 Nos rêves d\'avenir':
+            suggestion = '\n\nJ\'imagine notre avenir ensemble... [Partagez vos rêves et projets communs]\n\n';
+            break;
+        case '💌 Remerciements':
+            suggestion = '\n\nJe voulais te remercier pour... [Exprimez votre gratitude]\n\n';
+            break;
+    }
+    
+    // Ajouter la suggestion au contenu existant
+    textarea.value += suggestion;
+    textarea.focus();
+    
+    // Animation de confirmation
+    card.style.transform = 'scale(0.95)';
+    card.style.background = 'rgba(39, 174, 96, 0.3)';
+    setTimeout(() => {
+        card.style.transform = '';
+        card.style.background = '';
+    }, 300);
+    
+    // Mettre à jour le compteur de caractères
+    const event = new Event('input');
+    textarea.dispatchEvent(event);
+}
+</script>
+{% endblock %}

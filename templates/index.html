@@ -17,6 +17,19 @@
     <div class="daily-quote">
         <p class="love-quote">"{{ love_quote }}"</p>
         <small>💝 Citation d'amour du jour</small>
+        {% if unread_letters > 0 %}
+            <div class="notification-badge">
+                <a href="{{ url_for('letters') }}" class="unread-letters">
+                    💌 {{ unread_letters }} lettre{{ 's' if unread_letters > 1 else '' }} d'amour non lue{{ 's' if unread_letters > 1 else '' }}
+                </a>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Citation d'amour du jour -->
+    <div class="daily-quote">
+        <p class="love-quote">"{{ love_quote }}"</p>
+        <small>💝 Citation d'amour du jour</small>
     </div>
     
     <!-- Statistiques rapides -->
@@ -33,6 +46,12 @@
             <span class="stat-number">{{ stats.favoris_count }}</span>
             <span class="stat-label">Favoris</span>
         </div>
+        {% if unread_letters > 0 %}
+        <div class="stat-item special-stat">
+            <span class="stat-number">{{ unread_letters }}</span>
+            <span class="stat-label">Lettres ❤️</span>
+        </div>
+        {% endif %}
         {% if unread_letters > 0 %}
         <div class="stat-item special-stat">
             <span class="stat-number">{{ unread_letters }}</span>
@@ -68,6 +87,9 @@
                     {% if phrase.is_special %}
                         <div class="special-badge">✨ Message Spécial ✨</div>
                     {% endif %}
+                    {% if phrase.is_special %}
+                        <div class="special-badge">✨ Message Spécial ✨</div>
+                    {% endif %}
                     <div class="message-header">
                         <span class="message-date">{{ phrase.date.strftime('%d/%m/%Y à %H:%M') }}</span>
                         <span class="message-author">par {{ phrase.auteur }}</span>
@@ -80,10 +102,12 @@
                                 ❤️ <span id="likes-{{ phrase.id }}">{{ phrase.likes or 0 }}</span>
                             </button>
                             {% if phrase.auteur == user %}
+                            {% if phrase.auteur == user %}
                             <a href="{{ url_for('supprimer_phrase', phrase_id=phrase.id) }}" 
                                class="delete-btn" onclick="return confirm('Supprimer ce message?')">
                                 🗑️
                             </a>
+                            {% endif %}
                             {% endif %}
                         </div>
                     </div>
@@ -161,7 +185,10 @@
     <a href="{{ url_for('galerie') }}" class="btn btn-secondary">📸 Voir la galerie photo</a>
     <a href="{{ url_for('letters') }}" class="btn btn-romantic">💌 Lettres d'amour</a>
     <a href="{{ url_for('memories') }}" class="btn btn-memory">💝 Nos souvenirs</a>
+    <a href="{{ url_for('letters') }}" class="btn btn-romantic">💌 Lettres d'amour</a>
+    <a href="{{ url_for('memories') }}" class="btn btn-memory">💝 Nos souvenirs</a>
     <a href="{{ url_for('mood') }}" class="btn btn-info">🌷 Humeur du jour</a>
+    <a href="{{ url_for('personalize') }}" class="btn btn-customize">🎨 Personnaliser</a>
     <a href="{{ url_for('personalize') }}" class="btn btn-customize">🎨 Personnaliser</a>
     <a href="{{ url_for('stats') }}" class="btn btn-accent">📊 Statistiques</a>
     <a href="{{ url_for('logout') }}" class="btn btn-logout">🚪 Déconnexion</a>
@@ -201,6 +228,20 @@ document.addEventListener('DOMContentLoaded', function() {
             this.style.boxShadow = '';
         });
     });
+    
+    // Animation spéciale pour les messages spéciaux
+    const specialMessages = document.querySelectorAll('.special-message');
+    specialMessages.forEach(msg => {
+        msg.addEventListener('mouseenter', function() {
+            this.style.transform = 'scale(1.02) rotateY(5deg)';
+            this.style.boxShadow = '0 25px 50px rgba(255, 215, 0, 0.4)';
+        });
+        
+        msg.addEventListener('mouseleave', function() {
+            this.style.transform = 'scale(1) rotateY(0deg)';
+            this.style.boxShadow = '';
+        });
+    });
 });
 
 // Fonction pour liker un message
@@ -211,6 +252,15 @@ function likePhrase(phraseId) {
     .then(response => response.json())
     .then(data => {
         document.getElementById(`likes-${phraseId}`).textContent = data.likes;
+        
+        // Animation de cœur
+        const likeBtn = document.querySelector(`button[onclick="likePhrase(${phraseId})"]`);
+        likeBtn.style.transform = 'scale(1.3)';
+        likeBtn.style.color = '#e74c3c';
+        setTimeout(() => {
+            likeBtn.style.transform = 'scale(1)';
+            likeBtn.style.color = '';
+        }, 300);
         
         // Animation de cœur
         const likeBtn = document.querySelector(`button[onclick="likePhrase(${phraseId})"]`);

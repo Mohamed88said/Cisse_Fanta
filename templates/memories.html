@@ -1,0 +1,365 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="header-container">
+    <h1>💝 Nos Souvenirs Précieux</h1>
+    <p>Les moments qui ont marqué notre histoire d'amour</p>
+</div>
+
+<div class="navigation-links">
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">← Retour à l'accueil</a>
+    <a href="{{ url_for('add_memory') }}" class="btn btn-memory">✨ Ajouter un souvenir</a>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="flash-messages">
+            {% for category, message in messages %}
+                <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
+
+<div class="memories-container">
+    <!-- Anniversaires spéciaux -->
+    {% if anniversaries %}
+    <div class="memories-section">
+        <h2>🎉 Nos Anniversaires</h2>
+        <div class="memories-timeline">
+            {% for memory in anniversaries %}
+                <div class="memory-item anniversary">
+                    <div class="memory-date">
+                        <div class="date-circle">
+                            <span class="day">{{ memory.date_memory.strftime('%d') }}</span>
+                            <span class="month">{{ memory.date_memory.strftime('%b') }}</span>
+                        </div>
+                    </div>
+                    <div class="memory-content">
+                        <h3>{{ memory.title }}</h3>
+                        <p class="memory-description">{{ memory.description }}</p>
+                        <div class="memory-meta">
+                            <span class="memory-author">Ajouté par {{ memory.author }}</span>
+                            <span class="memory-created">{{ memory.created_at.strftime('%d/%m/%Y') }}</span>
+                        </div>
+                    </div>
+                    <div class="anniversary-badge">🎊</div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Souvenirs réguliers -->
+    <div class="memories-section">
+        <h2>📸 Nos Beaux Souvenirs</h2>
+        {% if regular_memories %}
+            <div class="memories-timeline">
+                {% for memory in regular_memories %}
+                    <div class="memory-item">
+                        <div class="memory-date">
+                            <div class="date-circle">
+                                <span class="day">{{ memory.date_memory.strftime('%d') }}</span>
+                                <span class="month">{{ memory.date_memory.strftime('%b') }}</span>
+                            </div>
+                        </div>
+                        <div class="memory-content">
+                            <h3>{{ memory.title }}</h3>
+                            <p class="memory-description">{{ memory.description }}</p>
+                            <div class="memory-meta">
+                                <span class="memory-author">Ajouté par {{ memory.author }}</span>
+                                <span class="memory-created">{{ memory.created_at.strftime('%d/%m/%Y') }}</span>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="no-memories">
+                <p>💫 Aucun souvenir ajouté pour le moment...</p>
+                <p>Commencez à créer votre livre de souvenirs !</p>
+                <a href="{{ url_for('add_memory') }}" class="btn btn-memory">Ajouter le premier souvenir ✨</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.memories-container {
+    max-width: 900px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 50px;
+}
+
+.memories-section {
+    background: rgba(30, 26, 77, 0.7);
+    backdrop-filter: blur(15px);
+    border-radius: 25px;
+    padding: 40px;
+    box-shadow: var(--card-shadow);
+    border: 1px solid rgba(236, 240, 241, 0.1);
+}
+
+.memories-section h2 {
+    color: var(--rose-quartz);
+    text-align: center;
+    margin-bottom: 40px;
+    font-size: 2em;
+    text-shadow: var(--text-shadow);
+}
+
+.memories-timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.memories-timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(to bottom, var(--rose-quartz), var(--starlight-gold), var(--lavender-blush));
+    border-radius: 2px;
+}
+
+.memory-item {
+    position: relative;
+    margin-bottom: 40px;
+    display: flex;
+    align-items: flex-start;
+    gap: 25px;
+    background: rgba(10, 17, 40, 0.6);
+    border-radius: 20px;
+    padding: 25px;
+    transition: var(--transition);
+    border: 2px solid rgba(236, 240, 241, 0.1);
+}
+
+.memory-item:hover {
+    transform: translateX(10px);
+    border-color: var(--rose-quartz);
+    background: rgba(10, 17, 40, 0.8);
+    box-shadow: 0 15px 30px rgba(248, 198, 208, 0.3);
+}
+
+.memory-item.anniversary {
+    border-color: var(--starlight-gold);
+    background: linear-gradient(135deg, rgba(10, 17, 40, 0.6), rgba(241, 196, 15, 0.1));
+}
+
+.memory-item.anniversary:hover {
+    border-color: var(--starlight-gold);
+    box-shadow: 0 15px 30px rgba(241, 196, 15, 0.4);
+}
+
+.memory-date {
+    flex-shrink: 0;
+    position: relative;
+}
+
+.date-circle {
+    width: 70px;
+    height: 70px;
+    background: linear-gradient(135deg, var(--rose-quartz), var(--mystic-purple));
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    box-shadow: 0 5px 15px rgba(248, 198, 208, 0.4);
+    position: relative;
+    z-index: 2;
+}
+
+.memory-item.anniversary .date-circle {
+    background: linear-gradient(135deg, var(--starlight-gold), var(--warning-orange));
+    box-shadow: 0 5px 15px rgba(241, 196, 15, 0.4);
+}
+
+.day {
+    font-size: 1.2em;
+    line-height: 1;
+}
+
+.month {
+    font-size: 0.8em;
+    text-transform: uppercase;
+    opacity: 0.9;
+}
+
+.memory-content {
+    flex: 1;
+}
+
+.memory-content h3 {
+    color: var(--moonlight-silver);
+    font-size: 1.4em;
+    margin-bottom: 15px;
+    text-shadow: var(--text-shadow);
+}
+
+.memory-description {
+    color: var(--lavender-blush);
+    line-height: 1.7;
+    margin-bottom: 15px;
+    font-size: 1.1em;
+}
+
+.memory-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9em;
+    opacity: 0.8;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.memory-author {
+    color: var(--rose-quartz);
+    font-weight: 600;
+}
+
+.memory-created {
+    color: var(--moonlight-silver);
+}
+
+.anniversary-badge {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    font-size: 2em;
+    animation: bounce 2s ease-in-out infinite;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+}
+
+.no-memories {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--moonlight-silver);
+}
+
+.no-memories p {
+    font-size: 1.2em;
+    margin-bottom: 15px;
+    opacity: 0.8;
+}
+
+.btn-memory {
+    background: linear-gradient(135deg, var(--mystic-purple), var(--rose-quartz));
+    color: white;
+    box-shadow: 0 8px 20px rgba(142, 68, 173, 0.4);
+}
+
+.btn-memory:hover {
+    transform: translateY(-5px) scale(1.05);
+    box-shadow: 0 15px 30px rgba(142, 68, 173, 0.6);
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+    }
+    40% {
+        transform: translateY(-10px);
+    }
+    60% {
+        transform: translateY(-5px);
+    }
+}
+
+/* Animation d'apparition */
+.memory-item {
+    animation: slideInFromLeft 0.8s ease-out;
+}
+
+@keyframes slideInFromLeft {
+    0% {
+        opacity: 0;
+        transform: translateX(-50px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@media (max-width: 768px) {
+    .memories-container {
+        gap: 30px;
+    }
+    
+    .memories-section {
+        padding: 25px;
+    }
+    
+    .memories-timeline {
+        padding-left: 20px;
+    }
+    
+    .memories-timeline::before {
+        left: 10px;
+    }
+    
+    .memory-item {
+        flex-direction: column;
+        text-align: center;
+        gap: 20px;
+        padding: 20px;
+    }
+    
+    .memory-meta {
+        justify-content: center;
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .date-circle {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .day {
+        font-size: 1.1em;
+    }
+    
+    .month {
+        font-size: 0.7em;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Animation d'apparition séquentielle des souvenirs
+    const memoryItems = document.querySelectorAll('.memory-item');
+    
+    memoryItems.forEach((item, index) => {
+        item.style.opacity = '0';
+        item.style.transform = 'translateX(-50px)';
+        
+        setTimeout(() => {
+            item.style.transition = 'all 0.8s ease-out';
+            item.style.opacity = '1';
+            item.style.transform = 'translateX(0)';
+        }, index * 200);
+    });
+    
+    // Effet de parallaxe léger sur les cercles de date
+    window.addEventListener('scroll', function() {
+        const scrolled = window.pageYOffset;
+        const dateCircles = document.querySelectorAll('.date-circle');
+        
+        dateCircles.forEach((circle, index) => {
+            const speed = 0.1 + (index * 0.02);
+            circle.style.transform = `translateY(${scrolled * speed}px)`;
+        });
+    });
+});
+</script>
+{% endblock %}

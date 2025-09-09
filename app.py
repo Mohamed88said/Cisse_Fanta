@@ -58,6 +58,40 @@ LOVE_QUOTES = [
     "Tu es la mélodie que mon cœur fredonne en silence",
     "Aimer, c'est regarder ensemble dans la même direction vers les étoiles"
 ]
+# --- Messages personnalisés pour Fanta ---
+FANTA_MESSAGES = [
+    "Ma princesse aux yeux d'étoiles ✨",
+    "Mon cœur qui bat sous les étoiles 💫",
+    "Ma lune qui illumine mes nuits 🌙",
+    "Mon étoile filante d'amour ⭐",
+    "Ma douce mélodie nocturne 🎵",
+    "Mon rêve devenu réalité 💝",
+    "Ma source de bonheur infini 🌸",
+    "Mon soleil dans l'obscurité ☀️"
+]
+
+SAID_MESSAGES = [
+    "Mon protecteur des étoiles 🛡️",
+    "Mon prince charmant 👑",
+    "Mon cœur qui bat pour moi 💖",
+    "Mon héros du quotidien 🦸",
+    "Ma force dans la tempête ⚡",
+    "Mon compagnon d'éternité 🌟",
+    "Mon amour sans limites 💕",
+    "Mon âme sœur trouvée 💫"
+]
+
+# --- Citations d'amour personnalisées ---
+LOVE_QUOTES = [
+    "Dans tes yeux, j'ai trouvé mon univers entier",
+    "Chaque battement de mon cœur murmure ton nom",
+    "Tu es la poésie que mon âme a toujours cherchée",
+    "Avec toi, chaque jour est une nouvelle étoile qui naît",
+    "Tu es ma prière exaucée sous le ciel étoilé",
+    "Dans tes bras, j'ai trouvé ma maison",
+    "Tu es la mélodie que mon cœur fredonne en silence",
+    "Aimer, c'est regarder ensemble dans la même direction vers les étoiles"
+]
 # --- Modèle User ---
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -65,6 +99,8 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(128), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     last_login = db.Column(db.DateTime)
+    visit_count = db.Column(db.Integer, default=0)
+    favorite_color = db.Column(db.String(7), default='#ffdde1')
     visit_count = db.Column(db.Integer, default=0)
     favorite_color = db.Column(db.String(7), default='#ffdde1')
     
@@ -85,6 +121,7 @@ class Phrase(db.Model):
     likes = db.Column(db.Integer, default=0)
     tags = db.Column(db.String(200))  # Tags séparés par des virgules
     is_special = db.Column(db.Boolean, default=False)  # Messages spéciaux automatiques
+    is_special = db.Column(db.Boolean, default=False)  # Messages spéciaux automatiques
 
 # --- Modèle Photo ---
 class Photo(db.Model):
@@ -104,6 +141,26 @@ class MoodJournal(db.Model):
     date = db.Column(db.Date, default=date.today)
     verse_shown = db.Column(db.String(10), nullable=False)
 
+# --- Nouveau modèle pour les souvenirs spéciaux ---
+class SpecialMemory(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    date_memory = db.Column(db.Date, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    author = db.Column(db.String(50), nullable=False)
+    is_anniversary = db.Column(db.Boolean, default=False)
+
+# --- Nouveau modèle pour les lettres d'amour ---
+class LoveLetter(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    recipient = db.Column(db.String(50), nullable=False)
+    sender = db.Column(db.String(50), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_read = db.Column(db.Boolean, default=False)
+    delivery_date = db.Column(db.DateTime)  # Pour programmer l'envoi
 # --- Nouveau modèle pour les souvenirs spéciaux ---
 class SpecialMemory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -169,6 +226,35 @@ def create_special_message_if_needed():
             )
             db.session.add(special_message)
             db.session.commit()
+def get_personalized_greeting(username):
+    """Retourne un message personnalisé selon l'utilisateur"""
+    if username == "fanta":
+        return random.choice(FANTA_MESSAGES)
+    elif username == "said":
+        return random.choice(SAID_MESSAGES)
+    return f"Bienvenue {username} 💖"
+
+def create_special_message_if_needed():
+    """Crée des messages spéciaux automatiquement selon les occasions"""
+    today = date.today()
+    
+    # Vérifier si c'est un jour spécial (exemple: 14 de chaque mois)
+    if today.day == 14:
+        existing = Phrase.query.filter(
+            Phrase.is_special == True,
+            db.func.date(Phrase.date) == today
+        ).first()
+        
+        if not existing:
+            special_message = Phrase(
+                texte=f"💝 Message spécial du {today.strftime('%d/%m/%Y')} : " + random.choice(LOVE_QUOTES),
+                couleur='#ff69b4',
+                auteur='Le Destin',
+                is_special=True,
+                tags='spécial,amour,destin'
+            )
+            db.session.add(special_message)
+            db.session.commit()
 def upgrade_database():
     """Met à jour la structure de la base de données avec gestion d'erreurs améliorée"""
     try:
@@ -194,6 +280,8 @@ def upgrade_database():
                     db.session.execute(text('ALTER TABLE phrase ADD COLUMN tags VARCHAR(200)'))
                 if 'is_special' not in columns:
                     db.session.execute(text('ALTER TABLE phrase ADD COLUMN is_special BOOLEAN DEFAULT FALSE'))
+                if 'is_special' not in columns:
+                    db.session.execute(text('ALTER TABLE phrase ADD COLUMN is_special BOOLEAN DEFAULT FALSE'))
             
             # Vérification et ajout des colonnes manquantes pour la table photo
             if inspector.has_table('photo'):
@@ -212,6 +300,10 @@ def upgrade_database():
                     db.session.execute(text('ALTER TABLE user ADD COLUMN created_at DATETIME'))
                 if 'last_login' not in user_columns:
                     db.session.execute(text('ALTER TABLE user ADD COLUMN last_login DATETIME'))
+                if 'visit_count' not in user_columns:
+                    db.session.execute(text('ALTER TABLE user ADD COLUMN visit_count INTEGER DEFAULT 0'))
+                if 'favorite_color' not in user_columns:
+                    db.session.execute(text('ALTER TABLE user ADD COLUMN favorite_color VARCHAR(7) DEFAULT "#ffdde1"'))
                 if 'visit_count' not in user_columns:
                     db.session.execute(text('ALTER TABLE user ADD COLUMN visit_count INTEGER DEFAULT 0'))
                 if 'favorite_color' not in user_columns:
@@ -284,11 +376,13 @@ def login():
             if user:
                 user.last_login = datetime.utcnow()
                 user.visit_count += 1
+                user.visit_count += 1
                 db.session.commit()
                 login_user(user)
                 session.pop('login_attempts', None)
                 session.pop('last_username', None)
                 log_activity(username, 'login', 'Connexion réussie')
+                create_special_message_if_needed()
                 create_special_message_if_needed()
                 return redirect(url_for('index'))
         
@@ -298,11 +392,13 @@ def login():
                 if user:
                     user.last_login = datetime.utcnow()
                     user.visit_count += 1
+                    user.visit_count += 1
                     db.session.commit()
                     login_user(user)
                     session.pop('login_attempts', None)
                     session.pop('last_username', None)
                     log_activity(username, 'login', 'Connexion réussie')
+                    create_special_message_if_needed()
                     create_special_message_if_needed()
                     return redirect(url_for('index'))
             else:
@@ -385,10 +481,25 @@ def index():
         recipient=current_user.username, 
         is_read=False
     ).count()
+    # Message personnalisé
+    personal_greeting = get_personalized_greeting(current_user.username)
+    
+    # Citation d'amour aléatoire
+    love_quote = random.choice(LOVE_QUOTES)
+    
+    # Vérifier s'il y a des lettres non lues
+    unread_letters = LoveLetter.query.filter_by(
+        recipient=current_user.username, 
+        is_read=False
+    ).count()
     return render_template('index.html', 
                          phrases=phrases.items, 
                          pagination=phrases,
                          user=current_user.username,
+                         personal_greeting=personal_greeting,
+                         love_quote=love_quote,
+                         unread_letters=unread_letters,
+                         visit_count=current_user.visit_count,
                          personal_greeting=personal_greeting,
                          love_quote=love_quote,
                          unread_letters=unread_letters,
@@ -399,6 +510,137 @@ def index():
                              'favoris_count': favoris_count
                          })
 
+@app.route('/letters')
+@login_required
+def letters():
+    """Page des lettres d'amour"""
+    received_letters = LoveLetter.query.filter_by(
+        recipient=current_user.username
+    ).order_by(LoveLetter.created_at.desc()).all()
+    
+    sent_letters = LoveLetter.query.filter_by(
+        sender=current_user.username
+    ).order_by(LoveLetter.created_at.desc()).all()
+    
+    return render_template('letters.html', 
+                         received_letters=received_letters,
+                         sent_letters=sent_letters,
+                         user=current_user.username)
+
+@app.route('/write_letter', methods=['GET', 'POST'])
+@login_required
+def write_letter():
+    """Écrire une lettre d'amour"""
+    if request.method == 'POST':
+        title = request.form['title']
+        content = request.form['content']
+        recipient = request.form['recipient']
+        
+        if len(title.strip()) == 0 or len(content.strip()) == 0:
+            flash('Le titre et le contenu ne peuvent pas être vides! 📝', 'error')
+            return redirect(url_for('write_letter'))
+        
+        new_letter = LoveLetter(
+            title=title,
+            content=content,
+            recipient=recipient,
+            sender=current_user.username
+        )
+        db.session.add(new_letter)
+        db.session.commit()
+        
+        log_activity(current_user.username, 'letter_sent', f'À {recipient}: {title}')
+        flash(f'Votre lettre d\'amour a été envoyée à {recipient}! 💌', 'success')
+        return redirect(url_for('letters'))
+    
+    # Déterminer le destinataire
+    recipient = 'fanta' if current_user.username == 'said' else 'said'
+    return render_template('write_letter.html', 
+                         user=current_user.username,
+                         recipient=recipient)
+
+@app.route('/read_letter/<int:letter_id>')
+@login_required
+def read_letter(letter_id):
+    """Lire une lettre d'amour"""
+    letter = LoveLetter.query.get_or_404(letter_id)
+    
+    # Vérifier que l'utilisateur peut lire cette lettre
+    if letter.recipient != current_user.username and letter.sender != current_user.username:
+        flash('Vous ne pouvez pas lire cette lettre! 🚫', 'error')
+        return redirect(url_for('letters'))
+    
+    # Marquer comme lue si c'est le destinataire
+    if letter.recipient == current_user.username and not letter.is_read:
+        letter.is_read = True
+        db.session.commit()
+        log_activity(current_user.username, 'letter_read', f'Lettre: {letter.title}')
+    
+    return render_template('read_letter.html', 
+                         letter=letter,
+                         user=current_user.username)
+
+@app.route('/memories')
+@login_required
+def memories():
+    """Page des souvenirs spéciaux"""
+    all_memories = SpecialMemory.query.order_by(SpecialMemory.date_memory.desc()).all()
+    
+    # Séparer les anniversaires des autres souvenirs
+    anniversaries = [m for m in all_memories if m.is_anniversary]
+    regular_memories = [m for m in all_memories if not m.is_anniversary]
+    
+    return render_template('memories.html',
+                         anniversaries=anniversaries,
+                         regular_memories=regular_memories,
+                         user=current_user.username)
+
+@app.route('/add_memory', methods=['GET', 'POST'])
+@login_required
+def add_memory():
+    """Ajouter un souvenir spécial"""
+    if request.method == 'POST':
+        title = request.form['title']
+        description = request.form['description']
+        date_memory = datetime.strptime(request.form['date_memory'], '%Y-%m-%d').date()
+        is_anniversary = 'is_anniversary' in request.form
+        
+        if len(title.strip()) == 0 or len(description.strip()) == 0:
+            flash('Le titre et la description ne peuvent pas être vides! 📝', 'error')
+            return redirect(url_for('add_memory'))
+        
+        new_memory = SpecialMemory(
+            title=title,
+            description=description,
+            date_memory=date_memory,
+            author=current_user.username,
+            is_anniversary=is_anniversary
+        )
+        db.session.add(new_memory)
+        db.session.commit()
+        
+        log_activity(current_user.username, 'memory_added', f'Souvenir: {title}')
+        flash('Votre souvenir a été ajouté avec succès! 💝', 'success')
+        return redirect(url_for('memories'))
+    
+    return render_template('add_memory.html', user=current_user.username)
+
+@app.route('/personalize', methods=['GET', 'POST'])
+@login_required
+def personalize():
+    """Page de personnalisation"""
+    if request.method == 'POST':
+        favorite_color = request.form.get('favorite_color', '#ffdde1')
+        current_user.favorite_color = favorite_color
+        db.session.commit()
+        
+        log_activity(current_user.username, 'profile_updated', f'Couleur: {favorite_color}')
+        flash('Vos préférences ont été sauvegardées! 🎨', 'success')
+        return redirect(url_for('personalize'))
+    
+    return render_template('personalize.html', 
+                         user=current_user.username,
+                         current_color=current_user.favorite_color)
 @app.route('/letters')
 @login_required
 def letters():
@@ -743,6 +985,8 @@ def stats():
     favoris_count = Phrase.query.filter_by(est_favori=True).count()
     total_letters = LoveLetter.query.count()
     total_memories = SpecialMemory.query.count()
+    total_letters = LoveLetter.query.count()
+    total_memories = SpecialMemory.query.count()
     
     # Messages par utilisateur
     messages_by_user = db.session.query(
@@ -765,6 +1009,8 @@ def stats():
                          total_messages=total_messages,
                          total_photos=total_photos,
                          favoris_count=favoris_count,
+                         total_letters=total_letters,
+                         total_memories=total_memories,
                          total_letters=total_letters,
                          total_memories=total_memories,
                          messages_by_user=messages_by_user,
