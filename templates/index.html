@@ -165,10 +165,10 @@
     <a href="{{ url_for('love_calendar') }}" class="btn btn-accent">📅 Notre calendrier</a>
     <a href="{{ url_for('love_challenges') }}" class="btn btn-info">🎯 Défis d'amour</a>
     {% if user == 'fanta' %}
-        {% set today = moment().date() if moment else date.today() %}
+        {% set today = moment().date() if moment else now.date() %}
         {% if today.month == 9 and today.day >= 27 %}
             <a href="{{ url_for('birthday_surprise') }}" class="btn btn-birthday">🎂 Ma surprise !</a>
-        {% elif today < date(2025, 9, 27) %}
+        {% elif today < now.replace(month=9, day=27).date() %}
             <a href="{{ url_for('countdown') }}" class="btn btn-countdown">⏰ Compte à rebours</a>
         {% endif %}
     {% endif %}

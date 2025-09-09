@@ -466,6 +466,7 @@ def index():
                          love_quote=love_quote,
                          unread_letters=unread_letters,
                          visit_count=current_user.visit_count,
+                         now=datetime.now(),
                          stats={
                              'total_messages': total_messages,
                              'total_photos': total_photos,
