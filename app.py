@@ -686,13 +686,13 @@ def mood():
         recent_verses = get_recent_verses(current_user.username)
         available_verses = []
         for v in verses:
-            # Pour les versets normaux qui ont un verse_id
-            if 'verse_id' in v:
+            # Pour les versets du Coran qui ont un verse_id
+            if v.get('verse_id'):
                 if v['verse_id'] not in recent_verses:
                     available_verses.append(v)
-            # Pour les hadiths/duas qui n'ont pas de verse_id, on génère un ID unique
+            # Pour les hadiths et invocations qui n'ont pas de verse_id, on génère un ID unique
             else:
-                unique_id = f"{v.get('type', 'unknown')}-{v.get('source', 'unknown')}-{v.get('reference', 'unknown')}"
+                unique_id = f"{v.get('type', 'hadith')}-{hash(v.get('arabic', ''))}"
                 if unique_id not in recent_verses:
                     available_verses.append(v)
         
@@ -707,7 +707,7 @@ def mood():
             username=current_user.username,
             mood=selected_mood,
             date=date.today(),
-            verse_shown=selected_verse.get('verse_id', f"{selected_verse.get('type', 'unknown')}-{selected_verse.get('source', 'unknown')}")
+            verse_shown=selected_verse.get('verse_id', f"{selected_verse.get('type', 'hadith')}-{hash(selected_verse.get('arabic', ''))}")
         )
         db.session.add(new_entry)
         db.session.commit()

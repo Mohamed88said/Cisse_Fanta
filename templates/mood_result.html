@@ -25,17 +25,17 @@
         </div>
         
         <div class="verse-details">
-            {% if verse.surah %}
+            {% if verse.get('surah') %}
                 <div class="source-info verse-source">
-                    📖 Verset du Coran - Sourate {{ verse.surah }}, Verset {{ verse.verse_number }}
+                    📖 Verset du Saint Coran - Sourate {{ verse.surah }}, Verset {{ verse.verse_number }}
                 </div>
-            {% elif verse.type == 'hadith' %}
+            {% elif verse.get('type') == 'hadith' %}
                 <div class="source-info hadith-source">
-                    📚 Hadith - {{ verse.source }}, {{ verse.reference }}
+                    📚 Hadith du Prophète (ﷺ) - {{ verse.source }}, {{ verse.reference }}
                 </div>
-            {% elif verse.type == 'dua' %}
+            {% elif verse.get('type') == 'dua' %}
                 <div class="source-info dua-source">
-                    🤲 Invocation - {{ verse.source }}, {{ verse.reference }}
+                    🤲 Invocation prophétique - {{ verse.source }}, {{ verse.reference }}
                 </div>
             {% endif %}
             
