@@ -1,7 +1,5 @@
-"""
-WSGI config pour la production
-"""
-from app import app
+# wsgi.py
+from app import app as application
 
 if __name__ == "__main__":
-    app.run()
+    application.run()
