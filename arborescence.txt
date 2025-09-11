@@ -1,21 +1,43 @@
 Arborescence du projet :
 ├── .
+│   ├── .env
+│   ├── .gitignore
+│   │   ├── pyvenv.cfg
+│   ├── Procfile
 │   ├── README.md
 │   ├── app.py
 │   ├── arborescence.txt
+│   ├── config.py
 │   ├── gen_arbo.py
-│   ├── instance/
-│   │   ├── database.db
 │   ├── mood_verses.json
+│   ├── package-lock.json
 │   ├── requirements.txt
+│   ├── runtime.txt
 │   ├── static/
 │   │   ├── style.css
 │   │   ├── uploads/
+│   │   │   ├── .gitkeep
 │   ├── templates/
 │   │   ├── add.html
+│   │   ├── add_memory.html
 │   │   ├── base.html
+│   │   ├── birthday_surprise.html
+│   │   ├── countdown.html
+│   │   ├── errors/
+│   │   │   ├── 404.html
+│   │   │   ├── 500.html
 │   │   ├── galerie.html
 │   │   ├── index.html
+│   │   ├── letters.html
 │   │   ├── login.html
+│   │   ├── love_calendar.html
+│   │   ├── love_challenges.html
+│   │   ├── memories.html
 │   │   ├── mood.html
 │   │   ├── mood_result.html
+│   │   ├── personalize.html
+│   │   ├── read_letter.html
+│   │   ├── search_results.html
+│   │   ├── stats.html
+│   │   ├── write_letter.html
+│   ├── wsgi.py

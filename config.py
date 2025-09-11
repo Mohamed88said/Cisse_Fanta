@@ -2,22 +2,26 @@ import os
 from datetime import timedelta
 
 class Config:
-    """Configuration de base"""
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
-    
-    # Base de données (SQLite en dev, PostgreSQL/MySQL en prod via DATABASE_URL)
-    DATABASE_PATH = os.environ.get('DATABASE_PATH') or 'instance/database.db'
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or f"sqlite:///{DATABASE_PATH}"
+    """Configuration de base pour l'application Flask"""
+
+    # 🔑 Sécurité
+    SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-key-change-in-production")
+
+    # 📦 Base de données : priorité à DATABASE_URL (PostgreSQL sur Render), sinon SQLite en local
+    SQLALCHEMY_DATABASE_URI = os.environ.get(
+        "DATABASE_URL",
+        f"sqlite:///{os.path.join(os.getcwd(), 'instance', 'database.db')}"
+    )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    
-    # Uploads
-    UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static', 'uploads')
-    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB
-    
-    # Configuration de session
+
+    # 📂 Gestion des fichiers uploadés
+    UPLOAD_FOLDER = os.path.join(os.getcwd(), "static", "uploads")
+    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB
+
+    # 🍪 Configuration des sessions
     PERMANENT_SESSION_LIFETIME = timedelta(days=7)
     SESSION_COOKIE_HTTPONLY = True
-    SESSION_COOKIE_SAMESITE = 'Lax'
+    SESSION_COOKIE_SAMESITE = "Lax"
 
 class DevelopmentConfig(Config):
     """Configuration pour le développement"""
