@@ -19,7 +19,7 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 DATABASE = os.environ.get('DATABASE_PATH', 'instance/database.db')
 
 # Date de déverrouillage (27 septembre 2025)
-UNLOCK_DATE = datetime(2025, 10, 27)
+UNLOCK_DATE = datetime(2025, 9, 26, 23, 00, 59)
 
 # Extensions de fichiers autorisées
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
