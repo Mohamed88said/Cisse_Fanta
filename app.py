@@ -147,7 +147,7 @@ def init_db():
         conn.execute('''
             INSERT INTO users (username, password_hash, favorite_color)
             VALUES (?, ?, ?)
-        ''', ('fanta', generate_password_hash('Elle a toujours été magnifique'), '#ffdde1'))
+        ''', ('fanta', generate_password_hash('Elle a toujours été belle'), '#ffdde1'))
     
     if 'saïd' not in existing_usernames:
         conn.execute('''
@@ -278,7 +278,7 @@ def login():
             
             if attempts == 1:
                 if username == 'fanta':
-                    flash('Hmm... Pense à ce que Saïd dit toujours sur ta beauté 💫', 'error')
+                    flash('Hmm... Pense à ce que Saïd dit toujours sur ta beauté éternelle 💫', 'error')
                 elif username == 'saïd':
                     flash('Rappelle-toi cette phrase romantique que tu dis souvent 🌙', 'error')
                 else:
@@ -292,7 +292,7 @@ def login():
                     flash('Nom d\'utilisateur ou mot de passe incorrect', 'error')
             elif attempts >= 3:
                 if username == 'fanta':
-                    flash('Ton mot de passe est : "Elle a toujours été magnifique" 💖', 'info')
+                    flash('Ton mot de passe est : "Elle a toujours été belle" 💖', 'info')
                 elif username == 'saïd':
                     flash('Ton mot de passe est : "La lune est belle ce soir" 🌙', 'info')
                 else:
