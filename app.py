@@ -147,13 +147,13 @@ def init_db():
         conn.execute('''
             INSERT INTO users (username, password_hash, favorite_color)
             VALUES (?, ?, ?)
-        ''', ('fanta', generate_password_hash('maninka'), '#ffdde1'))
+        ''', ('fanta', generate_password_hash('Elle a toujours été magnifique'), '#ffdde1'))
     
-    if 'said' not in existing_usernames:
+    if 'saïd' not in existing_usernames:
         conn.execute('''
             INSERT INTO users (username, password_hash, favorite_color)
             VALUES (?, ?, ?)
-        ''', ('said', generate_password_hash('panda2024'), '#e1f5fe'))
+        ''', ('saïd', generate_password_hash('La lune est belle ce soir'), '#e1f5fe'))
     
     # Ajouter quelques défis par défaut
     existing_challenges = conn.execute('SELECT COUNT(*) as count FROM challenges').fetchone()
@@ -235,10 +235,17 @@ def require_login():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    attempts = 0
+    # Récupérer le nombre de tentatives depuis la session
+    if 'login_attempts' not in session:
+        session['login_attempts'] = {}
+    
     if request.method == 'POST':
         username = request.form['username'].lower().strip()
         password = request.form['password']
+        
+        # Initialiser les tentatives pour cet utilisateur si nécessaire
+        if username not in session['login_attempts']:
+            session['login_attempts'][username] = 0
         
         conn = get_db_connection()
         user = conn.execute(
@@ -247,6 +254,8 @@ def login():
         conn.close()
         
         if user and check_password_hash(user['password_hash'], password):
+            # Réinitialiser les tentatives en cas de succès
+            session['login_attempts'][username] = 0
             session['user'] = username
             
             # Mettre à jour les statistiques de connexion
@@ -263,9 +272,40 @@ def login():
             flash('Connexion réussie ! Bienvenue dans votre jardin secret 💖', 'success')
             return redirect(url_for('index'))
         else:
-            flash('Nom d\'utilisateur ou mot de passe incorrect', 'error')
+            # Incrémenter les tentatives
+            session['login_attempts'][username] += 1
+            attempts = session['login_attempts'][username]
+            
+            if attempts == 1:
+                if username == 'fanta':
+                    flash('Hmm... Pense à ce que Saïd dit toujours sur ta beauté 💫', 'error')
+                elif username == 'saïd':
+                    flash('Rappelle-toi cette phrase romantique que tu dis souvent 🌙', 'error')
+                else:
+                    flash('Nom d\'utilisateur ou mot de passe incorrect', 'error')
+            elif attempts == 2:
+                if username == 'fanta':
+                    flash('Indice : "Elle a toujours été..." - tu sais la suite ! ✨', 'error')
+                elif username == 'saïd':
+                    flash('Indice : "La lune est..." - continue la phrase romantique 🌙', 'error')
+                else:
+                    flash('Nom d\'utilisateur ou mot de passe incorrect', 'error')
+            elif attempts >= 3:
+                if username == 'fanta':
+                    flash('Ton mot de passe est : "Elle a toujours été magnifique" 💖', 'info')
+                elif username == 'saïd':
+                    flash('Ton mot de passe est : "La lune est belle ce soir" 🌙', 'info')
+                else:
+                    flash('Trop de tentatives. Contacte l\'administrateur.', 'error')
+            else:
+                flash('Nom d\'utilisateur ou mot de passe incorrect', 'error')
     
-    return render_template('login.html')
+    # Récupérer les tentatives actuelles pour l'affichage
+    current_attempts = {}
+    if 'login_attempts' in session:
+        current_attempts = session['login_attempts']
+    
+    return render_template('login.html', attempts=current_attempts)
 
 @app.route('/logout')
 def logout():

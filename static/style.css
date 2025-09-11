@@ -1468,16 +1468,22 @@ textarea:focus {
 
 /* ===== SYSTÈME DE CONNEXION ===== */
 .login-container {
-    max-width: 450px;
+    max-width: 500px;
     margin: 60px auto;
     padding: 40px;
     background: rgba(30, 26, 77, 0.8);
-    -webkit-backdrop-filter: blur(15px);
     backdrop-filter: blur(15px);
     border-radius: 25px;
     box-shadow: var(--deep-shadow);
     border: 1px solid rgba(236, 240, 241, 0.1);
     text-align: center;
+}
+
+.login-container h2 {
+    color: var(--rose-quartz);
+    font-size: 2em;
+    margin-bottom: 20px;
+    text-shadow: var(--text-shadow);
 }
 
 .login-form {
@@ -1497,6 +1503,7 @@ textarea:focus {
     transition: var(--transition);
     background: rgba(10, 17, 40, 0.6);
     color: var(--moonlight-silver);
+    box-sizing: border-box;
 }
 
 .form-group input:focus {
@@ -1506,21 +1513,8 @@ textarea:focus {
     background: rgba(10, 17, 40, 0.8);
 }
 
-.hint-box {
-    background: rgba(255, 243, 205, 0.2);
-    border: 2px solid rgba(255, 193, 7, 0.3);
-    border-radius: 15px;
-    padding: 20px;
-    margin: 25px 0;
-    font-size: 1.1em;
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
-}
-
-.small-hint {
-    font-size: 0.9em;
-    margin-top: 12px;
-    opacity: 0.8;
+.form-group input::placeholder {
+    color: rgba(236, 240, 241, 0.6);
 }
 
 .login-info {
@@ -1530,6 +1524,29 @@ textarea:focus {
     border-radius: 15px;
     font-size: 0.95em;
     color: var(--moonlight-silver);
+}
+
+.login-info p {
+    margin: 8px 0;
+    opacity: 0.9;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--rose-quartz), var(--mystic-purple));
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 15px;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: var(--transition);
+    width: 100%;
+    font-weight: 600;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(248, 198, 208, 0.4);
 }
 
 /* ===== SYSTÈME MOOD ===== */
