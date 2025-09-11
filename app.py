@@ -412,7 +412,9 @@ def index():
                          visit_count=user_info['visit_count'] if user_info else 0,
                          current_user={'favorite_color': user_info['favorite_color'] if user_info else '#ffdde1'},
                          personal_greeting=greetings.get(user, f"Salut {user.title()}"),
-                         love_quote=get_love_quotes())
+                         love_quote=get_love_quotes(),
+                         now=datetime.now())
+
 
 @app.route('/toggle_favori/<int:phrase_id>')
 def toggle_favori(phrase_id):
