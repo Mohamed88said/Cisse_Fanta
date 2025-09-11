@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌙 Bientôt disponible - Ton Jardin Secret</title>
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Poppins:wght@300;400;500;600&family=Dancing+Script:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        /* Styles de base existants */
+        :root {
+            --midnight-blue: #0a1128;
+            --deep-purple: #1e1a4d;
+            --twilight-blue: #2c3e50;
+            --moonlight-silver: #ecf0f1;
+            --starlight-gold: #f1c40f;
+            --rose-quartz: #f8c6d0;
+            --lavender-blush: #e6e6fa;
+            --mystic-purple: #8e44ad;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Poppins', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #0a1128 0%, #1e1a4d 50%, #2c3e50 100%);
+            color: var(--moonlight-silver);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        /* Animation de fond */
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 5s infinite ease-in-out;
+        }
+        
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 1; }
+        }
+        
+        /* Contenu principal */
+        .locked-container {
+            text-align: center;
+            padding: 2rem;
+            background: rgba(30, 26, 77, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(236, 240, 241, 0.1);
+            max-width: 800px;
+            width: 90%;
+            animation: fadeIn 1.5s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .locked-container h1 {
+            font-family: 'Great Vibes', cursive;
+            font-size: 3.5rem;
+            background: linear-gradient(45deg, var(--rose-quartz), var(--lavender-blush), var(--starlight-gold));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        .locked-container p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+        
+        /* Compte à rebours */
+        .countdown {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin: 2rem 0;
+            flex-wrap: wrap;
+        }
+        
+        .countdown-item {
+            background: rgba(10, 17, 40, 0.6);
+            border-radius: 15px;
+            padding: 1.5rem;
+            min-width: 100px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(248, 198, 208, 0.3);
+            transition: transform 0.3s ease;
+        }
+        
+        .countdown-item:hover {
+            transform: translateY(-5px);
+            border-color: var(--rose-quartz);
+        }
+        
+        .countdown-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--starlight-gold);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+        
+        .countdown-label {
+            font-size: 0.9rem;
+            color: var(--moonlight-silver);
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        /* Message romantique */
+        .romantic-message {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: rgba(248, 198, 208, 0.1);
+            border-radius: 15px;
+            border-left: 4px solid var(--rose-quartz);
+        }
+        
+        .romantic-message p {
+            font-style: italic;
+            font-size: 1.1rem;
+            margin-bottom: 0;
+            color: var(--lavender-blush);
+        }
+        
+        /* Porte mystérieuse */
+        .mystery-door {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 80px;
+            cursor: pointer;
+            z-index: 1000;
+            transition: transform 0.3s ease;
+        }
+        
+        .mystery-door:hover {
+            transform: scale(1.1);
+        }
+        
+        .door-icon {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, #8B4513, #A0522D);
+            border: 3px solid #5D4037;
+            border-radius: 5px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 15px rgba(241, 196, 15, 0.5);
+        }
+        
+        .door-handle {
+            position: absolute;
+            top: 50%;
+            right: 10px;
+            width: 8px;
+            height: 15px;
+            background: #FFD700;
+            border-radius: 10px;
+            transform: translateY(-50%);
+        }
+        
+        .door-knob {
+            position: absolute;
+            top: 50%;
+            right: 5px;
+            width: 5px;
+            height: 5px;
+            background: #FFD700;
+            border-radius: 50%;
+            transform: translateY(-50%);
+        }
+        
+        /* Modal de la porte */
+        .door-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .door-modal-content {
+            background: linear-gradient(135deg, #1e1a4d, #0a1128);
+            padding: 2rem;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 0 30px rgba(248, 198, 208, 0.3);
+            border: 1px solid rgba(248, 198, 208, 0.2);
+            animation: modalFadeIn 0.5s ease-out;
+        }
+        
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        
+        .door-modal h2 {
+            font-family: 'Great Vibes', cursive;
+            font-size: 2.5rem;
+            color: var(--rose-quartz);
+            margin-bottom: 1rem;
+        }
+        
+        .door-modal p {
+            margin-bottom: 1.5rem;
+            color: var(--moonlight-silver);
+        }
+        
+        .door-modal input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 1rem;
+            border: none;
+            border-radius: 10px;
+            background: rgba(236, 240, 241, 0.1);
+            color: var(--moonlight-silver);
+            font-size: 1rem;
+            text-align: center;
+        }
+        
+        .door-modal input::placeholder {
+            color: rgba(236, 240, 241, 0.6);
+        }
+        
+        .door-modal button {
+            background: linear-gradient(45deg, var(--mystic-purple), var(--deep-purple));
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: transform 0.3s ease;
+        }
+        
+        .door-modal button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .modal-message {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 10px;
+            display: none;
+        }
+        
+        .modal-message.success {
+            background: rgba(76, 175, 80, 0.2);
+            border: 1px solid rgba(76, 175, 80, 0.5);
+            color: #4CAF50;
+        }
+        
+        .modal-message.error {
+            background: rgba(244, 67, 54, 0.2);
+            border: 1px solid rgba(244, 67, 54, 0.5);
+            color: #F44336;
+        }
+        
+        /* Animation de l'œil */
+        .eye-container {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 30px;
+            height: 20px;
+            animation: blink 4s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 95%, 98%, 100% { transform: scaleY(1); }
+            96%, 97% { transform: scaleY(0.1); }
+        }
+        
+        .eye {
+            width: 100%;
+            height: 100%;
+            background: #fff;
+            border-radius: 50%;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid #333;
+        }
+        
+        .pupil {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 12px;
+            height: 12px;
+            background: #000;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            animation: lookAround 8s infinite ease-in-out;
+        }
+        
+        @keyframes lookAround {
+            0%, 100% { transform: translate(-50%, -50%); }
+            25% { transform: translate(-30%, -40%); }
+            50% { transform: translate(-60%, -30%); }
+            75% { transform: translate(-40%, -60%); }
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .locked-container h1 {
+                font-size: 2.5rem;
+            }
+            
+            .countdown {
+                gap: 0.5rem;
+            }
+            
+            .countdown-item {
+                padding: 1rem;
+                min-width: 80px;
+            }
+            
+            .countdown-number {
+                font-size: 2rem;
+            }
+            
+            .mystery-door {
+                width: 50px;
+                height: 70px;
+                bottom: 15px;
+                right: 15px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .locked-container {
+                padding: 1.5rem;
+            }
+            
+            .locked-container h1 {
+                font-size: 2rem;
+            }
+            
+            .countdown-item {
+                min-width: 70px;
+                padding: 0.8rem;
+            }
+            
+            .countdown-number {
+                font-size: 1.8rem;
+            }
+            
+            .mystery-door {
+                width: 40px;
+                height: 60px;
+                bottom: 10px;
+                right: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Fond étoilé -->
+    <div class="stars" id="stars"></div>
+    
+    <!-- Œil qui observe -->
+    <div class="eye-container">
+        <div class="eye">
+            <div class="pupil"></div>
+        </div>
+    </div>
+    
+    <div class="locked-container">
+        <h1>🌙 Ton Jardin Secret</h1>
+        <p>Quelque chose de merveilleux se prépare pour toi...</p>
+        
+        <div class="countdown">
+            <div class="countdown-item">
+                <span class="countdown-number" id="days">{{ days }}</span>
+                <span class="countdown-label">Jours</span>
+            </div>
+            <div class="countdown-item">
+                <span class="countdown-number" id="hours">{{ hours }}</span>
+                <span class="countdown-label">Heures</span>
+            </div>
+            <div class="countdown-item">
+                <span class="countdown-number" id="minutes">{{ minutes }}</span>
+                <span class="countdown-label">Minutes</span>
+            </div>
+            <div class="countdown-item">
+                <span class="countdown-number" id="seconds">{{ seconds }}</span>
+                <span class="countdown-label">Secondes</span>
+            </div>
+        </div>
+        
+        <p>Le site sera accessible à partir du <strong>{{ unlock_date.strftime('%d/%m/%Y à %H:%M') }}</strong></p>
+        
+        <div class="romantic-message">
+            <p>"Les plus belles choses prennent du temps à mûrir. La patience est la clé de tous les trésors."</p>
+        </div>
+    </div>
+    
+    <!-- Porte mystérieuse -->
+    <div class="mystery-door" id="mysteryDoor">
+        <div class="door-icon">
+            <div class="door-handle"></div>
+            <div class="door-knob"></div>
+        </div>
+    </div>
+    
+    <!-- Modal de la porte -->
+    <div class="door-modal" id="doorModal">
+        <div class="door-modal-content">
+            <h2>Qui va là ?</h2>
+            <p>Une porte mystérieuse apparaît... Qui es-tu pour vouloir entrer avant l'heure ?</p>
+            
+            <input type="text" id="userName" placeholder="Qui es-tu ?">
+            <input type="password" id="secretPassword" placeholder="Mot de passe secret">
+            
+            <button id="unlockButton">Tenter ma chance</button>
+            
+            <div class="modal-message" id="modalMessage"></div>
+        </div>
+    </div>
+
+    <script>
+        // Créer les étoiles en fond
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            const starsCount = 150;
+            
+            for (let i = 0; i < starsCount; i++) {
+                const star = document.createElement('div');
+                star.classList.add('star');
+                
+                // Position aléatoire
+                star.style.top = Math.random() * 100 + '%';
+                star.style.left = Math.random() * 100 + '%';
+                
+                // Taille aléatoire
+                const size = Math.random() * 3 + 1;
+                star.style.width = size + 'px';
+                star.style.height = size + 'px';
+                
+                // Délai d'animation aléatoire
+                star.style.animationDelay = Math.random() * 5 + 's';
+                star.style.animationDuration = Math.random() * 3 + 3 + 's';
+                
+                starsContainer.appendChild(star);
+            }
+        }
+        
+        // Mettre à jour le compte à rebours en temps réel
+        function updateCountdown() {
+            const daysElem = document.getElementById('days');
+            const hoursElem = document.getElementById('hours');
+            const minutesElem = document.getElementById('minutes');
+            const secondsElem = document.getElementById('seconds');
+            
+            // Les valeurs initiales venant du serveur
+            let days = parseInt(daysElem.textContent);
+            let hours = parseInt(hoursElem.textContent);
+            let minutes = parseInt(minutesElem.textContent);
+            let seconds = parseInt(secondsElem.textContent);
+            
+            setInterval(() => {
+                seconds--;
+                
+                if (seconds < 0) {
+                    seconds = 59;
+                    minutes--;
+                    
+                    if (minutes < 0) {
+                        minutes = 59;
+                        hours--;
+                        
+                        if (hours < 0) {
+                            hours = 23;
+                            days--;
+                            
+                            if (days < 0) {
+                                // Le compte à rebours est terminé, recharger la page
+                                window.location.reload();
+                                return;
+                            }
+                        }
+                    }
+                }
+                
+                // Mettre à jour l'affichage
+                daysElem.textContent = days;
+                hoursElem.textContent = hours.toString().padStart(2, '0');
+                minutesElem.textContent = minutes.toString().padStart(2, '0');
+                secondsElem.textContent = seconds.toString().padStart(2, '0');
+            }, 1000);
+        }
+        
+        // Gestion de la porte mystérieuse
+        document.addEventListener('DOMContentLoaded', () => {
+            createStars();
+            updateCountdown();
+            
+            const mysteryDoor = document.getElementById('mysteryDoor');
+            const doorModal = document.getElementById('doorModal');
+            const unlockButton = document.getElementById('unlockButton');
+            const userNameInput = document.getElementById('userName');
+            const secretPasswordInput = document.getElementById('secretPassword');
+            const modalMessage = document.getElementById('modalMessage');
+            
+            // Afficher la modal quand on clique sur la porte
+            mysteryDoor.addEventListener('click', () => {
+                doorModal.style.display = 'flex';
+            });
+            
+            // Fermer la modal en cliquant à l'extérieur
+            doorModal.addEventListener('click', (e) => {
+                if (e.target === doorModal) {
+                    doorModal.style.display = 'none';
+                    modalMessage.style.display = 'none';
+                }
+            });
+            
+            // Tentative de déverrouillage
+            unlockButton.addEventListener('click', () => {
+                const name = userNameInput.value.trim().toLowerCase();
+                const password = secretPasswordInput.value.trim();
+                
+                fetch('/unlock_special', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ name, password })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    modalMessage.textContent = data.message;
+                    modalMessage.className = 'modal-message ' + (data.success ? 'success' : 'error');
+                    modalMessage.style.display = 'block';
+                    
+                    if (data.success) {
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 2000);
+                    }
+                })
+                .catch(error => {
+                    modalMessage.textContent = 'Erreur de connexion. Réessaie.';
+                    modalMessage.className = 'modal-message error';
+                    modalMessage.style.display = 'block';
+                });
+            });
+            
+            // Permettre d'appuyer sur Entrée pour valider
+            secretPasswordInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    unlockButton.click();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

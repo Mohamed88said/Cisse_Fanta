@@ -18,6 +18,9 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 # Configuration de la base de données
 DATABASE = os.environ.get('DATABASE_PATH', 'instance/database.db')
 
+# Date de déverrouillage (27 septembre 2025)
+UNLOCK_DATE = datetime(2025, 9, 27)
+
 # Extensions de fichiers autorisées
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
@@ -227,6 +230,10 @@ def get_love_quotes():
     ]
     return random.choice(quotes)
 
+def is_site_unlocked():
+    """Vérifie si le site est déverrouillé (après le 27 septembre 2025)"""
+    return datetime.now() >= UNLOCK_DATE
+
 # Créer le dossier uploads s'il n'existe pas
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs('instance', exist_ok=True)
@@ -235,11 +242,74 @@ os.makedirs('instance', exist_ok=True)
 init_db()
 
 @app.before_request
+def check_access():
+    """Vérifie l'accès au site selon la date de déverrouillage"""
+    # Pages autorisées même quand le site est verrouillé
+    allowed_paths = ['/login', '/static', '/locked', '/logout', '/unlock_special', '/special_access']
+    
+    # Vérifier si le site est toujours verrouillé
+    if not is_site_unlocked():
+        # Si l'utilisateur a déjà accès spécial, le laisser passer
+        if session.get('special_access'):
+            return
+        
+        # Vérifier si l'utilisateur essaie d'accéder à une page non autorisée
+        if not any(request.path.startswith(path) for path in allowed_paths):
+            return redirect(url_for('locked_page'))
+        
+@app.before_request
 def require_login():
-    """Vérifie que l'utilisateur est connecté pour toutes les routes sauf login"""
-    if request.endpoint and request.endpoint != 'login' and 'user' not in session:
+    """Vérifie que l'utilisateur est connecté pour toutes les routes sauf login et locked"""
+    if (request.endpoint and 
+        request.endpoint not in ['login', 'locked_page', 'static', 'unlock_special'] and 
+        'user' not in session):
         return redirect(url_for('login'))
 
+@app.route('/locked')
+def locked_page():
+    """Page de verrouillage avec compte à rebours"""
+    # Calculer le temps restant jusqu'au déverrouillage
+    now = datetime.now()
+    time_remaining = UNLOCK_DATE - now
+    
+    # Formater le temps restant
+    days = time_remaining.days
+    hours, remainder = divmod(time_remaining.seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    
+    return render_template('locked.html', 
+                         unlock_date=UNLOCK_DATE,
+                         days=days,
+                         hours=hours,
+                         minutes=minutes,
+                         seconds=seconds)
+
+@app.route('/unlock_special', methods=['POST'])
+def unlock_special():
+    """API pour déverrouiller l'accès spécial (utilisée par la porte mystérieuse)"""
+    if is_site_unlocked():
+        return jsonify({'success': True, 'message': 'Le site est déjà déverrouillé'})
+    
+    data = request.get_json()
+    name = data.get('name', '').strip().lower()
+    password = data.get('password', '').strip()
+    
+    if name == 'saïd':
+        session['special_access'] = True
+        return jsonify({
+            'success': True,
+            'message': 'Accès spécial accordé ! Bienvenue Saïd.'
+        })
+    elif password == '2708':
+        return jsonify({
+            'success': False,
+            'message': 'Ohhhh bien tenté Fanta ! Je t\'ai reconnu, tu as cru que ça serait si facile que ça ? Tu vas patienter.'
+        })
+    else:
+        return jsonify({
+            'success': False,
+            'message': 'Accès refusé. Merci de patienter.'
+        })
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     # Récupérer le nombre de tentatives depuis la session
@@ -277,7 +347,12 @@ def login():
             
             log_activity(username, 'login')
             flash('Connexion réussie ! Bienvenue dans ton jardin secret 💖', 'success')
-            return redirect(url_for('index'))
+            
+            # Rediriger vers la page appropriée selon l'état de déverrouillage
+            if is_site_unlocked() or session.get('special_access'):
+                return redirect(url_for('index'))
+            else:
+                return redirect(url_for('locked_page'))
         else:
             # Incrémenter les tentatives
             session['login_attempts'][username] += 1
@@ -314,17 +389,47 @@ def login():
     
     return render_template('login.html', attempts=current_attempts)
 
+
+
+@app.route('/special_access', methods=['GET', 'POST'])
+def special_access():
+    """Page d'accès spécial avec l'œil qui observe"""
+    if is_site_unlocked():
+        return redirect(url_for('index'))
+    
+    if request.method == 'POST':
+        name = request.form['name'].strip().lower()
+        password = request.form['password'].strip()
+        
+        if name == 'saïd':
+            session['special_access'] = True
+            flash('Accès spécial accordé ! Bienvenue Saïd.', 'success')
+            return redirect(url_for('index'))
+        elif password == '2708':
+            flash('Ohhhh bien tenté Fanta ! Je t\'ai reconnu, tu as cru que ça serait si facile que ça ? Tu vas patienter.', 'error')
+        else:
+            flash('Accès refusé. Merci de patienter.', 'error')
+    
+    return render_template('special_access.html')
+
+
+
 @app.route('/logout')
 def logout():
     user = session.get('user')
     if user:
         log_activity(user, 'logout')
     session.pop('user', None)
+    session.pop('special_access', None)
     flash('Déconnexion réussie. À bientôt ! 👋', 'info')
     return redirect(url_for('login'))
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
+    # Vérifier si le site est déverrouillé
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
     user = session['user']
     page = request.args.get('page', 1, type=int)
     per_page = 10
@@ -415,9 +520,12 @@ def index():
                          love_quote=get_love_quotes(),
                          now=datetime.now())
 
-
 @app.route('/toggle_favori/<int:phrase_id>')
 def toggle_favori(phrase_id):
+    # Vérifier si le site est déverrouillé
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
     conn = get_db_connection()
     phrase = conn.execute('SELECT est_favori FROM phrases WHERE id = ?', (phrase_id,)).fetchone()
     
@@ -434,6 +542,10 @@ def toggle_favori(phrase_id):
 
 @app.route('/like_phrase/<int:phrase_id>')
 def like_phrase(phrase_id):
+    # Vérifier si le site est déverrouillé
+    if not is_site_unlocked() and not session.get('special_access'):
+        return jsonify({'error': 'Site verrouillé'}), 403
+    
     conn = get_db_connection()
     conn.execute('UPDATE phrases SET likes = likes + 1 WHERE id = ?', (phrase_id,))
     conn.commit()
@@ -448,6 +560,10 @@ def like_phrase(phrase_id):
 
 @app.route('/supprimer_phrase/<int:phrase_id>')
 def supprimer_phrase(phrase_id):
+    # Vérifier si le site est déverrouillé
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
     user = session['user']
     conn = get_db_connection()
     
@@ -467,6 +583,10 @@ def supprimer_phrase(phrase_id):
 
 @app.route('/galerie')
 def galerie():
+    # Vérifier si le site est déverrouillé
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
     page = request.args.get('page', 1, type=int)
     per_page = 12
     
@@ -504,6 +624,10 @@ def galerie():
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
+    # Vérifier si le site est déverrouillé
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
     if 'file' not in request.files:
         flash('Aucun fichier sélectionné', 'error')
         return redirect(url_for('galerie'))
@@ -546,6 +670,10 @@ def upload_file():
 
 @app.route('/like_photo/<int:photo_id>')
 def like_photo(photo_id):
+    # Vérifier si le site est déverrouillé
+    if not is_site_unlocked() and not session.get('special_access'):
+        return jsonify({'error': 'Site verrouillé'}), 403
+    
     conn = get_db_connection()
     conn.execute('UPDATE photos SET likes = likes + 1 WHERE id = ?', (photo_id,))
     conn.commit()
@@ -560,6 +688,10 @@ def like_photo(photo_id):
 
 @app.route('/supprimer_photo/<int:photo_id>')
 def supprimer_photo(photo_id):
+    # Vérifier si le site est déverrouillé
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
     user = session['user']
     conn = get_db_connection()
     
@@ -588,6 +720,10 @@ def supprimer_photo(photo_id):
 
 @app.route('/mood', methods=['GET', 'POST'])
 def mood():
+    # Vérifier si le site est déverrouillé
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
     if request.method == 'POST':
         selected_mood = request.form['mood']
         log_activity(session['user'], 'mood_checked', f'Mood: {selected_mood}')
@@ -597,6 +733,10 @@ def mood():
 
 @app.route('/mood_result/<mood>')
 def mood_result(mood):
+    # Vérifier si le site est déverrouillé
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
     verses = load_mood_verses()
     
     # Sélectionner un verset aléatoire pour l'humeur
@@ -607,7 +747,7 @@ def mood_result(mood):
         verse = {
             "arabic": "وَاللَّهُ يُحِبُّ الْمُحْسِنِينَ",
             "french": "Et Allah aime les bienfaisants",
-            "explanation": "Allah aime ceux qui font le bien.",
+            "explanation": "Allah aime ceux qui fait le bien.",
             "conclusion": "Continue à faire le bien, Allah t'aime."
         }
     
@@ -615,6 +755,10 @@ def mood_result(mood):
 
 @app.route('/search')
 def search():
+    # Vérifier si le site est déverrouillé
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
     query = request.args.get('q', '').strip()
     phrases = []
     
@@ -633,6 +777,10 @@ def search():
 
 @app.route('/letters')
 def letters():
+    # Vérifier si le site est déverrouillé
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
     user = session['user']
     conn = get_db_connection()
     
@@ -659,6 +807,10 @@ def letters():
 
 @app.route('/write_letter', methods=['GET', 'POST'])
 def write_letter():
+    # Vérifier si le site est déverrouillé
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
     user = session['user']
     recipient = 'maninka mousso' if user == 'panda bg' else 'panda bg'
     
@@ -683,6 +835,10 @@ def write_letter():
 
 @app.route('/read_letter/<int:letter_id>')
 def read_letter(letter_id):
+    # Vérifier si le site est déverrouillé
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
     user = session['user']
     conn = get_db_connection()
     
@@ -709,6 +865,10 @@ def read_letter(letter_id):
 
 @app.route('/memories')
 def memories():
+    # Vérifier si le site est déverrouillé
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
     conn = get_db_connection()
     
     # Souvenirs anniversaires
@@ -734,6 +894,10 @@ def memories():
 
 @app.route('/add_memory', methods=['GET', 'POST'])
 def add_memory():
+    # Vérifier si le site est déverrouillé
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
     if request.method == 'POST':
         title = request.form['title'].strip()
         description = request.form['description'].strip()
@@ -757,6 +921,10 @@ def add_memory():
 
 @app.route('/love_calendar')
 def love_calendar():
+    # Vérifier si le site est déverrouillé
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
     # Implémentation basique du calendrier
     from calendar import monthcalendar
     import calendar
@@ -800,6 +968,10 @@ def love_calendar():
 
 @app.route('/add_calendar_event', methods=['POST'])
 def add_calendar_event():
+    # Vérifier si le site est déverrouillé
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
     title = request.form['title'].strip()
     event_date = request.form['event_date']
     event_type = request.form['event_type']
@@ -820,6 +992,10 @@ def add_calendar_event():
 
 @app.route('/love_challenges')
 def love_challenges():
+    # Vérifier si le site est déverrouillé
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
     conn = get_db_connection()
     
     # Défis actifs
@@ -852,6 +1028,10 @@ def love_challenges():
 
 @app.route('/complete_challenge/<int:challenge_id>')
 def complete_challenge(challenge_id):
+    # Vérifier si le site est déverrouillé
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
     conn = get_db_connection()
     
     # Marquer le défi comme terminé
@@ -869,6 +1049,10 @@ def complete_challenge(challenge_id):
 
 @app.route('/personalize', methods=['GET', 'POST'])
 def personalize():
+    # Vérifier si le site est déverrouillé
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
     user = session['user']
     
     if request.method == 'POST':
@@ -898,6 +1082,10 @@ def personalize():
 
 @app.route('/stats')
 def stats():
+    # Vérifier si le site est déverrouillé
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
     conn = get_db_connection()
     
     # Statistiques générales
@@ -945,6 +1133,10 @@ def stats():
 
 @app.route('/birthday_surprise')
 def birthday_surprise():
+    # Vérifier si le site est déverrouillé
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
     # Vérifier que c'est Maninka Mousso et que c'est son anniversaire
     if session['user'] != 'maninka mousso':
         flash('Cette page est réservée à Maninka Mousso ! 😊', 'info')
@@ -1019,3 +1211,8 @@ if __name__ == '__main__':
     debug = os.environ.get('FLASK_ENV') == 'development'
     
     app.run(host='0.0.0.0', port=port, debug=debug)
+
+
+
+
+

@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accès Spécial - Ton Jardin Secret</title>
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Poppins:wght@300;400;500;600&family=Dancing+Script:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --midnight-blue: #0a1128;
+            --deep-purple: #1e1a4d;
+            --twilight-blue: #2c3e50;
+            --moonlight-silver: #ecf0f1;
+            --starlight-gold: #f1c40f;
+            --rose-quartz: #f8c6d0;
+            --lavender-blush: #e6e6fa;
+            --mystic-purple: #8e44ad;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #0a1128 0%, #1e1a4d 50%, #2c3e50 100%);
+            color: var(--moonlight-silver);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 5s infinite ease-in-out;
+        }
+        
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 1; }
+        }
+        
+        .access-container {
+            background: rgba(30, 26, 77, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2.5rem;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(248, 198, 208, 0.3);
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+            animation: fadeIn 1s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .eye-container {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 2rem;
+        }
+        
+        .eye {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 35% 40%, #f5f5f5 10%, #ddd 65%);
+            border-radius: 50%;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(241, 196, 15, 0.5);
+            animation: blink 4s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 94%, 98%, 100% { height: 100%; }
+            96% { height: 10%; }
+        }
+        
+        .pupil {
+            position: absolute;
+            width: 40%;
+            height: 40%;
+            background: radial-gradient(circle at 35% 35%, #2c3e50 10%, #0a1128 90%);
+            border-radius: 50%;
+            top: 30%;
+            left: 30%;
+            transition: all 0.3s ease;
+        }
+        
+        .eye:hover .pupil {
+            transform: scale(1.1);
+        }
+        
+        .eyelid {
+            position: absolute;
+            width: 100%;
+            height: 50%;
+            background: var(--deep-purple);
+            border-radius: 50%;
+            z-index: 2;
+            animation: eyelidMove 8s infinite;
+        }
+        
+        @keyframes eyelidMove {
+            0%, 90%, 100% { top: -50%; }
+            92%, 96% { top: -10%; }
+            94% { top: -30%; }
+        }
+        
+        h1 {
+            font-family: 'Great Vibes', cursive;
+            font-size: 2.5rem;
+            background: linear-gradient(45deg, var(--rose-quartz), var(--lavender-blush), var(--starlight-gold));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1.5rem;
+        }
+        
+        p {
+            margin-bottom: 1.5rem;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+        
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+        }
+        
+        .form-group {
+            text-align: left;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--lavender-blush);
+        }
+        
+        input {
+            width: 100%;
+            padding: 0.8rem 1.2rem;
+            border: 2px solid rgba(248, 198, 208, 0.3);
+            border-radius: 10px;
+            background: rgba(10, 17, 40, 0.6);
+            color: var(--moonlight-silver);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: var(--rose-quartz);
+            box-shadow: 0 0 10px rgba(248, 198, 208, 0.5);
+        }
+        
+        button {
+            background: linear-gradient(45deg, var(--mystic-purple), var(--deep-purple));
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+        }
+        
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(142, 68, 173, 0.4);
+        }
+        
+        .flash-messages {
+            margin-bottom: 1.5rem;
+        }
+        
+        .alert {
+            padding: 0.8rem 1.2rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+        
+        .alert-error {
+            background: rgba(231, 76, 60, 0.2);
+            border: 1px solid rgba(231, 76, 60, 0.5);
+            color: #e74c3c;
+        }
+        
+        .alert-success {
+            background: rgba(46, 204, 113, 0.2);
+            border: 1px solid rgba(46, 204, 113, 0.5);
+            color: #2ecc71;
+        }
+        
+        .alert-warning {
+            background: rgba(241, 196, 15, 0.2);
+            border: 1px solid rgba(241, 196, 15, 0.5);
+            color: #f1c40f;
+        }
+        
+        @media (max-width: 768px) {
+            .access-container {
+                padding: 2rem 1.5rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .eye-container {
+                width: 100px;
+                height: 100px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Fond étoilé -->
+    <div class="stars" id="stars"></div>
+    
+    <div class="access-container">
+        <div class="eye-container">
+            <div class="eye">
+                <div class="pupil"></div>
+            </div>
+            <div class="eyelid"></div>
+        </div>
+        
+        <h1>Qui es-tu?</h1>
+        <p>Identifie-toi pour accéder au jardin secret avant l'heure...</p>
+        
+        <div class="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+        
+        <form method="POST">
+            <div class="form-group">
+                <label for="name">Ton nom</label>
+                <input type="text" id="name" name="name" required autocomplete="off">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Mot de passe secret</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            
+            <button type="submit">Entrer dans le jardin 🌸</button>
+        </form>
+    </div>
+
+    <script>
+        // Créer les étoiles en fond
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            const starsCount = 100;
+            
+            for (let i = 0; i < starsCount; i++) {
+                const star = document.createElement('div');
+                star.classList.add('star');
+                
+                star.style.top = Math.random() * 100 + '%';
+                star.style.left = Math.random() * 100 + '%';
+                
+                const size = Math.random() * 3 + 1;
+                star.style.width = size + 'px';
+                star.style.height = size + 'px';
+                
+                star.style.animationDelay = Math.random() * 5 + 's';
+                star.style.animationDuration = Math.random() * 3 + 3 + 's';
+                
+                starsContainer.appendChild(star);
+            }
+        }
+        
+        // Animation de l'œil qui suit la souris
+        document.addEventListener('mousemove', (e) => {
+            const pupil = document.querySelector('.pupil');
+            if (!pupil) return;
+            
+            const eye = document.querySelector('.eye');
+            const eyeRect = eye.getBoundingClientRect();
+            
+            const eyeCenterX = eyeRect.left + eyeRect.width / 2;
+            const eyeCenterY = eyeRect.top + eyeRect.height / 2;
+            
+            const mouseX = e.clientX;
+            const mouseY = e.clientY;
+            
+            const angle = Math.atan2(mouseY - eyeCenterY, mouseX - eyeCenterX);
+            const distance = Math.min(15, Math.sqrt(
+                Math.pow(mouseX - eyeCenterX, 2) + 
+                Math.pow(mouseY - eyeCenterY, 2)
+            ) / 20);
+            
+            const moveX = Math.cos(angle) * distance;
+            const moveY = Math.sin(angle) * distance;
+            
+            pupil.style.transform = `translate(${moveX}px, ${moveY}px)`;
+        });
+        
+        // Initialiser
+        document.addEventListener('DOMContentLoaded', () => {
+            createStars();
+        });
+    </script>
+</body>
+</html>
