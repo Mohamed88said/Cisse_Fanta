@@ -26,7 +26,118 @@
     {% endwith %}
 
     <div class="login-info">
-        <p>💭 Pour Fanta : "Elle a toujours été belle"</p>
-        <p>💭 Pour Saïd : "La lune est belle ce soir"</p>
+        <p>💭 Pour Fanta : souviens-toi de notre conversation spéciale...</p>
     </div>
+</div>
+
+<style>
+/* Gardez uniquement le CSS ici */
+.login-container {
+    max-width: 400px;
+    margin: 40px auto;
+    padding: 30px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.login-form {
+    margin: 30px 0;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 15px;
+    border: 2px solid #eee;
+    border-radius: 10px;
+    font-size: 1.1em;
+    transition: all 0.3s ease;
+    background-color: #ffffff;
+    color: #333333; /* Ajout de la couleur de texte */
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #e60073;
+    box-shadow: 0 0 0 3px rgba(230, 0, 115, 0.1);
+    color: #333333; /* Assurer la couleur du texte en focus */
+}
+
+.form-group input::placeholder {
+    color: #999999; /* Couleur du texte placeholder */
+}
+
+.hint-box {
+    background: #fff3cd;
+    border: 2px solid #ffc107;
+    border-radius: 10px;
+    padding: 15px;
+    margin: 20px 0;
+    font-size: 1.1em;
+    color: #333333; /* Ajout de la couleur de texte */
+}
+
+.small-hint {
+    font-size: 0.9em;
+    margin-top: 10px;
+    opacity: 0.8;
+    color: #333333; /* Ajout de la couleur de texte */
+}
+
+.login-info {
+    margin-top: 30px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    font-size: 0.9em;
+    color: #666666;
+}
+
+.flash {
+    padding: 15px;
+    margin: 20px 0;
+    border-radius: 10px;
+    font-weight: bold;
+}
+
+.flash.error {
+    background-color: #ffebee;
+    color: #c62828;
+    border: 2px solid #ef5350;
+}
+
+.flash.success {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    border: 2px solid #66bb6a;
+}
+
+.flash.info {
+    background-color: #e3f2fd;
+    color: #1565c0;
+    border: 2px solid #42a5f5;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #e60073, #ff4da6);
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 10px;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(230, 0, 115, 0.3);
+}
+</style>
 {% endblock %}
