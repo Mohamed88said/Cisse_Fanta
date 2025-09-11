@@ -217,13 +217,13 @@ def load_mood_verses():
 def get_love_quotes():
     """Retourne une liste de citations d'amour"""
     quotes = [
-        "L'amour est la seule force capable de transformer un ennemi en ami.",
-        "Aimer, ce n'est pas se regarder l'un l'autre, c'est regarder ensemble dans la même direction.",
-        "Il n'y a qu'un bonheur dans la vie, c'est d'aimer et d'être aimé.",
-        "L'amour ne se voit pas avec les yeux, mais avec le cœur.",
-        "Aimer quelqu'un profondément vous donne de la force.",
-        "L'amour véritable ne finit jamais.",
-        "Dans tes yeux, j'ai trouvé mon foyer."
+        "N'oublie pas que je pense à toi ",
+        "Prend soin de toi et de ton bonheur avant les autres",
+        "Appelle-moi quand tu veux, je suis là pour toi même si on se dispute ou on ne se voit pas",
+        "La lune est belle ce soir.",
+        "Tu es l'une des meilleurs choses qui me soit arrivée.",
+        "Mange bien et fait des activités que tu aimes avec des gens que tu aimes ou seule si tu préfères",
+        "Tu es belle à l'intérieur comme à l'extérieur",
     ]
     return random.choice(quotes)
 
@@ -276,7 +276,7 @@ def login():
             conn.close()
             
             log_activity(username, 'login')
-            flash('Connexion réussie ! Bienvenue dans votre jardin secret 💖', 'success')
+            flash('Connexion réussie ! Bienvenue dans ton jardin secret 💖', 'success')
             return redirect(url_for('index'))
         else:
             # Incrémenter les tentatives
@@ -285,9 +285,9 @@ def login():
             
             if attempts == 1:
                 if username == 'maninka mousso':
-                    flash('Hmm... Pense à ce que Panda BG dit toujours sur ta beauté éternelle 💫', 'error')
+                    flash('Hmm... Pense à ce que je te dit toujours sur ta beauté 💫', 'error')
                 elif username == 'panda bg':
-                    flash('Rappelle-toi cette phrase romantique que tu dis souvent 🌙', 'error')
+                    flash('Rappelle-toi cette phrase romantique qui est une déclaration à nous 🌙', 'error')
                 else:
                     flash('Nom d\'utilisateur ou mot de passe incorrect', 'error')
             elif attempts == 2:
@@ -399,7 +399,7 @@ def index():
     
     # Salutation personnalisée
     greetings = {
-        'maninka mousso': "Salut ma maninka mousso préférée",
+        'maninka mousso': "Salut ma maninka mousso préférée( seule d'ailleurs 😂 )",
         'panda bg': "Salut mon panda préféré"
     }
     
@@ -962,18 +962,18 @@ Aujourd'hui est un jour très spécial car c'est TON jour ! 🎉
 
 J'ai créé ce site entier comme une déclaration d'amour pour toi. Chaque ligne de code, chaque couleur, chaque fonctionnalité a été pensée avec amour pour te faire sourire.
 
-Tu es ma maninka mousso, ma femme de valeur, celle qui illumine mes journées et réchauffe mon cœur. Ton sourire est mon soleil, ta voix est ma mélodie préférée, et ton amour est mon plus grand trésor.
+Tu es ma maninka mousso, la plus gentille, la plus belle, celle qui sait me faire rire. Ton sourire, ta voix, ton amour tout est un trésor.
 
 Pour ton anniversaire, j'ai voulu t'offrir quelque chose d'unique : notre propre jardin secret numérique où nous pouvons cultiver notre amour, partager nos souvenirs et écrire notre histoire.
 
 Que cette nouvelle année de ta vie soit remplie de bonheur, de réussites, de rires et surtout... de nous ! 💕
 
-Je t'aime plus que les mots ne peuvent l'exprimer, plus que les étoiles dans le ciel, plus que tout au monde.
+Je t'aime plus que les mots ne peuvent l'exprimer, plus que les étoiles dans le ciel, plus que tu ne le sais toi-même.
 
-Joyeux anniversaire ma princesse ! 👑
+Joyeux anniversaire la plus belle et gentille ! 👑
 
-Ton panda qui t'aime à la folie,
-Panda BG 💖
+Ton panda qui trouve la lune si  belle chaque soir 🌙,
+Ton plus grand fan 💖
 
 P.S. : Explore toutes les nouvelles fonctionnalités que j'ai ajoutées spécialement pour ton anniversaire ! 🎁'''
     }
