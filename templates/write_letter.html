@@ -23,7 +23,7 @@
     <div class="letter-paper">
         <div class="paper-header">
             <h2>💌 Pour {{ recipient|title }}</h2>
-            <p class="paper-date">{{ moment().strftime('%d %B %Y') if moment else '' }}</p>
+            <p class="paper-date">{{ moment() if moment else '' }}</p>
         </div>
         
         <form method="POST" class="letter-form">

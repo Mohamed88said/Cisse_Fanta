@@ -30,8 +30,8 @@
                 <div class="memory-item anniversary">
                     <div class="memory-date">
                         <div class="date-circle">
-                            <span class="day">{{ memory.date_memory.strftime('%d') }}</span>
-                            <span class="month">{{ memory.date_memory.strftime('%b') }}</span>
+                            <span class="day">{{ memory.date_memory }}</span>
+                            <span class="month">{{ memory.date_memory }}</span>
                         </div>
                     </div>
                     <div class="memory-content">
@@ -39,7 +39,7 @@
                         <p class="memory-description">{{ memory.description }}</p>
                         <div class="memory-meta">
                             <span class="memory-author">Ajouté par {{ memory.author }}</span>
-                            <span class="memory-created">{{ memory.created_at.strftime('%d/%m/%Y') }}</span>
+                            <span class="memory-created">{{ memory.created_at }}</span>
                         </div>
                     </div>
                     <div class="anniversary-badge">🎊</div>
@@ -58,8 +58,8 @@
                     <div class="memory-item">
                         <div class="memory-date">
                             <div class="date-circle">
-                                <span class="day">{{ memory.date_memory.strftime('%d') }}</span>
-                                <span class="month">{{ memory.date_memory.strftime('%b') }}</span>
+                                <span class="day">{{ memory.date_memory }}</span>
+                                <span class="month">{{ memory.date_memory }}</span>
                             </div>
                         </div>
                         <div class="memory-content">
@@ -67,7 +67,7 @@
                             <p class="memory-description">{{ memory.description }}</p>
                             <div class="memory-meta">
                                 <span class="memory-author">Ajouté par {{ memory.author }}</span>
-                                <span class="memory-created">{{ memory.created_at.strftime('%d/%m/%Y') }}</span>
+                                <span class="memory-created">{{ memory.created_at }}</span>
                             </div>
                         </div>
                     </div>

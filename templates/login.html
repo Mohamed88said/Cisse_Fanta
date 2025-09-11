@@ -1,98 +1,70 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="login-container">
-    <div class="login-header">
-        <h1>🌙 Bienvenue dans votre Jardin Secret</h1>
-        <p>Connectez-vous pour accéder à vos souvenirs précieux</p>
+<div class="header-container">
+    <h1>💌 Bienvenue dans votre Jardin Secret</h1>
+    <div class="user-welcome">
+        <span class="welcome-text">Connectez-vous pour accéder à vos souvenirs précieux</span>
     </div>
     
-    <div class="login-form-container">
-        <h2>💖 Connexion</h2>
+    <!-- Citation d'amour comme dans index.html -->
+    <div class="daily-quote">
+        <p class="love-quote">"Aimer quelqu'un profondément vous donne de la force."</p>
+        <small>💝 Citation du jour</small>
+    </div>
+</div>
+
+<div class="login-form-container">
+    <h2>💖 Connexion</h2>
+    
+    <form method="POST" class="login-form">
+        <div class="form-group">
+            <label for="username">Nom d'utilisateur</label>
+            <input type="text" name="username" id="username" placeholder="maninka mousso ou panda bg" required class="form-input">
+        </div>
         
-        <form method="POST" class="login-form">
-            <div class="form-group">
-                <label for="username">Nom d'utilisateur</label>
-                <input type="text" name="username" id="username" placeholder="fanta ou saïd" required class="form-input">
-            </div>
-            
-            <div class="form-group">
-                <label for="password">Mot de passe</label>
-                <input type="password" name="password" id="password" placeholder="Votre phrase secrète..." required class="form-input">
-            </div>
-            
-            <button type="submit" class="btn btn-primary btn-login">Se connecter 💕</button>
-        </form>
+        <div class="form-group">
+            <label for="password">Mot de passe</label>
+            <input type="password" name="password" id="password" placeholder="Votre phrase secrète..." required class="form-input">
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Se connecter 💕</button>
+    </form>
 
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div class="flash-messages">
-                    {% for category, message in messages %}
-                        <div class="flash flash-{{ category }}">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endif %}
-        {% endwith %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                    <div class="flash {{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
 
-        <div class="login-hints">
-            <div class="hint-box">
-                <h3>💭 Indices pour vous aider</h3>
-                <div class="hints-grid">
-                    <div class="hint-item">
-                        <span class="hint-icon">👸</span>
-                        <div class="hint-content">
-                            <strong>Pour Fanta :</strong>
-                            <p>Une phrase que Saïd dit toujours sur ta beauté...</p>
-                        </div>
-                    </div>
-                    <div class="hint-item">
-                        <span class="hint-icon">🌙</span>
-                        <div class="hint-content">
-                            <strong>Pour Saïd :</strong>
-                            <p>Ta phrase romantique préférée sur la lune...</p>
-                        </div>
+    <div class="login-hints">
+        <div class="hint-box">
+            <h3>💭 Indices pour vous aider</h3>
+            <div class="hints-grid">
+                <div class="hint-item">
+                    <span class="hint-icon">👸</span>
+                    <div class="hint-content">
+                        <strong>Pour Maninka Mousso :</strong>
+                        <p>Une phrase que Panda BG dit toujours sur ta beauté...</p>
                     </div>
                 </div>
-                <p class="hint-note">💡 Après 3 tentatives, le mot de passe vous sera révélé</p>
+                <div class="hint-item">
+                    <span class="hint-icon">🌙</span>
+                    <div class="hint-content">
+                        <strong>Pour Panda BG :</strong>
+                        <p>Ta phrase romantique préférée sur la lune...</p>
+                    </div>
+                </div>
             </div>
+            <p class="hint-note">💡 Après 3 tentatives, le mot de passe vous sera révélé</p>
         </div>
     </div>
 </div>
 
 <style>
-.login-container {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    background: var(--night-sky);
-    color: var(--moonlight-silver);
-}
-
-.login-header {
-    text-align: center;
-    margin-bottom: 40px;
-}
-
-.login-header h1 {
-    font-size: 3em;
-    background: linear-gradient(45deg, var(--rose-quartz), var(--starlight-gold));
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    margin-bottom: 15px;
-    text-shadow: var(--text-shadow);
-}
-
-.login-header p {
-    font-size: 1.2em;
-    opacity: 0.9;
-    color: var(--lavender-blush);
-}
-
 .login-form-container {
     background: rgba(30, 26, 77, 0.8);
     backdrop-filter: blur(15px);
@@ -101,13 +73,13 @@
     box-shadow: var(--deep-shadow);
     border: 1px solid rgba(236, 240, 241, 0.1);
     max-width: 500px;
-    width: 100%;
+    margin: 0 auto;
 }
 
 .login-form-container h2 {
     text-align: center;
     color: var(--rose-quartz);
-    font-size: 2em;
+    font-size: 2.2em;
     margin-bottom: 30px;
     text-shadow: var(--text-shadow);
 }
@@ -122,19 +94,19 @@
 .form-group {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
 }
 
 .form-group label {
     color: var(--moonlight-silver);
     font-weight: 600;
-    font-size: 1.1em;
+    font-size: 1.2em;
 }
 
 .form-input {
-    padding: 15px;
+    padding: 16px;
     border: 2px solid rgba(236, 240, 241, 0.2);
-    border-radius: 12px;
+    border-radius: 15px;
     font-size: 1.1em;
     background: rgba(10, 17, 40, 0.6);
     color: var(--moonlight-silver);
@@ -152,7 +124,7 @@
     color: rgba(236, 240, 241, 0.5);
 }
 
-.btn-login {
+.btn-primary {
     padding: 18px;
     font-size: 1.2em;
     font-weight: 600;
@@ -164,13 +136,15 @@
     transition: var(--transition);
     text-transform: uppercase;
     letter-spacing: 1px;
+    margin-top: 10px;
 }
 
-.btn-login:hover {
+.btn-primary:hover {
     transform: translateY(-3px);
     box-shadow: 0 10px 25px rgba(248, 198, 208, 0.5);
 }
 
+/* Messages flash */
 .flash-messages {
     margin: 20px 0;
 }
@@ -181,6 +155,7 @@
     margin: 10px 0;
     font-weight: 500;
     text-align: center;
+    font-size: 1.1em;
 }
 
 .flash-error {
@@ -189,18 +164,13 @@
     border: 1px solid rgba(231, 76, 60, 0.3);
 }
 
-.flash-info {
-    background: rgba(52, 152, 219, 0.2);
-    color: #d1ecf1;
-    border: 1px solid rgba(52, 152, 219, 0.3);
-}
-
 .flash-success {
     background: rgba(39, 174, 96, 0.2);
     color: #d4edda;
     border: 1px solid rgba(39, 174, 96, 0.3);
 }
 
+/* Indices */
 .login-hints {
     margin-top: 30px;
 }
@@ -216,13 +186,13 @@
     color: var(--starlight-gold);
     text-align: center;
     margin-bottom: 20px;
-    font-size: 1.3em;
+    font-size: 1.4em;
 }
 
 .hints-grid {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 20px;
     margin-bottom: 20px;
 }
 
@@ -230,56 +200,54 @@
     display: flex;
     align-items: flex-start;
     gap: 15px;
-    padding: 15px;
+    padding: 18px;
     background: rgba(30, 26, 77, 0.6);
-    border-radius: 10px;
+    border-radius: 12px;
 }
 
 .hint-icon {
-    font-size: 1.5em;
+    font-size: 1.8em;
     flex-shrink: 0;
 }
 
 .hint-content strong {
     color: var(--rose-quartz);
     display: block;
-    margin-bottom: 5px;
+    margin-bottom: 8px;
+    font-size: 1.1em;
 }
 
 .hint-content p {
     color: var(--lavender-blush);
     margin: 0;
-    font-size: 0.9em;
+    font-size: 1em;
     opacity: 0.9;
 }
 
 .hint-note {
     text-align: center;
     color: var(--moonlight-silver);
-    font-size: 0.9em;
-    opacity: 0.7;
+    font-size: 1em;
+    opacity: 0.8;
     font-style: italic;
     margin: 0;
 }
 
+/* Responsive */
 @media (max-width: 768px) {
-    .login-header h1 {
-        font-size: 2.2em;
-    }
-    
     .login-form-container {
-        padding: 25px;
+        padding: 30px 20px;
         margin: 0 15px;
     }
     
-    .hints-grid {
-        gap: 12px;
+    .login-form-container h2 {
+        font-size: 1.8em;
     }
     
     .hint-item {
         flex-direction: column;
         text-align: center;
-        gap: 10px;
+        gap: 12px;
     }
 }
 </style>

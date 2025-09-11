@@ -43,12 +43,12 @@
                     <img src="{{ url_for('static', filename='uploads/' + photo.filename) }}" 
                          alt="{{ photo.legende }}" 
                          loading="lazy"
-                         onclick="openModal('{{ url_for('static', filename='uploads/' + photo.filename) }}', '{{ photo.legende }}', '{{ photo.auteur }}', '{{ photo.date.strftime('%d/%m/%Y à %H:%M') }}')">
+                         onclick="openModal('{{ url_for('static', filename='uploads/' + photo.filename) }}', '{{ photo.legende }}', '{{ photo.auteur }}', '{{ photo.date }}')">
                     <div class="gallery-caption">
                         <h3>{{ photo.legende or 'Sans légende' }}</h3>
                         <div class="photo-meta">
                             <div class="photo-author">📷 {{ photo.auteur }}</div>
-                            <div class="photo-date">📅 {{ photo.date.strftime('%d/%m/%Y à %H:%M') }}</div>
+                            <div class="photo-date">📅 {{ photo.date }}</div>
                             {% if photo.file_size %}
                                 <div class="photo-size">📏 {{ "%.1f"|format(photo.file_size / 1024 / 1024) }} MB</div>
                             {% endif %}

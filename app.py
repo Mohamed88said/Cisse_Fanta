@@ -143,17 +143,24 @@ def init_db():
     existing_users = conn.execute('SELECT username FROM users').fetchall()
     existing_usernames = [user['username'] for user in existing_users]
     
-    if 'fanta' not in existing_usernames:
+    # Mettre à jour les utilisateurs avec les nouveaux noms et mots de passe
+    if 'maninka mousso' not in existing_usernames:
+        # Supprimer l'ancien utilisateur fanta s'il existe
+        conn.execute('DELETE FROM users WHERE username = ?', ('fanta',))
+        # Créer le nouvel utilisateur
         conn.execute('''
             INSERT INTO users (username, password_hash, favorite_color)
             VALUES (?, ?, ?)
-        ''', ('fanta', generate_password_hash('Elle a toujours été belle'), '#ffdde1'))
+        ''', ('maninka mousso', generate_password_hash('Elle a toujours été belle'), '#ffdde1'))
     
-    if 'saïd' not in existing_usernames:
+    if 'panda bg' not in existing_usernames:
+        # Supprimer l'ancien utilisateur saïd s'il existe
+        conn.execute('DELETE FROM users WHERE username = ?', ('saïd',))
+        # Créer le nouvel utilisateur
         conn.execute('''
             INSERT INTO users (username, password_hash, favorite_color)
             VALUES (?, ?, ?)
-        ''', ('saïd', generate_password_hash('La lune est belle ce soir'), '#e1f5fe'))
+        ''', ('panda bg', generate_password_hash('La lune est belle ce soir'), '#e1f5fe'))
     
     # Ajouter quelques défis par défaut
     existing_challenges = conn.execute('SELECT COUNT(*) as count FROM challenges').fetchone()
@@ -277,23 +284,23 @@ def login():
             attempts = session['login_attempts'][username]
             
             if attempts == 1:
-                if username == 'fanta':
-                    flash('Hmm... Pense à ce que Saïd dit toujours sur ta beauté éternelle 💫', 'error')
-                elif username == 'saïd':
+                if username == 'maninka mousso':
+                    flash('Hmm... Pense à ce que Panda BG dit toujours sur ta beauté éternelle 💫', 'error')
+                elif username == 'panda bg':
                     flash('Rappelle-toi cette phrase romantique que tu dis souvent 🌙', 'error')
                 else:
                     flash('Nom d\'utilisateur ou mot de passe incorrect', 'error')
             elif attempts == 2:
-                if username == 'fanta':
+                if username == 'maninka mousso':
                     flash('Indice : "Elle a toujours été..." - tu sais la suite ! ✨', 'error')
-                elif username == 'saïd':
+                elif username == 'panda bg':
                     flash('Indice : "La lune est..." - continue la phrase romantique 🌙', 'error')
                 else:
                     flash('Nom d\'utilisateur ou mot de passe incorrect', 'error')
             elif attempts >= 3:
-                if username == 'fanta':
+                if username == 'maninka mousso':
                     flash('Ton mot de passe est : "Elle a toujours été belle" 💖', 'info')
-                elif username == 'saïd':
+                elif username == 'panda bg':
                     flash('Ton mot de passe est : "La lune est belle ce soir" 🌙', 'info')
                 else:
                     flash('Trop de tentatives. Contacte l\'administrateur.', 'error')
@@ -392,8 +399,8 @@ def index():
     
     # Salutation personnalisée
     greetings = {
-        'fanta': "Salut ma maninka mousso préférée",
-        'said': "Salut mon panda préféré"
+        'maninka mousso': "Salut ma maninka mousso préférée",
+        'panda bg': "Salut mon panda préféré"
     }
     
     return render_template('index.html',
@@ -651,7 +658,7 @@ def letters():
 @app.route('/write_letter', methods=['GET', 'POST'])
 def write_letter():
     user = session['user']
-    recipient = 'fanta' if user == 'said' else 'said'
+    recipient = 'maninka mousso' if user == 'panda bg' else 'panda bg'
     
     if request.method == 'POST':
         title = request.form['title'].strip()
@@ -778,7 +785,7 @@ def love_calendar():
     # Dates spéciales (anniversaires, etc.)
     special_dates = {}
     if month == 9:  # Septembre
-        special_dates[27] = {'title': 'Anniversaire de Fanta', 'type': 'anniversary'}
+        special_dates[27] = {'title': 'Anniversaire de Maninka Mousso', 'type': 'anniversary'}
     
     return render_template('love_calendar.html',
                          calendar_data=cal,
@@ -936,9 +943,9 @@ def stats():
 
 @app.route('/birthday_surprise')
 def birthday_surprise():
-    # Vérifier que c'est Fanta et que c'est son anniversaire
-    if session['user'] != 'fanta':
-        flash('Cette page est réservée à Fanta ! 😊', 'info')
+    # Vérifier que c'est Maninka Mousso et que c'est son anniversaire
+    if session['user'] != 'maninka mousso':
+        flash('Cette page est réservée à Maninka Mousso ! 😊', 'info')
         return redirect(url_for('index'))
     
     today = datetime.now().date()
@@ -949,7 +956,7 @@ def birthday_surprise():
     # Lettre de surprise d'anniversaire
     surprise = {
         'title': 'Joyeux Anniversaire ma Maninka Mousso ! 🎂',
-        'content': '''Ma très chère Fanta,
+        'content': '''Ma très chère Maninka Mousso,
 
 Aujourd'hui est un jour très spécial car c'est TON jour ! 🎉
 
@@ -966,7 +973,7 @@ Je t'aime plus que les mots ne peuvent l'exprimer, plus que les étoiles dans le
 Joyeux anniversaire ma princesse ! 👑
 
 Ton panda qui t'aime à la folie,
-Saïd 💖
+Panda BG 💖
 
 P.S. : Explore toutes les nouvelles fonctionnalités que j'ai ajoutées spécialement pour ton anniversaire ! 🎁'''
     }

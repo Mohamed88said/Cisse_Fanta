@@ -32,7 +32,7 @@
                             <h3>{{ letter.title }}</h3>
                             <div class="letter-meta">
                                 <span class="letter-sender">De: {{ letter.sender }}</span>
-                                <span class="letter-date">{{ letter.created_at.strftime('%d/%m/%Y à %H:%M') }}</span>
+                                <span class="letter-date">{{ letter.created_at }}</span>
                                 {% if not letter.is_read %}
                                     <span class="unread-indicator">Nouveau ✨</span>
                                 {% endif %}
@@ -67,7 +67,7 @@
                             <h3>{{ letter.title }}</h3>
                             <div class="letter-meta">
                                 <span class="letter-recipient">À: {{ letter.recipient }}</span>
-                                <span class="letter-date">{{ letter.created_at.strftime('%d/%m/%Y à %H:%M') }}</span>
+                                <span class="letter-date">{{ letter.created_at }}</span>
                                 {% if letter.is_read %}
                                     <span class="read-indicator">Lu ✓</span>
                                 {% else %}

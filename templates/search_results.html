@@ -28,7 +28,7 @@
             {% for phrase in phrases %}
                 <div class="message-card" style="background-color: {{ phrase.couleur }};">
                     <div class="message-header">
-                        <span class="message-date">{{ phrase.date.strftime('%d/%m/%Y à %H:%M') }}</span>
+                        <span class="message-date">{{ phrase.date }}</span>
                         <span class="message-author">par {{ phrase.auteur }}</span>
                         <div class="message-actions">
                             <a href="{{ url_for('toggle_favori', phrase_id=phrase.id) }}" 

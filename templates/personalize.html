@@ -79,7 +79,7 @@
                 <div class="stat-icon">🗓️</div>
                 <div class="stat-info">
                     <div class="stat-label">Dans mon cœur depuis</div>
-                    <div class="stat-value">{{ current_user.created_at.strftime('%B %Y') if current_user.created_at else 'Toujours' }}</div>
+                    <div class="stat-value">{{ current_user.created_at if current_user.created_at else 'Toujours' }}</div>
                 </div>
             </div>
             
@@ -95,7 +95,7 @@
                 <div class="stat-icon">🕐</div>
                 <div class="stat-info">
                     <div class="stat-label">Dernière fois ici</div>
-                    <div class="stat-value">{{ current_user.last_login.strftime('%d/%m à %H:%M') if current_user.last_login else 'Maintenant' }}</div>
+                    <div class="stat-value">{{ current_user.last_login if current_user.last_login else 'Maintenant' }}</div>
                 </div>
             </div>
         </div>
