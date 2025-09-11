@@ -1,1 +1,346 @@
-non
+{% extends "base.html" %}
+{% block content %}
+<div class="login-container">
+    <div class="login-header">
+        <h1>🌙 Fanta #Femme de valeur</h1>
+        <p>Ton jardin secret sous les étoiles</p>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                    <div class="flash flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <div class="login-form-container">
+        <h2>💖 Connexion</h2>
+        <p class="login-subtitle">Connecte-toi pour accéder à tes souvenirs précieux</p>
+        
+        <!-- Citation d'amour du jour -->
+        <div class="daily-quote">
+            <p class="love-quote">"Aimer quelqu'un profondément vous donne de la force."</p>
+            <small>💝 Citation du jour</small>
+        </div>
+        
+        <form method="POST" class="login-form">
+            <div class="form-group">
+                <label for="username">Nom d'utilisateur :</label>
+                <input type="text" name="username" id="username" required class="form-input" placeholder="Ton nom d'utilisateur...">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Mot de passe :</label>
+                <input type="password" name="password" id="password" required class="form-input" placeholder="Ton mot de passe...">
+            </div>
+            
+            <button type="submit" class="btn btn-login">💖 Se connecter</button>
+        </form>
+        
+        <!-- Indices d'aide -->
+        <div class="hint-box">
+            <h3>💡 Besoin d'aide ?</h3>
+            <div class="hints-list">
+                <div class="hint-item">
+                    <strong>Maninka Mousso :</strong> Pense à ce que Panda BG dit toujours sur ta beauté éternelle 💫
+                </div>
+                <div class="hint-item">
+                    <strong>Panda BG :</strong> Rappelle-toi cette phrase romantique que tu dis souvent 🌙
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.login-container {
+    min-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    position: relative;
+    z-index: 1;
+}
+
+.login-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.login-header h1 {
+    font-family: 'Great Vibes', 'Dancing Script', cursive;
+    font-size: 3.5em;
+    background: linear-gradient(45deg, var(--rose-quartz), var(--lavender-blush), var(--starlight-gold));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 15px;
+    text-shadow: var(--text-shadow);
+    animation: glowText 3s ease-in-out infinite alternate;
+}
+
+.login-header p {
+    color: var(--moonlight-silver);
+    font-size: 1.2em;
+    opacity: 0.9;
+}
+
+.login-form-container {
+    background: rgba(30, 26, 77, 0.8);
+    backdrop-filter: blur(15px);
+    border-radius: 25px;
+    padding: 40px;
+    box-shadow: var(--deep-shadow);
+    border: 1px solid rgba(236, 240, 241, 0.1);
+    max-width: 500px;
+    width: 100%;
+    animation: fadeInUp 0.8s ease-out;
+}
+
+.login-form-container h2 {
+    color: var(--rose-quartz);
+    font-size: 2em;
+    margin-bottom: 10px;
+    text-shadow: var(--text-shadow);
+    text-align: center;
+}
+
+.login-subtitle {
+    text-align: center;
+    color: var(--moonlight-silver);
+    margin-bottom: 30px;
+    opacity: 0.9;
+}
+
+.daily-quote {
+    background: rgba(10, 17, 40, 0.6);
+    border-radius: 20px;
+    padding: 25px;
+    margin: 25px 0;
+    text-align: center;
+    border: 2px solid rgba(248, 198, 208, 0.3);
+}
+
+.love-quote {
+    font-size: 1.2em;
+    font-style: italic;
+    color: var(--lavender-blush);
+    margin-bottom: 10px;
+    text-shadow: var(--text-shadow);
+    line-height: 1.6;
+}
+
+.daily-quote small {
+    color: var(--rose-quartz);
+    font-weight: 600;
+    opacity: 0.9;
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    margin-bottom: 30px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-group label {
+    color: var(--moonlight-silver);
+    font-weight: 600;
+    font-size: 1.1em;
+}
+
+.form-input {
+    padding: 15px;
+    border: 2px solid rgba(236, 240, 241, 0.2);
+    border-radius: 12px;
+    font-size: 1.1em;
+    transition: var(--transition);
+    background: rgba(10, 17, 40, 0.6);
+    color: var(--moonlight-silver);
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--rose-quartz);
+    box-shadow: 0 0 20px rgba(248, 198, 208, 0.4);
+    background: rgba(10, 17, 40, 0.8);
+}
+
+.form-input::placeholder {
+    color: rgba(236, 240, 241, 0.5);
+}
+
+.btn-login {
+    padding: 18px;
+    font-size: 1.2em;
+    font-weight: 600;
+    background: linear-gradient(135deg, var(--rose-quartz), var(--mystic-purple));
+    color: white;
+    border: none;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: var(--transition);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-login::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: var(--transition);
+}
+
+.btn-login:hover::before {
+    left: 100%;
+}
+
+.btn-login:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 10px 25px rgba(248, 198, 208, 0.5);
+}
+
+.hint-box {
+    background: rgba(10, 17, 40, 0.6);
+    border-radius: 15px;
+    padding: 25px;
+    border: 1px solid rgba(236, 240, 241, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.hint-box h3 {
+    color: var(--starlight-gold);
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 1.3em;
+    text-shadow: var(--text-shadow);
+}
+
+.hints-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.hint-item {
+    color: var(--moonlight-silver);
+    padding: 15px;
+    background: rgba(30, 26, 77, 0.6);
+    border-radius: 10px;
+    border-left: 4px solid var(--rose-quartz);
+    transition: var(--transition);
+}
+
+.hint-item:hover {
+    transform: translateX(5px);
+    background: rgba(30, 26, 77, 0.8);
+}
+
+.hint-item strong {
+    color: var(--rose-quartz);
+}
+
+.flash-messages {
+    margin: 25px 0;
+    width: 100%;
+    max-width: 500px;
+}
+
+.flash {
+    padding: 20px;
+    border-radius: 15px;
+    margin: 15px 0;
+    font-weight: 500;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.flash-success {
+    background: rgba(39, 174, 96, 0.2);
+    color: #d4edda;
+    border-color: rgba(39, 174, 96, 0.3);
+}
+
+.flash-error {
+    background: rgba(231, 76, 60, 0.2);
+    color: #f8d7da;
+    border-color: rgba(231, 76, 60, 0.3);
+}
+
+.flash-info {
+    background: rgba(52, 152, 219, 0.2);
+    color: #d1ecf1;
+    border-color: rgba(52, 152, 219, 0.3);
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes glowText {
+    from { text-shadow: 0 0 10px rgba(248, 198, 208, 0.5); }
+    to { text-shadow: 0 0 20px rgba(248, 198, 208, 0.8), 0 0 30px rgba(241, 196, 15, 0.6); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .login-container {
+        padding: 20px 15px;
+    }
+    
+    .login-header h1 {
+        font-size: 2.5em;
+    }
+    
+    .login-form-container {
+        padding: 30px 25px;
+    }
+    
+    .login-form-container h2 {
+        font-size: 1.6em;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Animation d'entrée pour les éléments
+    const animatedElements = document.querySelectorAll('.hint-item');
+    animatedElements.forEach((element, index) => {
+        element.style.opacity = '0';
+        element.style.transform = 'translateX(-20px)';
+        
+        setTimeout(() => {
+            element.style.transition = 'all 0.6s ease-out';
+            element.style.opacity = '1';
+            element.style.transform = 'translateX(0)';
+        }, index * 200 + 800);
+    });
+});
+</script>
+{% endblock %}
