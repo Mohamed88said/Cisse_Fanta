@@ -235,6 +235,7 @@ def require_login():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    attempts = 0
     if request.method == 'POST':
         username = request.form['username'].lower().strip()
         password = request.form['password']
