@@ -147,13 +147,13 @@ def init_db():
         conn.execute('''
             INSERT INTO users (username, password_hash, favorite_color)
             VALUES (?, ?, ?)
-        ''', ('fanta', generate_password_hash('maninka'), '#ffdde1'))
+        ''', ('fanta', generate_password_hash('Elle a toujours été belle'), '#ffdde1'))
     
     if 'said' not in existing_usernames:
         conn.execute('''
             INSERT INTO users (username, password_hash, favorite_color)
             VALUES (?, ?, ?)
-        ''', ('said', generate_password_hash('panda2024'), '#e1f5fe'))
+        ''', ('said', generate_password_hash('La lune est belle ce soir'), '#e1f5fe'))
     
     # Ajouter quelques défis par défaut
     existing_challenges = conn.execute('SELECT COUNT(*) as count FROM challenges').fetchone()
