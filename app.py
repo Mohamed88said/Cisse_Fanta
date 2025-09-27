@@ -895,6 +895,46 @@ def search():
     
     return render_template('search_results.html', phrases=phrases, query=query, user=session['user'])
 
+
+
+
+@app.route('/letters')
+def letters():
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
+    user = session['user']
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Récupérer les lettres pour l'utilisateur actuel
+    cursor.execute('''
+        SELECT * FROM letters 
+        WHERE recipient = %s OR sender = %s
+        ORDER BY created_at DESC
+    ''', (user, user))
+    
+    letters_data = cursor.fetchall()
+    letters = []
+    for row in letters_data:
+        letters.append({
+            'id': row[0],
+            'title': row[1],
+            'content': row[2],
+            'sender': row[3],
+            'recipient': row[4],
+            'is_read': row[5],
+            'created_at': row[6]
+        })
+    
+    cursor.close()
+    conn.close()
+    
+    return render_template('letters.html', letters=letters, user=user)
+
+
+
+    
 @app.route('/stats')
 def stats():
     if not is_site_unlocked() and not session.get('special_access'):
