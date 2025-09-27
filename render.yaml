@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: flask-app
+    name: flask-love-app
     env: python
     plan: free
     buildCommand: "pip install -r requirements.txt"
@@ -15,8 +15,8 @@ services:
       - key: CLOUDINARY_API_SECRET
         value: "xfudLM75vr_yKqrpHVAr87NNhDo"
       - key: SECRET_KEY
-        generateValue: true
+        value: "68e60b4d247647f18db672d7b14d85dfdd7a1a69cdeb35144cc7b5563f369e23"
+      - key: FLASK_ENV
+        value: "production"
       - key: PYTHON_VERSION
-        value: 3.11.5
-
-# Supprimer la section pgsql car vous utilisez Neon.tech
+        value: "3.11.5"

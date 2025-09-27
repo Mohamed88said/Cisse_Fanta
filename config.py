@@ -5,18 +5,15 @@ class Config:
     """Configuration de base pour l'application Flask"""
 
     # 🔑 Sécurité
-    SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-key-change-in-production")
+    SECRET_KEY = os.environ.get("SECRET_KEY", "68e60b4d247647f18db672d7b14d85dfdd7a1a69cdeb35144cc7b5563f369e23")
 
-    # 📦 Base de données : Neon.tech PostgreSQL
+    # 📦 Base de données : Neon.tech PostgreSQL UNIQUEMENT
     DATABASE_URL = os.environ.get("DATABASE_URL", "")
-    if DATABASE_URL:
-        # Pour Neon.tech - conversion automatique si nécessaire
-        if DATABASE_URL.startswith("postgres://"):
-            DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://")
-        SQLALCHEMY_DATABASE_URI = DATABASE_URL
-    else:
-        # Fallback SQLite en développement
-        SQLALCHEMY_DATABASE_URI = f"sqlite:///{os.path.join(os.getcwd(), 'instance', 'database.db')}"
+    if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://")
+    
+    # 🔥 FORCER PostgreSQL - pas de fallback SQLite
+    SQLALCHEMY_DATABASE_URI = DATABASE_URL
     
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
@@ -29,8 +26,7 @@ class Config:
     CLOUDINARY_API_KEY = os.environ.get("CLOUDINARY_API_KEY", "455591489376377")
     CLOUDINARY_API_SECRET = os.environ.get("CLOUDINARY_API_SECRET", "xfudLM75vr_yKqrpHVAr87NNhDo")
 
-    # 📂 Gestion des fichiers uploadés
-    UPLOAD_FOLDER = os.path.join(os.getcwd(), "static", "uploads")
+    # 📂 Gestion des fichiers uploadés (Cloudinary uniquement)
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB
 
     # 🍪 Configuration des sessions
@@ -55,5 +51,5 @@ class ProductionConfig(Config):
 config = {
     'development': DevelopmentConfig,
     'production': ProductionConfig,
-    'default': DevelopmentConfig
+    'default': ProductionConfig  # 🔥 Production par défaut
 }
