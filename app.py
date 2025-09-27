@@ -934,7 +934,133 @@ def letters():
 
 
 
+
+
+@app.route('/memories')
+def memories():
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
     
+    user = session['user']
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        SELECT * FROM memories 
+        WHERE author = %s
+        ORDER BY date_memory DESC
+    ''', (user,))
+    
+    memories_data = cursor.fetchall()
+    memories_list = []
+    for row in memories_data:
+        memories_list.append({
+            'id': row[0],
+            'title': row[1],
+            'description': row[2],
+            'date_memory': row[3],
+            'author': row[4],
+            'is_anniversary': row[5],
+            'created_at': row[6]
+        })
+    
+    cursor.close()
+    conn.close()
+    
+    return render_template('memories.html', memories=memories_list, user=user)
+
+@app.route('/add_memory', methods=['GET', 'POST'])
+def add_memory():
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
+    if request.method == 'POST':
+        title = request.form['title'].strip()
+        description = request.form['description'].strip()
+        date_memory = request.form['date_memory']
+        is_anniversary = 'is_anniversary' in request.form
+        
+        if title and description and date_memory:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            
+            cursor.execute('''
+                INSERT INTO memories (title, description, date_memory, author, is_anniversary)
+                VALUES (%s, %s, %s, %s, %s)
+            ''', (title, description, date_memory, session['user'], is_anniversary))
+            
+            conn.commit()
+            cursor.close()
+            conn.close()
+            
+            log_activity(session['user'], 'memory_added', f'Memory: {title}')
+            flash('Souvenir ajouté avec succès ! 💝', 'success')
+            return redirect(url_for('memories'))
+    
+    return render_template('add_memory.html', user=session['user'])
+
+@app.route('/love_calendar')
+def love_calendar():
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
+    user = session['user']
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute('SELECT * FROM calendar_events ORDER BY event_date')
+    events_data = cursor.fetchall()
+    events = []
+    for row in events_data:
+        events.append({
+            'id': row[0],
+            'title': row[1],
+            'event_date': row[2],
+            'event_type': row[3],
+            'description': row[4],
+            'created_by': row[5],
+            'created_at': row[6]
+        })
+    
+    cursor.close()
+    conn.close()
+    
+    return render_template('love_calendar.html', events=events, user=user)
+
+@app.route('/love_challenges')
+def love_challenges():
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
+    user = session['user']
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute('SELECT * FROM challenges WHERE is_active = TRUE')
+    challenges_data = cursor.fetchall()
+    challenges = []
+    for row in challenges_data:
+        challenges.append({
+            'id': row[0],
+            'title': row[1],
+            'description': row[2],
+            'challenge_type': row[3],
+            'points': row[4],
+            'is_active': row[5],
+            'completed_by': row[6],
+            'completed_date': row[7],
+            'created_at': row[8]
+        })
+    
+    cursor.close()
+    conn.close()
+    
+    return render_template('love_challenges.html', challenges=challenges, user=user)
+
+
+
+
+
 @app.route('/stats')
 def stats():
     if not is_site_unlocked() and not session.get('special_access'):
