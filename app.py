@@ -24,24 +24,23 @@ app.config['CLOUDINARY_CLOUD_NAME'] = os.environ.get('CLOUDINARY_CLOUD_NAME', 'd
 app.config['CLOUDINARY_API_KEY'] = os.environ.get('CLOUDINARY_API_KEY', '455591489376377')
 app.config['CLOUDINARY_API_SECRET'] = os.environ.get('CLOUDINARY_API_SECRET', 'xfudLM75vr_yKqrpHVAr87NNhDo')
 
-# 🔥 CONFIGURATION UNIQUE - PostgreSQL Neon.tech uniquement
+# 🔥 CONFIGURATION CORRIGÉE - PostgreSQL Neon.tech uniquement
 DATABASE_URL = os.environ.get('DATABASE_URL', 'postgresql://neondb_owner:npg_oC3pqDdPf5Ru@ep-lingering-mountain-afolq7j6-pooler.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require')
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://")
 
-app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
-DB_TYPE = 'postgresql'  # Toujours PostgreSQL sur Render
-
 # Configuration de connexion PostgreSQL
 parsed_url = urlparse(DATABASE_URL)
 app.config['DATABASE_CONFIG'] = {
-    'dbname': parsed_url.path.split('/')[-1],  # Récupérer 'neondb'
+    'dbname': parsed_url.path.split('/')[-1],
     'user': parsed_url.username,
     'password': parsed_url.password,
     'host': parsed_url.hostname,
     'port': parsed_url.port,
     'sslmode': 'require'
 }
+
+DB_TYPE = 'postgresql'  # 🔥 Forcer PostgreSQL
 
 # Date de déverrouillage (27 septembre 2025)
 UNLOCK_DATE = datetime(2025, 9, 26, 23, 0, 59)
@@ -70,7 +69,7 @@ def init_db():
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # Tables PostgreSQL pour Neon.tech
+    # Tables PostgreSQL pour Neon.tech - CORRIGÉ : remplacer "user" par "username"
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id SERIAL PRIMARY KEY,
@@ -175,7 +174,6 @@ def init_db():
     cursor.execute("SELECT username FROM users")
     existing_users = [row[0] for row in cursor.fetchall()]
     
-    # Mettre à jour les utilisateurs avec les nouveaux noms et mots de passe
     if 'maninka mousso' not in existing_users:
         cursor.execute('''
             INSERT INTO users (username, password_hash, favorite_color)
@@ -374,7 +372,6 @@ def login():
         cursor.close()
         conn.close()
         
-        # Convertir en dict pour un accès cohérent
         user = None
         if user_data:
             user = {
@@ -391,7 +388,6 @@ def login():
             session['login_attempts'][username] = 0
             session['user'] = username
             
-            # Mettre à jour les statistiques de connexion
             conn = get_db_connection()
             cursor = conn.cursor()
             
@@ -509,15 +505,12 @@ def index():
         
         return redirect(url_for('index'))
     
-    # Récupérer les messages avec pagination
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # Compter le total des messages
     cursor.execute('SELECT COUNT(*) FROM phrases')
     total = cursor.fetchone()[0]
     
-    # Récupérer les messages pour la page actuelle
     offset = (page - 1) * per_page
     
     cursor.execute('''
@@ -540,7 +533,6 @@ def index():
             'is_special': row[8]
         })
     
-    # Statistiques
     cursor.execute('SELECT COUNT(*) FROM phrases')
     total_messages = cursor.fetchone()[0]
     
@@ -562,7 +554,6 @@ def index():
         'favoris_count': favoris_count
     }
     
-    # Convertir user_info en dict
     user_info = {}
     if user_info_data:
         user_info = {
@@ -573,7 +564,6 @@ def index():
     cursor.close()
     conn.close()
     
-    # Pagination
     has_prev = page > 1
     has_next = offset + per_page < total
     pagination = {
@@ -584,11 +574,9 @@ def index():
         'has_prev': has_prev,
         'has_next': has_next,
         'prev_num': page - 1 if has_prev else None,
-        'next_num': page + 1 if has_next else None,
-        'iter_pages': lambda: range(max(1, page - 2), min((total + per_page - 1) // per_page + 1, page + 3))
+        'next_num': page + 1 if has_next else None
     }
     
-    # Salutation personnalisée
     greetings = {
         'maninka mousso': "Salut ma maninka mousso préférée( seule d'ailleurs 😂 )",
         'panda bg': "Salut mon panda préféré"
@@ -605,6 +593,105 @@ def index():
                          personal_greeting=greetings.get(user, f"Salut {user.title()}"),
                          love_quote=get_love_quotes(),
                          now=datetime.now())
+
+# 🔥 AJOUTER TOUTES LES ROUTES MANQUANTES
+@app.route('/letters')
+def letters():
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
+    user = session['user']
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        SELECT * FROM letters 
+        WHERE recipient = %s OR sender = %s
+        ORDER BY created_at DESC
+    ''', (user, user))
+    
+    letters_data = cursor.fetchall()
+    letters = []
+    for row in letters_data:
+        letters.append({
+            'id': row[0],
+            'title': row[1],
+            'content': row[2],
+            'sender': row[3],
+            'recipient': row[4],
+            'is_read': row[5],
+            'created_at': row[6]
+        })
+    
+    cursor.close()
+    conn.close()
+    
+    return render_template('letters.html', letters=letters, user=user)
+
+@app.route('/memories')
+def memories():
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
+    user = session['user']
+    return render_template('memories.html', user=user)
+
+@app.route('/love_calendar')
+def love_calendar():
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
+    user = session['user']
+    return render_template('love_calendar.html', user=user)
+
+@app.route('/love_challenges')
+def love_challenges():
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
+    user = session['user']
+    return render_template('love_challenges.html', user=user)
+
+@app.route('/personalize')
+def personalize():
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
+    user = session['user']
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute('SELECT favorite_color FROM users WHERE username = %s', (user,))
+    user_data = cursor.fetchone()
+    favorite_color = user_data[0] if user_data else '#ffdde1'
+    
+    cursor.close()
+    conn.close()
+    
+    return render_template('personalize.html', user=user, favorite_color=favorite_color)
+
+@app.route('/update_preferences', methods=['POST'])
+def update_preferences():
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
+    user = session['user']
+    favorite_color = request.form.get('favorite_color', '#ffdde1')
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        UPDATE users SET favorite_color = %s WHERE username = %s
+    ''', (favorite_color, user))
+    
+    conn.commit()
+    cursor.close()
+    conn.close()
+    
+    log_activity(user, 'preferences_updated', f'Color: {favorite_color}')
+    flash('Préférences mises à jour avec succès ! 🎨', 'success')
+    return redirect(url_for('index'))
 
 @app.route('/toggle_favori/<int:phrase_id>')
 def toggle_favori(phrase_id):
@@ -658,7 +745,6 @@ def supprimer_phrase(phrase_id):
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # Vérifier que l'utilisateur est l'auteur
     cursor.execute('SELECT auteur FROM phrases WHERE id = %s', (phrase_id,))
     phrase_data = cursor.fetchone()
     if phrase_data and phrase_data[0] == user:
@@ -684,11 +770,9 @@ def galerie():
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # Compter le total des photos
     cursor.execute('SELECT COUNT(*) FROM photos')
     total = cursor.fetchone()[0]
     
-    # Récupérer les photos pour la page actuelle
     offset = (page - 1) * per_page
     
     cursor.execute('''
@@ -713,7 +797,6 @@ def galerie():
     cursor.close()
     conn.close()
     
-    # Pagination
     has_prev = page > 1
     has_next = offset + per_page < total
     pagination = {
@@ -724,8 +807,7 @@ def galerie():
         'has_prev': has_prev,
         'has_next': has_next,
         'prev_num': page - 1 if has_prev else None,
-        'next_num': page + 1 if has_next else None,
-        'iter_pages': lambda: range(max(1, page - 2), min((total + per_page - 1) // per_page + 1, page + 3))
+        'next_num': page + 1 if has_next else None
     }
     
     return render_template('galerie.html', photos=photos, user=session['user'], pagination=pagination)
@@ -751,7 +833,6 @@ def upload_file():
         cloudinary_result = upload_to_cloudinary(file)
         
         if cloudinary_result['success']:
-            # Sauvegarde Cloudinary réussie
             conn = get_db_connection()
             cursor = conn.cursor()
             
@@ -802,12 +883,10 @@ def supprimer_photo(photo_id):
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # Vérifier que l'utilisateur est l'auteur
     cursor.execute('SELECT auteur, filename, cloudinary_url FROM photos WHERE id = %s', (photo_id,))
     photo_data = cursor.fetchone()
     if photo_data and photo_data[0] == user:
-        # Supprimer de Cloudinary si applicable
-        if photo_data[2]:  # cloudinary_url existe
+        if photo_data[2]:
             try:
                 public_id = photo_data[2].split('/')[-1].split('.')[0]
                 cloudinary.uploader.destroy(public_id)
@@ -1069,7 +1148,6 @@ def stats():
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # Statistiques générales
     cursor.execute('SELECT COUNT(*) FROM phrases')
     total_messages = cursor.fetchone()[0]
     
@@ -1085,7 +1163,6 @@ def stats():
     cursor.execute('SELECT COUNT(*) FROM memories')
     total_memories = cursor.fetchone()[0]
     
-    # Messages par utilisateur
     cursor.execute('''
         SELECT auteur, COUNT(*) as count 
         FROM phrases 
@@ -1109,7 +1186,6 @@ def stats():
     for row in photos_by_user_data:
         photos_by_user.append({'auteur': row[0], 'count': row[1]})
     
-    # Activité récente
     cursor.execute('''
         SELECT * FROM activities 
         ORDER BY date DESC 
@@ -1120,7 +1196,7 @@ def stats():
     for row in activities_data:
         recent_activity.append({
             'id': row[0],
-            'username': row[1],  # 🔥 CORRIGÉ : remplacer "user" par "username"
+            'username': row[1],
             'action': row[2],
             'details': row[3],
             'date': row[4]
