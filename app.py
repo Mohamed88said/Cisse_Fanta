@@ -160,10 +160,11 @@ def init_db():
         )
     ''')
     
+    # 🔥 CORRIGÉ : remplacer "user" par "username" (mot réservé PostgreSQL)
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS activities (
             id SERIAL PRIMARY KEY,
-            user TEXT NOT NULL,
+            username TEXT NOT NULL,
             action TEXT NOT NULL,
             details TEXT,
             date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -239,8 +240,9 @@ def log_activity(user, action, details=None):
     conn = get_db_connection()
     cursor = conn.cursor()
     
+    # 🔥 CORRIGÉ : remplacer "user" par "username"
     cursor.execute('''
-        INSERT INTO activities (user, action, details)
+        INSERT INTO activities (username, action, details)
         VALUES (%s, %s, %s)
     ''', (user, action, details))
     
@@ -952,7 +954,7 @@ def stats():
     for row in activities_data:
         recent_activity.append({
             'id': row[0],
-            'user': row[1],
+            'username': row[1],  # 🔥 CORRIGÉ : remplacer "user" par "username"
             'action': row[2],
             'details': row[3],
             'date': row[4]
