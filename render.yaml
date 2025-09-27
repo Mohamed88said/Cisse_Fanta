@@ -6,10 +6,17 @@ services:
     buildCommand: "pip install -r requirements.txt"
     startCommand: "gunicorn wsgi:application"
     envVars:
+      - key: DATABASE_URL
+        value: "postgresql://neondb_owner:npg_oC3pqDdPf5Ru@ep-lingering-mountain-afolq7j6-pooler.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require"
+      - key: CLOUDINARY_CLOUD_NAME
+        value: "djbdv90jr"
+      - key: CLOUDINARY_API_KEY
+        value: "455591489376377"
+      - key: CLOUDINARY_API_SECRET
+        value: "xfudLM75vr_yKqrpHVAr87NNhDo"
+      - key: SECRET_KEY
+        generateValue: true
       - key: PYTHON_VERSION
         value: 3.11.5
 
-  - type: pgsql
-    name: flask-db
-    plan: free
-    ipAllowList: []
+# Supprimer la section pgsql car vous utilisez Neon.tech
