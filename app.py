@@ -1125,6 +1125,271 @@ def supprimer_photo(photo_id):
     conn.close()
     return redirect(url_for('galerie'))
 
+# ROUTES MANQUANTES AJOUTÉES
+
+@app.route('/letters')
+def letters():
+    """Page des lettres d'amour"""
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
+    user = session['user']
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Récupérer les lettres envoyées et reçues
+    if DB_TYPE == 'postgresql':
+        cursor.execute('''
+            SELECT * FROM letters 
+            WHERE sender = %s OR recipient = %s 
+            ORDER BY created_at DESC
+        ''', (user, user))
+        letters_data = cursor.fetchall()
+        letters = []
+        for row in letters_data:
+            letters.append({
+                'id': row[0],
+                'title': row[1],
+                'content': row[2],
+                'sender': row[3],
+                'recipient': row[4],
+                'is_read': row[5],
+                'created_at': row[6]
+            })
+    else:
+        cursor.execute('''
+            SELECT * FROM letters 
+            WHERE sender = ? OR recipient = ? 
+            ORDER BY created_at DESC
+        ''', (user, user))
+        letters_data = cursor.fetchall()
+        letters = [dict(row) for row in letters_data]
+    
+    cursor.close()
+    conn.close()
+    
+    return render_template('letters.html', letters=letters, user=user)
+
+@app.route('/write_letter', methods=['GET', 'POST'])
+def write_letter():
+    """Écrire une nouvelle lettre"""
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
+    if request.method == 'POST':
+        title = request.form['title'].strip()
+        content = request.form['content'].strip()
+        recipient = request.form['recipient'].strip()
+        
+        if title and content and recipient:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            
+            if DB_TYPE == 'postgresql':
+                cursor.execute('''
+                    INSERT INTO letters (title, content, sender, recipient)
+                    VALUES (%s, %s, %s, %s)
+                ''', (title, content, session['user'], recipient))
+            else:
+                cursor.execute('''
+                    INSERT INTO letters (title, content, sender, recipient)
+                    VALUES (?, ?, ?, ?)
+                ''', (title, content, session['user'], recipient))
+            
+            conn.commit()
+            cursor.close()
+            conn.close()
+            
+            log_activity(session['user'], 'letter_sent', f'À: {recipient}')
+            flash('Lettre envoyée avec succès ! 💌', 'success')
+            return redirect(url_for('letters'))
+        else:
+            flash('Veuillez remplir tous les champs', 'error')
+    
+    return render_template('write_letter.html', user=session['user'])
+
+@app.route('/read_letter/<int:letter_id>')
+def read_letter(letter_id):
+    """Lire une lettre"""
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
+    user = session['user']
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    if DB_TYPE == 'postgresql':
+        cursor.execute('SELECT * FROM letters WHERE id = %s', (letter_id,))
+        letter_data = cursor.fetchone()
+        if letter_data:
+            letter = {
+                'id': letter_data[0],
+                'title': letter_data[1],
+                'content': letter_data[2],
+                'sender': letter_data[3],
+                'recipient': letter_data[4],
+                'is_read': letter_data[5],
+                'created_at': letter_data[6]
+            }
+            
+            # Marquer comme lu si le destinataire est l'utilisateur actuel
+            if letter['recipient'] == user and not letter['is_read']:
+                cursor.execute('UPDATE letters SET is_read = TRUE WHERE id = %s', (letter_id,))
+                conn.commit()
+        else:
+            letter = None
+    else:
+        cursor.execute('SELECT * FROM letters WHERE id = ?', (letter_id,))
+        letter_row = cursor.fetchone()
+        if letter_row:
+            letter = dict(letter_row)
+            
+            # Marquer comme lu si le destinataire est l'utilisateur actuel
+            if letter['recipient'] == user and not letter['is_read']:
+                cursor.execute('UPDATE letters SET is_read = 1 WHERE id = ?', (letter_id,))
+                conn.commit()
+        else:
+            letter = None
+    
+    cursor.close()
+    conn.close()
+    
+    if not letter:
+        flash('Lettre non trouvée', 'error')
+        return redirect(url_for('letters'))
+    
+    return render_template('read_letter.html', letter=letter, user=user)
+
+@app.route('/memories')
+def memories():
+    """Page des souvenirs"""
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    if DB_TYPE == 'postgresql':
+        cursor.execute('SELECT * FROM memories ORDER BY date_memory DESC')
+        memories_data = cursor.fetchall()
+        memories_list = []
+        for row in memories_data:
+            memories_list.append({
+                'id': row[0],
+                'title': row[1],
+                'description': row[2],
+                'date_memory': row[3],
+                'author': row[4],
+                'is_anniversary': row[5],
+                'created_at': row[6]
+            })
+    else:
+        cursor.execute('SELECT * FROM memories ORDER BY date_memory DESC')
+        memories_data = cursor.fetchall()
+        memories_list = [dict(row) for row in memories_data]
+    
+    cursor.close()
+    conn.close()
+    
+    return render_template('memories.html', memories=memories_list, user=session['user'])
+
+@app.route('/add_memory', methods=['GET', 'POST'])
+def add_memory():
+    """Ajouter un souvenir"""
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
+    if request.method == 'POST':
+        title = request.form['title'].strip()
+        description = request.form['description'].strip()
+        date_memory = request.form['date_memory']
+        is_anniversary = 'is_anniversary' in request.form
+        
+        if title and description and date_memory:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            
+            if DB_TYPE == 'postgresql':
+                cursor.execute('''
+                    INSERT INTO memories (title, description, date_memory, author, is_anniversary)
+                    VALUES (%s, %s, %s, %s, %s)
+                ''', (title, description, date_memory, session['user'], is_anniversary))
+            else:
+                cursor.execute('''
+                    INSERT INTO memories (title, description, date_memory, author, is_anniversary)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (title, description, date_memory, session['user'], is_anniversary))
+            
+            conn.commit()
+            cursor.close()
+            conn.close()
+            
+            log_activity(session['user'], 'memory_added', f'Souvenir: {title}')
+            flash('Souvenir ajouté avec succès ! 📝', 'success')
+            return redirect(url_for('memories'))
+        else:
+            flash('Veuillez remplir tous les champs', 'error')
+    
+    return render_template('add_memory.html', user=session['user'])
+
+@app.route('/challenges')
+def challenges():
+    """Page des défis"""
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    if DB_TYPE == 'postgresql':
+        cursor.execute('SELECT * FROM challenges WHERE is_active = TRUE ORDER BY points DESC')
+        challenges_data = cursor.fetchall()
+        challenges_list = []
+        for row in challenges_data:
+            challenges_list.append({
+                'id': row[0],
+                'title': row[1],
+                'description': row[2],
+                'challenge_type': row[3],
+                'points': row[4],
+                'is_active': row[5],
+                'completed_by': row[6],
+                'completed_date': row[7],
+                'created_at': row[8]
+            })
+    else:
+        cursor.execute('SELECT * FROM challenges WHERE is_active = 1 ORDER BY points DESC')
+        challenges_data = cursor.fetchall()
+        challenges_list = [dict(row) for row in challenges_data]
+    
+    cursor.close()
+    conn.close()
+    
+    return render_template('challenges.html', challenges=challenges_list, user=session['user'])
+
+@app.route('/complete_challenge/<int:challenge_id>')
+def complete_challenge(challenge_id):
+    """Marquer un défi comme complété"""
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
+    user = session['user']
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    if DB_TYPE == 'postgresql':
+        cursor.execute('UPDATE challenges SET completed_by = %s, completed_date = CURRENT_TIMESTAMP WHERE id = %s', (user, challenge_id))
+    else:
+        cursor.execute('UPDATE challenges SET completed_by = ?, completed_date = CURRENT_TIMESTAMP WHERE id = ?', (user, challenge_id))
+    
+    conn.commit()
+    cursor.close()
+    conn.close()
+    
+    log_activity(user, 'challenge_completed', f'Défi ID: {challenge_id}')
+    flash('Défi complété ! 🎉', 'success')
+    return redirect(url_for('challenges'))
+
 @app.route('/migrate_data')
 def migrate_data():
     """Route pour migrer les données de SQLite vers Neon.tech"""
