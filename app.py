@@ -1366,6 +1366,10 @@ def challenges():
     conn.close()
     
     return render_template('challenges.html', challenges=challenges_list, user=session['user'])
+@app.route('/love_challenges')
+def love_challenges():
+    return redirect(url_for('challenges'))
+
 
 @app.route('/complete_challenge/<int:challenge_id>')
 def complete_challenge(challenge_id):
