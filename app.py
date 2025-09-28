@@ -1366,9 +1366,100 @@ def challenges():
     conn.close()
     
     return render_template('challenges.html', challenges=challenges_list, user=session['user'])
+# ROUTES MANQUANTES FINALES
+
 @app.route('/love_challenges')
 def love_challenges():
+    """Alias pour la page des défis d'amour"""
     return redirect(url_for('challenges'))
+
+@app.route('/personalize')
+def personalize():
+    """Page de personnalisation des préférences"""
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
+    user = session['user']
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    if DB_TYPE == 'postgresql':
+        cursor.execute('SELECT favorite_color FROM users WHERE username = %s', (user,))
+        user_data = cursor.fetchone()
+        favorite_color = user_data[0] if user_data else '#ffdde1'
+    else:
+        cursor.execute('SELECT favorite_color FROM users WHERE username = ?', (user,))
+        user_row = cursor.fetchone()
+        favorite_color = user_row['favorite_color'] if user_row else '#ffdde1'
+    
+    cursor.close()
+    conn.close()
+    
+    return render_template('personalize.html', user=user, favorite_color=favorite_color)
+
+@app.route('/update_preferences', methods=['POST'])
+def update_preferences():
+    """Mettre à jour les préférences utilisateur"""
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
+    user = session['user']
+    favorite_color = request.form.get('favorite_color', '#ffdde1')
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    if DB_TYPE == 'postgresql':
+        cursor.execute('UPDATE users SET favorite_color = %s WHERE username = %s', (favorite_color, user))
+    else:
+        cursor.execute('UPDATE users SET favorite_color = ? WHERE username = ?', (favorite_color, user))
+    
+    conn.commit()
+    cursor.close()
+    conn.close()
+    
+    log_activity(user, 'preferences_updated', f'Couleur: {favorite_color}')
+    flash('Préférences mises à jour avec succès ! 🎨', 'success')
+    return redirect(url_for('index'))
+
+
+
+# Route pour le calendrier (si elle n'existe pas déjà)
+@app.route('/calendar')
+def calendar():
+    """Page du calendrier d'amour"""
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Récupérer les événements du calendrier
+    if DB_TYPE == 'postgresql':
+        cursor.execute('SELECT * FROM calendar_events ORDER BY event_date')
+        events_data = cursor.fetchall()
+        events = []
+        for row in events_data:
+            events.append({
+                'id': row[0],
+                'title': row[1],
+                'event_date': row[2],
+                'event_type': row[3],
+                'description': row[4],
+                'created_by': row[5],
+                'created_at': row[6]
+            })
+    else:
+        cursor.execute('SELECT * FROM calendar_events ORDER BY event_date')
+        events_data = cursor.fetchall()
+        events = [dict(row) for row in events_data]
+    
+    cursor.close()
+    conn.close()
+    
+    return render_template('calendar.html', events=events, user=session['user'])
+
+
 
 
 @app.route('/complete_challenge/<int:challenge_id>')
