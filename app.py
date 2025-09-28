@@ -1424,7 +1424,17 @@ def update_preferences():
 
 
 
-# Route pour le calendrier (si elle n'existe pas déjà)
+
+
+# AJOUTER CES ROUTES APRÈS LA ROUTE challenges DANS app.py
+
+
+
+@app.route('/love_challenges')
+def love_challenges():
+    """Alias pour la page des défis d'amour"""
+    return redirect(url_for('challenges'))
+
 @app.route('/calendar')
 def calendar():
     """Page du calendrier d'amour"""
@@ -1459,8 +1469,49 @@ def calendar():
     
     return render_template('love_calendar.html', events=events, user=session['user'])
 
+@app.route('/love_calendar')
+def love_calendar():
+    """Alias pour la page du calendrier"""
+    return redirect(url_for('calendar'))
 
-
+@app.route('/add_event', methods=['GET', 'POST'])
+def add_event():
+    """Ajouter un événement au calendrier"""
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
+    if request.method == 'POST':
+        title = request.form['title'].strip()
+        event_date = request.form['event_date']
+        event_type = request.form.get('event_type', 'special')
+        description = request.form.get('description', '').strip()
+        
+        if title and event_date:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            
+            if DB_TYPE == 'postgresql':
+                cursor.execute('''
+                    INSERT INTO calendar_events (title, event_date, event_type, description, created_by)
+                    VALUES (%s, %s, %s, %s, %s)
+                ''', (title, event_date, event_type, description, session['user']))
+            else:
+                cursor.execute('''
+                    INSERT INTO calendar_events (title, event_date, event_type, description, created_by)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (title, event_date, event_type, description, session['user']))
+            
+            conn.commit()
+            cursor.close()
+            conn.close()
+            
+            log_activity(session['user'], 'event_added', f'Événement: {title}')
+            flash('Événement ajouté au calendrier ! 📅', 'success')
+            return redirect(url_for('calendar'))
+        else:
+            flash('Veuillez remplir le titre et la date', 'error')
+    
+    return render_template('add_event.html', user=session['user'])
 
 @app.route('/complete_challenge/<int:challenge_id>')
 def complete_challenge(challenge_id):
@@ -1484,6 +1535,9 @@ def complete_challenge(challenge_id):
     log_activity(user, 'challenge_completed', f'Défi ID: {challenge_id}')
     flash('Défi complété ! 🎉', 'success')
     return redirect(url_for('challenges'))
+
+
+
 
 @app.route('/migrate_data')
 def migrate_data():
@@ -1762,39 +1816,7 @@ def stats():
 
 # ROUTES MANQUANTES POUR LE CALENDRIER
 
-@app.route('/calendar')
-def love_calendar():
-    """Page du calendrier d'amour"""
-    if not is_site_unlocked() and not session.get('special_access'):
-        return redirect(url_for('locked_page'))
-    
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    # Récupérer les événements du calendrier
-    if DB_TYPE == 'postgresql':
-        cursor.execute('SELECT * FROM calendar_events ORDER BY event_date')
-        events_data = cursor.fetchall()
-        events = []
-        for row in events_data:
-            events.append({
-                'id': row[0],
-                'title': row[1],
-                'event_date': row[2],
-                'event_type': row[3],
-                'description': row[4],
-                'created_by': row[5],
-                'created_at': row[6]
-            })
-    else:
-        cursor.execute('SELECT * FROM calendar_events ORDER BY event_date')
-        events_data = cursor.fetchall()
-        events = [dict(row) for row in events_data]
-    
-    cursor.close()
-    conn.close()
-    
-    return render_template('calendar.html', events=events, user=session['user'])
+
 
 @app.route('/add_event', methods=['GET', 'POST'])
 def add_event():
