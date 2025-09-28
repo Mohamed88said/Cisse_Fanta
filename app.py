@@ -1661,6 +1661,124 @@ def stats():
                          recent_activity=recent_activity,
                          user=session['user'])
 
+
+
+
+
+# ROUTES MANQUANTES POUR LE CALENDRIER
+
+@app.route('/calendar')
+def love_calendar():
+    """Page du calendrier d'amour"""
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Récupérer les événements du calendrier
+    if DB_TYPE == 'postgresql':
+        cursor.execute('SELECT * FROM calendar_events ORDER BY event_date')
+        events_data = cursor.fetchall()
+        events = []
+        for row in events_data:
+            events.append({
+                'id': row[0],
+                'title': row[1],
+                'event_date': row[2],
+                'event_type': row[3],
+                'description': row[4],
+                'created_by': row[5],
+                'created_at': row[6]
+            })
+    else:
+        cursor.execute('SELECT * FROM calendar_events ORDER BY event_date')
+        events_data = cursor.fetchall()
+        events = [dict(row) for row in events_data]
+    
+    cursor.close()
+    conn.close()
+    
+    return render_template('calendar.html', events=events, user=session['user'])
+
+@app.route('/add_event', methods=['GET', 'POST'])
+def add_event():
+    """Ajouter un événement au calendrier"""
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
+    if request.method == 'POST':
+        title = request.form['title'].strip()
+        event_date = request.form['event_date']
+        event_type = request.form.get('event_type', 'special')
+        description = request.form.get('description', '').strip()
+        
+        if title and event_date:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            
+            if DB_TYPE == 'postgresql':
+                cursor.execute('''
+                    INSERT INTO calendar_events (title, event_date, event_type, description, created_by)
+                    VALUES (%s, %s, %s, %s, %s)
+                ''', (title, event_date, event_type, description, session['user']))
+            else:
+                cursor.execute('''
+                    INSERT INTO calendar_events (title, event_date, event_type, description, created_by)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (title, event_date, event_type, description, session['user']))
+            
+            conn.commit()
+            cursor.close()
+            conn.close()
+            
+            log_activity(session['user'], 'event_added', f'Événement: {title}')
+            flash('Événement ajouté au calendrier ! 📅', 'success')
+            return redirect(url_for('love_calendar'))
+        else:
+            flash('Veuillez remplir le titre et la date', 'error')
+    
+    return render_template('add_event.html', user=session['user'])
+
+@app.route('/delete_event/<int:event_id>')
+def delete_event(event_id):
+    """Supprimer un événement"""
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
+    user = session['user']
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Vérifier que l'utilisateur est le créateur
+    if DB_TYPE == 'postgresql':
+        cursor.execute('SELECT created_by FROM calendar_events WHERE id = %s', (event_id,))
+        event_data = cursor.fetchone()
+        if event_data and event_data[0] == user:
+            cursor.execute('DELETE FROM calendar_events WHERE id = %s', (event_id,))
+            log_activity(user, 'event_deleted', f'Événement ID: {event_id}')
+            flash('Événement supprimé avec succès', 'success')
+        else:
+            flash('Vous ne pouvez supprimer que vos propres événements', 'error')
+    else:
+        cursor.execute('SELECT created_by FROM calendar_events WHERE id = ?', (event_id,))
+        event = cursor.fetchone()
+        if event and event['created_by'] == user:
+            cursor.execute('DELETE FROM calendar_events WHERE id = ?', (event_id,))
+            log_activity(user, 'event_deleted', f'Événement ID: {event_id}')
+            flash('Événement supprimé avec succès', 'success')
+        else:
+            flash('Vous ne pouvez supprimer que vos propres événements', 'error')
+    
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return redirect(url_for('love_calendar'))
+
+
+
+
+
 # Gestion des erreurs
 @app.errorhandler(404)
 def not_found_error(error):
