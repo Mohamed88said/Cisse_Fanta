@@ -79,7 +79,7 @@
                 <div class="stat-icon">🗓️</div>
                 <div class="stat-info">
                     <div class="stat-label">Dans mon cœur depuis</div>
-                    <div class="stat-value">{{ current_user.created_at if current_user.created_at else 'Toujours' }}</div>
+                    <div class="stat-value">{{ user.created_at if user.created_at else 'Toujours' }}</div>
                 </div>
             </div>
             

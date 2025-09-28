@@ -1365,7 +1365,7 @@ def challenges():
     cursor.close()
     conn.close()
     
-    return render_template('challenges.html', challenges=challenges_list, user=session['user'])
+    return render_template('love_challenges.html', challenges=challenges_list, user=session['user'])
 # ROUTES MANQUANTES FINALES
 
 @app.route('/love_challenges')
@@ -1457,7 +1457,7 @@ def calendar():
     cursor.close()
     conn.close()
     
-    return render_template('calendar.html', events=events, user=session['user'])
+    return render_template('love_calendar.html', events=events, user=session['user'])
 
 
 
