@@ -1430,10 +1430,7 @@ def update_preferences():
 
 
 
-@app.route('/love_challenges')
-def love_challenges():
-    """Alias pour la page des défis d'amour"""
-    return redirect(url_for('challenges'))
+
 
 @app.route('/calendar')
 def calendar():
