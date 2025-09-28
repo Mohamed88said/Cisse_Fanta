@@ -1988,13 +1988,48 @@ def api_user_activity():
     
     return jsonify(activities)
 
+# Créer des templates d'erreur basiques
 @app.errorhandler(404)
 def page_not_found(e):
-    return render_template('404.html'), 404
+    return """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Page non trouvée</title>
+        <style>
+            body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: linear-gradient(135deg, #ffdde1, #ee9ca7); }
+            h1 { color: #d63384; }
+            a { color: #d63384; text-decoration: none; }
+        </style>
+    </head>
+    <body>
+        <h1>404 - Page non trouvée</h1>
+        <p>Désolé, la page que vous cherchez n'existe pas.</p>
+        <p><a href="/">Retour à l'accueil</a></p>
+    </body>
+    </html>
+    """, 404
 
 @app.errorhandler(500)
 def internal_server_error(e):
-    return render_template('500.html'), 500
+    return """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Erreur serveur</title>
+        <style>
+            body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: linear-gradient(135deg, #ffdde1, #ee9ca7); }
+            h1 { color: #d63384; }
+            a { color: #d63384; text-decoration: none; }
+        </style>
+    </head>
+    <body>
+        <h1>500 - Erreur interne du serveur</h1>
+        <p>Une erreur s'est produite. Veuillez réessayer plus tard.</p>
+        <p><a href="/">Retour à l'accueil</a></p>
+    </body>
+    </html>
+    """, 500
 
 @app.route('/test_db')
 def test_db():
