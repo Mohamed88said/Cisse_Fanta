@@ -958,18 +958,20 @@ def galerie():
         'iter_pages': lambda: range(max(1, page - 2), min((total + per_page - 1) // per_page + 1, page + 3))
     }
     
-    return render_template('galerie.html', photos=photos, user=session['user'], pagination=pagination)
+    return render_template('galerie.html', photos=photos, pagination=pagination)
 
-@app.route('/upload', methods=['POST'])
-def upload_file():
+@app.route('/upload_photo', methods=['POST'])
+def upload_photo():
     if not is_site_unlocked() and not session.get('special_access'):
         return redirect(url_for('locked_page'))
     
-    if 'file' not in request.files:
+    user = session['user']
+    
+    if 'photo' not in request.files:
         flash('Aucun fichier sélectionné', 'error')
         return redirect(url_for('galerie'))
     
-    file = request.files['file']
+    file = request.files['photo']
     legende = request.form.get('legende', '').strip()
     
     if file.filename == '':
@@ -977,11 +979,10 @@ def upload_file():
         return redirect(url_for('galerie'))
     
     if file and allowed_file(file.filename):
-        # Essayer d'abord Cloudinary
-        cloudinary_result = upload_to_cloudinary(file)
+        # Upload vers Cloudinary
+        result = upload_to_cloudinary(file)
         
-        if cloudinary_result['success']:
-            # Sauvegarde Cloudinary réussie
+        if result['success']:
             conn = get_db_connection()
             cursor = conn.cursor()
             
@@ -989,55 +990,23 @@ def upload_file():
                 cursor.execute('''
                     INSERT INTO photos (filename, cloudinary_url, legende, auteur, file_size)
                     VALUES (%s, %s, %s, %s, %s)
-                ''', (cloudinary_result['filename'], cloudinary_result['url'], legende, session['user'], cloudinary_result['file_size']))
+                ''', (result['filename'], result['url'], legende, user, result['file_size']))
             else:
                 cursor.execute('''
                     INSERT INTO photos (filename, cloudinary_url, legende, auteur, file_size)
                     VALUES (?, ?, ?, ?, ?)
-                ''', (cloudinary_result['filename'], cloudinary_result['url'], legende, session['user'], cloudinary_result['file_size']))
+                ''', (result['filename'], result['url'], legende, user, result['file_size']))
             
             conn.commit()
             cursor.close()
             conn.close()
             
-            log_activity(session['user'], 'photo_uploaded', f'Photo: {cloudinary_result["filename"]}')
-            flash('Photo uploadée avec succès vers Cloudinary ! 📸', 'success')
-            
+            log_activity(user, 'photo_uploaded', f'Photo: {result["filename"]}')
+            flash('Photo uploadée avec succès ! 📸', 'success')
         else:
-            # Fallback local
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_')
-            filename = timestamp + secure_filename(file.filename)
-            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            
-            try:
-                file.save(file_path)
-                file_size = os.path.getsize(file_path)
-                
-                conn = get_db_connection()
-                cursor = conn.cursor()
-                
-                if DB_TYPE == 'postgresql':
-                    cursor.execute('''
-                        INSERT INTO photos (filename, legende, auteur, file_size)
-                        VALUES (%s, %s, %s, %s)
-                    ''', (filename, legende, session['user'], file_size))
-                else:
-                    cursor.execute('''
-                        INSERT INTO photos (filename, legende, auteur, file_size)
-                        VALUES (?, ?, ?, ?)
-                    ''', (filename, legende, session['user'], file_size))
-                
-                conn.commit()
-                cursor.close()
-                conn.close()
-                
-                log_activity(session['user'], 'photo_uploaded', f'Photo: {filename}')
-                flash('Photo sauvegardée localement ! 📸', 'warning')
-                
-            except Exception as e:
-                flash(f'Erreur lors de l\'upload: {str(e)}', 'error')
+            flash(f'Erreur lors de l\'upload: {result["error"]}', 'error')
     else:
-        flash('Type de fichier non autorisé', 'error')
+        flash('Type de fichier non autorisé. Utilisez PNG, JPG, JPEG, GIF ou WEBP.', 'error')
     
     return redirect(url_for('galerie'))
 
@@ -1078,24 +1047,16 @@ def supprimer_photo(photo_id):
     
     # Vérifier que l'utilisateur est l'auteur
     if DB_TYPE == 'postgresql':
-        cursor.execute('SELECT auteur, filename, cloudinary_url FROM photos WHERE id = %s', (photo_id,))
+        cursor.execute('SELECT auteur, cloudinary_url FROM photos WHERE id = %s', (photo_id,))
         photo_data = cursor.fetchone()
         if photo_data and photo_data[0] == user:
-            # Supprimer de Cloudinary si applicable
-            if photo_data[2]:  # cloudinary_url existe
+            # Supprimer de Cloudinary
+            if photo_data[1]:
                 try:
-                    public_id = photo_data[2].split('/')[-1].split('.')[0]
-                    cloudinary.uploader.destroy(public_id)
+                    public_id = photo_data[1].split('/')[-1].split('.')[0]
+                    cloudinary.uploader.destroy(f"love_app/{public_id}")
                 except Exception as e:
                     print(f"Erreur suppression Cloudinary: {e}")
-            
-            # Supprimer le fichier local
-            try:
-                file_path = os.path.join(app.config['UPLOAD_FOLDER'], photo_data[1])
-                if os.path.exists(file_path):
-                    os.remove(file_path)
-            except Exception as e:
-                print(f"Erreur suppression fichier: {e}")
             
             cursor.execute('DELETE FROM photos WHERE id = %s', (photo_id,))
             log_activity(user, 'photo_deleted', f'Photo ID: {photo_id}')
@@ -1103,16 +1064,16 @@ def supprimer_photo(photo_id):
         else:
             flash('Vous ne pouvez supprimer que vos propres photos', 'error')
     else:
-        cursor.execute('SELECT auteur, filename FROM photos WHERE id = ?', (photo_id,))
+        cursor.execute('SELECT auteur, cloudinary_url FROM photos WHERE id = ?', (photo_id,))
         photo = cursor.fetchone()
         if photo and photo['auteur'] == user:
-            # Supprimer le fichier
-            try:
-                file_path = os.path.join(app.config['UPLOAD_FOLDER'], photo['filename'])
-                if os.path.exists(file_path):
-                    os.remove(file_path)
-            except Exception as e:
-                print(f"Erreur suppression fichier: {e}")
+            # Supprimer de Cloudinary
+            if photo['cloudinary_url']:
+                try:
+                    public_id = photo['cloudinary_url'].split('/')[-1].split('.')[0]
+                    cloudinary.uploader.destroy(f"love_app/{public_id}")
+                except Exception as e:
+                    print(f"Erreur suppression Cloudinary: {e}")
             
             cursor.execute('DELETE FROM photos WHERE id = ?', (photo_id,))
             log_activity(user, 'photo_deleted', f'Photo ID: {photo_id}')
@@ -1125,11 +1086,8 @@ def supprimer_photo(photo_id):
     conn.close()
     return redirect(url_for('galerie'))
 
-# ROUTES MANQUANTES AJOUTÉES
-
-@app.route('/letters')
-def letters():
-    """Page des lettres d'amour"""
+@app.route('/lettres')
+def lettres():
     if not is_site_unlocked() and not session.get('special_access'):
         return redirect(url_for('locked_page'))
     
@@ -1137,17 +1095,34 @@ def letters():
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # Récupérer les lettres envoyées et reçues
     if DB_TYPE == 'postgresql':
         cursor.execute('''
             SELECT * FROM letters 
-            WHERE sender = %s OR recipient = %s 
+            WHERE recipient = %s 
             ORDER BY created_at DESC
-        ''', (user, user))
+        ''', (user,))
         letters_data = cursor.fetchall()
-        letters = []
+        received_letters = []
         for row in letters_data:
-            letters.append({
+            received_letters.append({
+                'id': row[0],
+                'title': row[1],
+                'content': row[2],
+                'sender': row[3],
+                'recipient': row[4],
+                'is_read': row[5],
+                'created_at': row[6]
+            })
+        
+        cursor.execute('''
+            SELECT * FROM letters 
+            WHERE sender = %s 
+            ORDER BY created_at DESC
+        ''', (user,))
+        sent_letters_data = cursor.fetchall()
+        sent_letters = []
+        for row in sent_letters_data:
+            sent_letters.append({
                 'id': row[0],
                 'title': row[1],
                 'content': row[2],
@@ -1159,20 +1134,27 @@ def letters():
     else:
         cursor.execute('''
             SELECT * FROM letters 
-            WHERE sender = ? OR recipient = ? 
+            WHERE recipient = ? 
             ORDER BY created_at DESC
-        ''', (user, user))
-        letters_data = cursor.fetchall()
-        letters = [dict(row) for row in letters_data]
+        ''', (user,))
+        received_letters = [dict(row) for row in cursor.fetchall()]
+        
+        cursor.execute('''
+            SELECT * FROM letters 
+            WHERE sender = ? 
+            ORDER BY created_at DESC
+        ''', (user,))
+        sent_letters = [dict(row) for row in cursor.fetchall()]
     
     cursor.close()
     conn.close()
     
-    return render_template('letters.html', letters=letters, user=user)
+    return render_template('lettres.html', 
+                         received_letters=received_letters,
+                         sent_letters=sent_letters)
 
-@app.route('/write_letter', methods=['GET', 'POST'])
-def write_letter():
-    """Écrire une nouvelle lettre"""
+@app.route('/ecrire_lettre', methods=['GET', 'POST'])
+def ecrire_lettre():
     if not is_site_unlocked() and not session.get('special_access'):
         return redirect(url_for('locked_page'))
     
@@ -1182,6 +1164,8 @@ def write_letter():
         recipient = request.form['recipient'].strip()
         
         if title and content and recipient:
+            sender = session['user']
+            
             conn = get_db_connection()
             cursor = conn.cursor()
             
@@ -1189,28 +1173,27 @@ def write_letter():
                 cursor.execute('''
                     INSERT INTO letters (title, content, sender, recipient)
                     VALUES (%s, %s, %s, %s)
-                ''', (title, content, session['user'], recipient))
+                ''', (title, content, sender, recipient))
             else:
                 cursor.execute('''
                     INSERT INTO letters (title, content, sender, recipient)
                     VALUES (?, ?, ?, ?)
-                ''', (title, content, session['user'], recipient))
+                ''', (title, content, sender, recipient))
             
             conn.commit()
             cursor.close()
             conn.close()
             
-            log_activity(session['user'], 'letter_sent', f'À: {recipient}')
+            log_activity(sender, 'letter_sent', f'À: {recipient}, Titre: {title}')
             flash('Lettre envoyée avec succès ! 💌', 'success')
-            return redirect(url_for('letters'))
+            return redirect(url_for('lettres'))
         else:
             flash('Veuillez remplir tous les champs', 'error')
     
-    return render_template('write_letter.html', user=session['user'])
+    return render_template('ecrire_lettre.html')
 
-@app.route('/read_letter/<int:letter_id>')
-def read_letter(letter_id):
-    """Lire une lettre"""
+@app.route('/lire_lettre/<int:letter_id>')
+def lire_lettre(letter_id):
     if not is_site_unlocked() and not session.get('special_access'):
         return redirect(url_for('locked_page'))
     
@@ -1232,7 +1215,7 @@ def read_letter(letter_id):
                 'created_at': letter_data[6]
             }
             
-            # Marquer comme lu si le destinataire est l'utilisateur actuel
+            # Marquer comme lu si c'est le destinataire
             if letter['recipient'] == user and not letter['is_read']:
                 cursor.execute('UPDATE letters SET is_read = TRUE WHERE id = %s', (letter_id,))
                 conn.commit()
@@ -1244,7 +1227,7 @@ def read_letter(letter_id):
         if letter_row:
             letter = dict(letter_row)
             
-            # Marquer comme lu si le destinataire est l'utilisateur actuel
+            # Marquer comme lu si c'est le destinataire
             if letter['recipient'] == user and not letter['is_read']:
                 cursor.execute('UPDATE letters SET is_read = 1 WHERE id = ?', (letter_id,))
                 conn.commit()
@@ -1256,13 +1239,16 @@ def read_letter(letter_id):
     
     if not letter:
         flash('Lettre non trouvée', 'error')
-        return redirect(url_for('letters'))
+        return redirect(url_for('lettres'))
     
-    return render_template('read_letter.html', letter=letter, user=user)
+    if letter['recipient'] != user and letter['sender'] != user:
+        flash('Vous n\'avez pas accès à cette lettre', 'error')
+        return redirect(url_for('lettres'))
+    
+    return render_template('lire_lettre.html', letter=letter)
 
 @app.route('/memories')
 def memories():
-    """Page des souvenirs"""
     if not is_site_unlocked() and not session.get('special_access'):
         return redirect(url_for('locked_page'))
     
@@ -1270,7 +1256,10 @@ def memories():
     cursor = conn.cursor()
     
     if DB_TYPE == 'postgresql':
-        cursor.execute('SELECT * FROM memories ORDER BY date_memory DESC')
+        cursor.execute('''
+            SELECT * FROM memories 
+            ORDER BY date_memory DESC
+        ''')
         memories_data = cursor.fetchall()
         memories_list = []
         for row in memories_data:
@@ -1284,18 +1273,19 @@ def memories():
                 'created_at': row[6]
             })
     else:
-        cursor.execute('SELECT * FROM memories ORDER BY date_memory DESC')
-        memories_data = cursor.fetchall()
-        memories_list = [dict(row) for row in memories_data]
+        cursor.execute('''
+            SELECT * FROM memories 
+            ORDER BY date_memory DESC
+        ''')
+        memories_list = [dict(row) for row in cursor.fetchall()]
     
     cursor.close()
     conn.close()
     
-    return render_template('memories.html', memories=memories_list, user=session['user'])
+    return render_template('memories.html', memories=memories_list)
 
 @app.route('/add_memory', methods=['GET', 'POST'])
 def add_memory():
-    """Ajouter un souvenir"""
     if not is_site_unlocked() and not session.get('special_access'):
         return redirect(url_for('locked_page'))
     
@@ -1306,6 +1296,8 @@ def add_memory():
         is_anniversary = 'is_anniversary' in request.form
         
         if title and description and date_memory:
+            author = session['user']
+            
             conn = get_db_connection()
             cursor = conn.cursor()
             
@@ -1313,28 +1305,61 @@ def add_memory():
                 cursor.execute('''
                     INSERT INTO memories (title, description, date_memory, author, is_anniversary)
                     VALUES (%s, %s, %s, %s, %s)
-                ''', (title, description, date_memory, session['user'], is_anniversary))
+                ''', (title, description, date_memory, author, is_anniversary))
             else:
                 cursor.execute('''
                     INSERT INTO memories (title, description, date_memory, author, is_anniversary)
                     VALUES (?, ?, ?, ?, ?)
-                ''', (title, description, date_memory, session['user'], is_anniversary))
+                ''', (title, description, date_memory, author, is_anniversary))
             
             conn.commit()
             cursor.close()
             conn.close()
             
-            log_activity(session['user'], 'memory_added', f'Souvenir: {title}')
+            log_activity(author, 'memory_added', f'Titre: {title}')
             flash('Souvenir ajouté avec succès ! 📝', 'success')
             return redirect(url_for('memories'))
         else:
-            flash('Veuillez remplir tous les champs', 'error')
+            flash('Veuillez remplir tous les champs obligatoires', 'error')
     
-    return render_template('add_memory.html', user=session['user'])
+    return render_template('add_memory.html')
 
-@app.route('/challenges')
-def challenges():
-    """Page des défis"""
+@app.route('/delete_memory/<int:memory_id>')
+def delete_memory(memory_id):
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
+    user = session['user']
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Vérifier que l'utilisateur est l'auteur
+    if DB_TYPE == 'postgresql':
+        cursor.execute('SELECT author FROM memories WHERE id = %s', (memory_id,))
+        memory_data = cursor.fetchone()
+        if memory_data and memory_data[0] == user:
+            cursor.execute('DELETE FROM memories WHERE id = %s', (memory_id,))
+            log_activity(user, 'memory_deleted', f'Memory ID: {memory_id}')
+            flash('Souvenir supprimé avec succès', 'success')
+        else:
+            flash('Vous ne pouvez supprimer que vos propres souvenirs', 'error')
+    else:
+        cursor.execute('SELECT author FROM memories WHERE id = ?', (memory_id,))
+        memory = cursor.fetchone()
+        if memory and memory['author'] == user:
+            cursor.execute('DELETE FROM memories WHERE id = ?', (memory_id,))
+            log_activity(user, 'memory_deleted', f'Memory ID: {memory_id}')
+            flash('Souvenir supprimé avec succès', 'success')
+        else:
+            flash('Vous ne pouvez supprimer que vos propres souvenirs', 'error')
+    
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return redirect(url_for('memories'))
+
+@app.route('/calendar')
+def calendar():
     if not is_site_unlocked() and not session.get('special_access'):
         return redirect(url_for('locked_page'))
     
@@ -1342,7 +1367,123 @@ def challenges():
     cursor = conn.cursor()
     
     if DB_TYPE == 'postgresql':
-        cursor.execute('SELECT * FROM challenges WHERE is_active = TRUE ORDER BY points DESC')
+        cursor.execute('''
+            SELECT * FROM calendar_events 
+            ORDER BY event_date
+        ''')
+        events_data = cursor.fetchall()
+        events = []
+        for row in events_data:
+            events.append({
+                'id': row[0],
+                'title': row[1],
+                'event_date': row[2],
+                'event_type': row[3],
+                'description': row[4],
+                'created_by': row[5],
+                'created_at': row[6]
+            })
+    else:
+        cursor.execute('''
+            SELECT * FROM calendar_events 
+            ORDER BY event_date
+        ''')
+        events = [dict(row) for row in cursor.fetchall()]
+    
+    cursor.close()
+    conn.close()
+    
+    return render_template('calendar.html', events=events)
+
+@app.route('/add_event', methods=['GET', 'POST'])
+def add_event():
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
+    if request.method == 'POST':
+        title = request.form['title'].strip()
+        event_date = request.form['event_date']
+        event_type = request.form['event_type']
+        description = request.form.get('description', '').strip()
+        
+        if title and event_date:
+            created_by = session['user']
+            
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            
+            if DB_TYPE == 'postgresql':
+                cursor.execute('''
+                    INSERT INTO calendar_events (title, event_date, event_type, description, created_by)
+                    VALUES (%s, %s, %s, %s, %s)
+                ''', (title, event_date, event_type, description, created_by))
+            else:
+                cursor.execute('''
+                    INSERT INTO calendar_events (title, event_date, event_type, description, created_by)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (title, event_date, event_type, description, created_by))
+            
+            conn.commit()
+            cursor.close()
+            conn.close()
+            
+            log_activity(created_by, 'event_added', f'Titre: {title}')
+            flash('Événement ajouté avec succès ! 📅', 'success')
+            return redirect(url_for('calendar'))
+        else:
+            flash('Veuillez remplir tous les champs obligatoires', 'error')
+    
+    return render_template('add_event.html')
+
+@app.route('/delete_event/<int:event_id>')
+def delete_event(event_id):
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
+    user = session['user']
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Vérifier que l'utilisateur est le créateur
+    if DB_TYPE == 'postgresql':
+        cursor.execute('SELECT created_by FROM calendar_events WHERE id = %s', (event_id,))
+        event_data = cursor.fetchone()
+        if event_data and event_data[0] == user:
+            cursor.execute('DELETE FROM calendar_events WHERE id = %s', (event_id,))
+            log_activity(user, 'event_deleted', f'Event ID: {event_id}')
+            flash('Événement supprimé avec succès', 'success')
+        else:
+            flash('Vous ne pouvez supprimer que vos propres événements', 'error')
+    else:
+        cursor.execute('SELECT created_by FROM calendar_events WHERE id = ?', (event_id,))
+        event = cursor.fetchone()
+        if event and event['created_by'] == user:
+            cursor.execute('DELETE FROM calendar_events WHERE id = ?', (event_id,))
+            log_activity(user, 'event_deleted', f'Event ID: {event_id}')
+            flash('Événement supprimé avec succès', 'success')
+        else:
+            flash('Vous ne pouvez supprimer que vos propres événements', 'error')
+    
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return redirect(url_for('calendar'))
+
+@app.route('/challenges')
+def challenges():
+    if not is_site_unlocked() and not session.get('special_access'):
+        return redirect(url_for('locked_page'))
+    
+    user = session['user']
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    if DB_TYPE == 'postgresql':
+        cursor.execute('''
+            SELECT * FROM challenges 
+            WHERE is_active = TRUE
+            ORDER BY points DESC
+        ''')
         challenges_data = cursor.fetchall()
         challenges_list = []
         for row in challenges_data:
@@ -1358,281 +1499,251 @@ def challenges():
                 'created_at': row[8]
             })
     else:
-        cursor.execute('SELECT * FROM challenges WHERE is_active = 1 ORDER BY points DESC')
-        challenges_data = cursor.fetchall()
-        challenges_list = [dict(row) for row in challenges_data]
+        cursor.execute('''
+            SELECT * FROM challenges 
+            WHERE is_active = 1
+            ORDER BY points DESC
+        ''')
+        challenges_list = [dict(row) for row in cursor.fetchall()]
+    
+    # Vérifier les défis complétés par l'utilisateur
+    completed_challenges = []
+    for challenge in challenges_list:
+        if challenge['completed_by'] and user in challenge['completed_by']:
+            completed_challenges.append(challenge['id'])
     
     cursor.close()
     conn.close()
     
-    return render_template('love_challenges.html', challenges=challenges_list, user=session['user'])
-# ROUTES MANQUANTES FINALES
-
-@app.route('/love_challenges')
-def love_challenges():
-    """Alias pour la page des défis d'amour"""
-    return redirect(url_for('challenges'))
-
-@app.route('/personalize')
-def personalize():
-    """Page de personnalisation des préférences"""
-    if not is_site_unlocked() and not session.get('special_access'):
-        return redirect(url_for('locked_page'))
-    
-    user = session['user']
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    if DB_TYPE == 'postgresql':
-        cursor.execute('SELECT favorite_color FROM users WHERE username = %s', (user,))
-        user_data = cursor.fetchone()
-        favorite_color = user_data[0] if user_data else '#ffdde1'
-    else:
-        cursor.execute('SELECT favorite_color FROM users WHERE username = ?', (user,))
-        user_row = cursor.fetchone()
-        favorite_color = user_row['favorite_color'] if user_row else '#ffdde1'
-    
-    cursor.close()
-    conn.close()
-    
-    return render_template('personalize.html', user=user, favorite_color=favorite_color)
-
-@app.route('/update_preferences', methods=['POST'])
-def update_preferences():
-    """Mettre à jour les préférences utilisateur"""
-    if not is_site_unlocked() and not session.get('special_access'):
-        return redirect(url_for('locked_page'))
-    
-    user = session['user']
-    favorite_color = request.form.get('favorite_color', '#ffdde1')
-    
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    if DB_TYPE == 'postgresql':
-        cursor.execute('UPDATE users SET favorite_color = %s WHERE username = %s', (favorite_color, user))
-    else:
-        cursor.execute('UPDATE users SET favorite_color = ? WHERE username = ?', (favorite_color, user))
-    
-    conn.commit()
-    cursor.close()
-    conn.close()
-    
-    log_activity(user, 'preferences_updated', f'Couleur: {favorite_color}')
-    flash('Préférences mises à jour avec succès ! 🎨', 'success')
-    return redirect(url_for('index'))
-
-
-
-
-
-# AJOUTER CES ROUTES APRÈS LA ROUTE challenges DANS app.py
-
-
-
-
-
-@app.route('/calendar')
-def calendar():
-    """Page du calendrier d'amour"""
-    if not is_site_unlocked() and not session.get('special_access'):
-        return redirect(url_for('locked_page'))
-    
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    # Récupérer les événements du calendrier
-    if DB_TYPE == 'postgresql':
-        cursor.execute('SELECT * FROM calendar_events ORDER BY event_date')
-        events_data = cursor.fetchall()
-        events = []
-        for row in events_data:
-            events.append({
-                'id': row[0],
-                'title': row[1],
-                'event_date': row[2],
-                'event_type': row[3],
-                'description': row[4],
-                'created_by': row[5],
-                'created_at': row[6]
-            })
-    else:
-        cursor.execute('SELECT * FROM calendar_events ORDER BY event_date')
-        events_data = cursor.fetchall()
-        events = [dict(row) for row in events_data]
-    
-    cursor.close()
-    conn.close()
-    
-    return render_template('love_calendar.html', events=events, user=session['user'])
-
-@app.route('/love_calendar')
-def love_calendar():
-    """Alias pour la page du calendrier"""
-    return redirect(url_for('calendar'))
-
-@app.route('/add_event', methods=['GET', 'POST'])
-def add_event():
-    """Ajouter un événement au calendrier"""
-    if not is_site_unlocked() and not session.get('special_access'):
-        return redirect(url_for('locked_page'))
-    
-    if request.method == 'POST':
-        title = request.form['title'].strip()
-        event_date = request.form['event_date']
-        event_type = request.form.get('event_type', 'special')
-        description = request.form.get('description', '').strip()
-        
-        if title and event_date:
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            
-            if DB_TYPE == 'postgresql':
-                cursor.execute('''
-                    INSERT INTO calendar_events (title, event_date, event_type, description, created_by)
-                    VALUES (%s, %s, %s, %s, %s)
-                ''', (title, event_date, event_type, description, session['user']))
-            else:
-                cursor.execute('''
-                    INSERT INTO calendar_events (title, event_date, event_type, description, created_by)
-                    VALUES (?, ?, ?, ?, ?)
-                ''', (title, event_date, event_type, description, session['user']))
-            
-            conn.commit()
-            cursor.close()
-            conn.close()
-            
-            log_activity(session['user'], 'event_added', f'Événement: {title}')
-            flash('Événement ajouté au calendrier ! 📅', 'success')
-            return redirect(url_for('calendar'))
-        else:
-            flash('Veuillez remplir le titre et la date', 'error')
-    
-    return render_template('add_event.html', user=session['user'])
+    return render_template('challenges.html', 
+                         challenges=challenges_list,
+                         completed_challenges=completed_challenges)
 
 @app.route('/complete_challenge/<int:challenge_id>')
 def complete_challenge(challenge_id):
-    """Marquer un défi comme complété"""
     if not is_site_unlocked() and not session.get('special_access'):
-        return redirect(url_for('locked_page'))
+        return jsonify({'error': 'Site verrouillé'}), 403
     
     user = session['user']
     conn = get_db_connection()
     cursor = conn.cursor()
     
     if DB_TYPE == 'postgresql':
-        cursor.execute('UPDATE challenges SET completed_by = %s, completed_date = CURRENT_TIMESTAMP WHERE id = %s', (user, challenge_id))
+        cursor.execute('SELECT completed_by FROM challenges WHERE id = %s', (challenge_id,))
+        challenge_data = cursor.fetchone()
+        if challenge_data:
+            completed_by = challenge_data[0] or ''
+            if user not in completed_by:
+                new_completed_by = completed_by + f',{user}' if completed_by else user
+                cursor.execute('''
+                    UPDATE challenges 
+                    SET completed_by = %s, completed_date = CURRENT_TIMESTAMP 
+                    WHERE id = %s
+                ''', (new_completed_by, challenge_id))
+                conn.commit()
+                
+                log_activity(user, 'challenge_completed', f'Challenge ID: {challenge_id}')
+                flash('Défi complété ! Points gagnés ! 🎉', 'success')
+            else:
+                flash('Vous avez déjà complété ce défi', 'info')
     else:
-        cursor.execute('UPDATE challenges SET completed_by = ?, completed_date = CURRENT_TIMESTAMP WHERE id = ?', (user, challenge_id))
+        cursor.execute('SELECT completed_by FROM challenges WHERE id = ?', (challenge_id,))
+        challenge = cursor.fetchone()
+        if challenge:
+            completed_by = challenge['completed_by'] or ''
+            if user not in completed_by:
+                new_completed_by = completed_by + f',{user}' if completed_by else user
+                cursor.execute('''
+                    UPDATE challenges 
+                    SET completed_by = ?, completed_date = CURRENT_TIMESTAMP 
+                    WHERE id = ?
+                ''', (new_completed_by, challenge_id))
+                conn.commit()
+                
+                log_activity(user, 'challenge_completed', f'Challenge ID: {challenge_id}')
+                flash('Défi complété ! Points gagnés ! 🎉', 'success')
+            else:
+                flash('Vous avez déjà complété ce défi', 'info')
     
-    conn.commit()
     cursor.close()
     conn.close()
-    
-    log_activity(user, 'challenge_completed', f'Défi ID: {challenge_id}')
-    flash('Défi complété ! 🎉', 'success')
     return redirect(url_for('challenges'))
 
-
-
-
-@app.route('/migrate_data')
-def migrate_data():
-    """Route pour migrer les données de SQLite vers Neon.tech"""
-    if DB_TYPE != 'postgresql':
-        flash('Migration seulement nécessaire pour PostgreSQL', 'info')
-        return redirect(url_for('index'))
-    
-    # Vérifier si l'utilisateur est admin
-    if session.get('user') not in ['maninka mousso', 'panda bg']:
-        flash('Accès non autorisé', 'error')
-        return redirect(url_for('index'))
-    
-    try:
-        # Se connecter à SQLite (si existe)
-        sqlite_path = 'instance/database.db'
-        if not os.path.exists(sqlite_path):
-            flash('Aucune base SQLite trouvée pour migration', 'info')
-            return redirect(url_for('index'))
-        
-        sqlite_conn = sqlite3.connect(sqlite_path)
-        sqlite_conn.row_factory = sqlite3.Row
-        sqlite_cursor = sqlite_conn.cursor()
-        
-        # Se connecter à Neon.tech
-        pg_conn = get_db_connection()
-        pg_cursor = pg_conn.cursor()
-        
-        # Migrer chaque table
-        tables = ['users', 'phrases', 'photos', 'letters', 'memories', 'activities', 'challenges', 'calendar_events']
-        
-        for table in tables:
-            sqlite_cursor.execute(f'SELECT * FROM {table}')
-            rows = sqlite_cursor.fetchall()
-            
-            if not rows:
-                continue
-            
-            migrated_count = 0
-            for row in rows:
-                row_dict = dict(row)
-                columns = list(row_dict.keys())
-                values = list(row_dict.values())
-                
-                placeholders = ', '.join(['%s'] * len(columns))
-                columns_str = ', '.join(columns)
-                
-                # Éviter les doublons
-                pg_cursor.execute(f'SELECT COUNT(*) FROM {table} WHERE id = %s', (row_dict['id'],))
-                if pg_cursor.fetchone()[0] == 0:
-                    pg_cursor.execute(f'INSERT INTO {table} ({columns_str}) VALUES ({placeholders})', values)
-                    migrated_count += 1
-            
-            flash(f'✅ {migrated_count} lignes migrées de {table}', 'success')
-        
-        pg_conn.commit()
-        pg_cursor.close()
-        pg_conn.close()
-        sqlite_cursor.close()
-        sqlite_conn.close()
-        
-        flash('🎉 Migration des données terminée avec succès !', 'success')
-        
-    except Exception as e:
-        flash(f'❌ Erreur lors de la migration: {str(e)}', 'error')
-    
-    return redirect(url_for('stats'))
-
-@app.route('/mood', methods=['GET', 'POST'])
+@app.route('/mood')
 def mood():
     if not is_site_unlocked() and not session.get('special_access'):
         return redirect(url_for('locked_page'))
     
-    if request.method == 'POST':
-        selected_mood = request.form['mood']
-        log_activity(session['user'], 'mood_checked', f'Mood: {selected_mood}')
-        return redirect(url_for('mood_result', mood=selected_mood))
-    
-    return render_template('mood.html', user=session['user'])
+    return render_template('mood.html')
 
-@app.route('/mood_result/<mood>')
-def mood_result(mood):
+@app.route('/get_mood_verse/<mood_type>')
+def get_mood_verse(mood_type):
+    if not is_site_unlocked() and not session.get('special_access'):
+        return jsonify({'error': 'Site verrouillé'}), 403
+    
+    verses = load_mood_verses()
+    mood_verses = verses.get(mood_type, [])
+    
+    if mood_verses:
+        verse = random.choice(mood_verses)
+        log_activity(session['user'], 'mood_check', f'Mood: {mood_type}')
+        return jsonify(verse)
+    else:
+        return jsonify({
+            'arabic': 'لَا تَقْنَطُوا مِن رَّحْمَةِ اللَّهِ',
+            'french': 'Ne désespérez pas de la miséricorde d\'Allah',
+            'explanation': 'Allah est toujours miséricordieux envers Ses serviteurs.',
+            'conclusion': 'Ayez confiance en la miséricorde divine.'
+        })
+
+@app.route('/profile')
+def profile():
     if not is_site_unlocked() and not session.get('special_access'):
         return redirect(url_for('locked_page'))
     
-    verses = load_mood_verses()
+    user = session['user']
+    conn = get_db_connection()
+    cursor = conn.cursor()
     
-    if mood in verses and verses[mood]:
-        verse = random.choice(verses[mood])
+    if DB_TYPE == 'postgresql':
+        cursor.execute('''
+            SELECT username, favorite_color, visit_count, last_login, created_at 
+            FROM users WHERE username = %s
+        ''', (user,))
+        user_data = cursor.fetchone()
+        if user_data:
+            profile_data = {
+                'username': user_data[0],
+                'favorite_color': user_data[1],
+                'visit_count': user_data[2],
+                'last_login': user_data[3],
+                'created_at': user_data[4]
+            }
+        else:
+            profile_data = None
+        
+        # Statistiques de l'utilisateur
+        cursor.execute('SELECT COUNT(*) FROM phrases WHERE auteur = %s', (user,))
+        user_messages = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT COUNT(*) FROM photos WHERE auteur = %s', (user,))
+        user_photos = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT COUNT(*) FROM letters WHERE sender = %s', (user,))
+        user_letters_sent = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT COUNT(*) FROM letters WHERE recipient = %s', (user,))
+        user_letters_received = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT COUNT(*) FROM memories WHERE author = %s', (user,))
+        user_memories = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT COUNT(*) FROM calendar_events WHERE created_by = %s', (user,))
+        user_events = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT COUNT(*) FROM challenges WHERE completed_by LIKE %s', (f'%{user}%',))
+        user_challenges = cursor.fetchone()[0]
+        
+        # Activités récentes
+        cursor.execute('''
+            SELECT action, details, date 
+            FROM activities 
+            WHERE username = %s 
+            ORDER BY date DESC 
+            LIMIT 10
+        ''', (user,))
+        activities_data = cursor.fetchall()
+        activities = []
+        for row in activities_data:
+            activities.append({
+                'action': row[0],
+                'details': row[1],
+                'date': row[2]
+            })
     else:
-        verse = {
-            "arabic": "وَاللَّهُ يُحِبُّ الْمُحْسِنِينَ",
-            "french": "Et Allah aime les bienfaisants",
-            "explanation": "Allah aime ceux qui fait le bien.",
-            "conclusion": "Continue à faire le bien, Allah t'aime."
-        }
+        cursor.execute('''
+            SELECT username, favorite_color, visit_count, last_login, created_at 
+            FROM users WHERE username = ?
+        ''', (user,))
+        user_row = cursor.fetchone()
+        if user_row:
+            profile_data = dict(user_row)
+        else:
+            profile_data = None
+        
+        # Statistiques de l'utilisateur
+        cursor.execute('SELECT COUNT(*) FROM phrases WHERE auteur = ?', (user,))
+        user_messages = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT COUNT(*) FROM photos WHERE auteur = ?', (user,))
+        user_photos = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT COUNT(*) FROM letters WHERE sender = ?', (user,))
+        user_letters_sent = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT COUNT(*) FROM letters WHERE recipient = ?', (user,))
+        user_letters_received = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT COUNT(*) FROM memories WHERE author = ?', (user,))
+        user_memories = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT COUNT(*) FROM calendar_events WHERE created_by = ?', (user,))
+        user_events = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT COUNT(*) FROM challenges WHERE completed_by LIKE ?', (f'%{user}%',))
+        user_challenges = cursor.fetchone()[0]
+        
+        # Activités récentes
+        cursor.execute('''
+            SELECT action, details, date 
+            FROM activities 
+            WHERE user = ? 
+            ORDER BY date DESC 
+            LIMIT 10
+        ''', (user,))
+        activities_rows = cursor.fetchall()
+        activities = [dict(row) for row in activities_rows]
     
-    return render_template('mood_result.html', mood=mood, verse=verse, user=session['user'])
+    cursor.close()
+    conn.close()
+    
+    stats = {
+        'messages': user_messages,
+        'photos': user_photos,
+        'letters_sent': user_letters_sent,
+        'letters_received': user_letters_received,
+        'memories': user_memories,
+        'events': user_events,
+        'challenges': user_challenges
+    }
+    
+    return render_template('profile.html', 
+                         profile=profile_data,
+                         stats=stats,
+                         activities=activities)
+
+@app.route('/update_profile_color', methods=['POST'])
+def update_profile_color():
+    if not is_site_unlocked() and not session.get('special_access'):
+        return jsonify({'error': 'Site verrouillé'}), 403
+    
+    user = session['user']
+    color = request.json.get('color', '#ffdde1')
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    if DB_TYPE == 'postgresql':
+        cursor.execute('UPDATE users SET favorite_color = %s WHERE username = %s', (color, user))
+    else:
+        cursor.execute('UPDATE users SET favorite_color = ? WHERE username = ?', (color, user))
+    
+    conn.commit()
+    cursor.close()
+    conn.close()
+    
+    log_activity(user, 'color_updated', f'Color: {color}')
+    return jsonify({'success': True, 'color': color})
 
 @app.route('/search')
 def search():
@@ -1640,31 +1751,33 @@ def search():
         return redirect(url_for('locked_page'))
     
     query = request.args.get('q', '').strip()
-    phrases = []
+    search_type = request.args.get('type', 'all')
     
-    if query:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
+    if not query:
+        return render_template('search.html', results=[], query='', search_type=search_type)
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    results = []
+    
+    if search_type in ['all', 'messages']:
         if DB_TYPE == 'postgresql':
             cursor.execute('''
                 SELECT * FROM phrases 
-                WHERE texte LIKE %s OR tags LIKE %s
+                WHERE texte ILIKE %s OR tags ILIKE %s
                 ORDER BY date DESC
             ''', (f'%{query}%', f'%{query}%'))
-            phrases_data = cursor.fetchall()
-            phrases = []
-            for row in phrases_data:
-                phrases.append({
+            messages_data = cursor.fetchall()
+            for row in messages_data:
+                results.append({
+                    'type': 'message',
                     'id': row[0],
                     'texte': row[1],
                     'auteur': row[2],
                     'date': row[3],
                     'couleur': row[4],
-                    'tags': row[5],
-                    'est_favori': row[6],
-                    'likes': row[7],
-                    'is_special': row[8]
+                    'tags': row[5]
                 })
         else:
             cursor.execute('''
@@ -1672,243 +1785,248 @@ def search():
                 WHERE texte LIKE ? OR tags LIKE ?
                 ORDER BY date DESC
             ''', (f'%{query}%', f'%{query}%'))
-            phrases_data = cursor.fetchall()
-            phrases = [dict(row) for row in phrases_data]
+            messages_rows = cursor.fetchall()
+            for row in messages_rows:
+                results.append({
+                    'type': 'message',
+                    'id': row['id'],
+                    'texte': row['texte'],
+                    'auteur': row['auteur'],
+                    'date': row['date'],
+                    'couleur': row['couleur'],
+                    'tags': row['tags']
+                })
+    
+    if search_type in ['all', 'photos']:
+        if DB_TYPE == 'postgresql':
+            cursor.execute('''
+                SELECT * FROM photos 
+                WHERE legende ILIKE %s
+                ORDER BY date DESC
+            ''', (f'%{query}%',))
+            photos_data = cursor.fetchall()
+            for row in photos_data:
+                results.append({
+                    'type': 'photo',
+                    'id': row[0],
+                    'filename': row[1],
+                    'cloudinary_url': row[2],
+                    'legende': row[3],
+                    'auteur': row[4],
+                    'date': row[5]
+                })
+        else:
+            cursor.execute('''
+                SELECT * FROM photos 
+                WHERE legende LIKE ?
+                ORDER BY date DESC
+            ''', (f'%{query}%',))
+            photos_rows = cursor.fetchall()
+            for row in photos_rows:
+                results.append({
+                    'type': 'photo',
+                    'id': row['id'],
+                    'filename': row['filename'],
+                    'cloudinary_url': row['cloudinary_url'],
+                    'legende': row['legende'],
+                    'auteur': row['auteur'],
+                    'date': row['date']
+                })
+    
+    if search_type in ['all', 'memories']:
+        if DB_TYPE == 'postgresql':
+            cursor.execute('''
+                SELECT * FROM memories 
+                WHERE title ILIKE %s OR description ILIKE %s
+                ORDER BY date_memory DESC
+            ''', (f'%{query}%', f'%{query}%'))
+            memories_data = cursor.fetchall()
+            for row in memories_data:
+                results.append({
+                    'type': 'memory',
+                    'id': row[0],
+                    'title': row[1],
+                    'description': row[2],
+                    'date_memory': row[3],
+                    'author': row[4]
+                })
+        else:
+            cursor.execute('''
+                SELECT * FROM memories 
+                WHERE title LIKE ? OR description LIKE ?
+                ORDER BY date_memory DESC
+            ''', (f'%{query}%', f'%{query}%'))
+            memories_rows = cursor.fetchall()
+            for row in memories_rows:
+                results.append({
+                    'type': 'memory',
+                    'id': row['id'],
+                    'title': row['title'],
+                    'description': row['description'],
+                    'date_memory': row['date_memory'],
+                    'author': row['author']
+                })
+    
+    cursor.close()
+    conn.close()
+    
+    log_activity(session['user'], 'search', f'Query: {query}, Type: {search_type}')
+    return render_template('search.html', results=results, query=query, search_type=search_type)
+
+@app.route('/api/stats')
+def api_stats():
+    if not is_site_unlocked() and not session.get('special_access'):
+        return jsonify({'error': 'Site verrouillé'}), 403
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    if DB_TYPE == 'postgresql':
+        cursor.execute('SELECT COUNT(*) FROM phrases')
+        total_messages = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT COUNT(*) FROM photos')
+        total_photos = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT COUNT(*) FROM letters')
+        total_letters = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT COUNT(*) FROM memories')
+        total_memories = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT COUNT(*) FROM calendar_events')
+        total_events = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT COUNT(*) FROM challenges WHERE completed_by IS NOT NULL')
+        completed_challenges = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT COUNT(*) FROM users')
+        total_users = cursor.fetchone()[0]
+    else:
+        cursor.execute('SELECT COUNT(*) FROM phrases')
+        total_messages = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT COUNT(*) FROM photos')
+        total_photos = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT COUNT(*) FROM letters')
+        total_letters = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT COUNT(*) FROM memories')
+        total_memories = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT COUNT(*) FROM calendar_events')
+        total_events = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT COUNT(*) FROM challenges WHERE completed_by IS NOT NULL')
+        completed_challenges = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT COUNT(*) FROM users')
+        total_users = cursor.fetchone()[0]
+    
+    cursor.close()
+    conn.close()
+    
+    stats = {
+        'total_messages': total_messages,
+        'total_photos': total_photos,
+        'total_letters': total_letters,
+        'total_memories': total_memories,
+        'total_events': total_events,
+        'completed_challenges': completed_challenges,
+        'total_users': total_users
+    }
+    
+    return jsonify(stats)
+
+@app.route('/api/user_activity')
+def api_user_activity():
+    if not is_site_unlocked() and not session.get('special_access'):
+        return jsonify({'error': 'Site verrouillé'}), 403
+    
+    user = session['user']
+    limit = request.args.get('limit', 10, type=int)
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    if DB_TYPE == 'postgresql':
+        cursor.execute('''
+            SELECT action, details, date 
+            FROM activities 
+            WHERE username = %s 
+            ORDER BY date DESC 
+            LIMIT %s
+        ''', (user, limit))
+        activities_data = cursor.fetchall()
+        activities = []
+        for row in activities_data:
+            activities.append({
+                'action': row[0],
+                'details': row[1],
+                'date': row[2].isoformat() if row[2] else None
+            })
+    else:
+        cursor.execute('''
+            SELECT action, details, date 
+            FROM activities 
+            WHERE user = ? 
+            ORDER BY date DESC 
+            LIMIT ?
+        ''', (user, limit))
+        activities_rows = cursor.fetchall()
+        activities = []
+        for row in activities_rows:
+            activities.append({
+                'action': row['action'],
+                'details': row['details'],
+                'date': row['date']
+            })
+    
+    cursor.close()
+    conn.close()
+    
+    return jsonify(activities)
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html'), 404
+
+@app.errorhandler(500)
+def internal_server_error(e):
+    return render_template('500.html'), 500
+
+@app.route('/test_db')
+def test_db():
+    """Route de test pour vérifier la connexion à la base de données"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        if DB_TYPE == 'postgresql':
+            cursor.execute('SELECT version()')
+            version = cursor.fetchone()[0]
+        else:
+            cursor.execute('SELECT sqlite_version()')
+            version = cursor.fetchone()[0]
         
         cursor.close()
         conn.close()
         
-        log_activity(session['user'], 'search', f'Query: {query}')
-    
-    return render_template('search_results.html', phrases=phrases, query=query, user=session['user'])
-
-@app.route('/stats')
-def stats():
-    if not is_site_unlocked() and not session.get('special_access'):
-        return redirect(url_for('locked_page'))
-    
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    # Statistiques générales
-    if DB_TYPE == 'postgresql':
-        cursor.execute('SELECT COUNT(*) FROM phrases')
-        total_messages = cursor.fetchone()[0]
-        
-        cursor.execute('SELECT COUNT(*) FROM photos')
-        total_photos = cursor.fetchone()[0]
-        
-        cursor.execute('SELECT COUNT(*) FROM phrases WHERE est_favori = TRUE')
-        favoris_count = cursor.fetchone()[0]
-        
-        cursor.execute('SELECT COUNT(*) FROM letters')
-        total_letters = cursor.fetchone()[0]
-        
-        cursor.execute('SELECT COUNT(*) FROM memories')
-        total_memories = cursor.fetchone()[0]
-        
-        # Messages par utilisateur
-        cursor.execute('''
-            SELECT auteur, COUNT(*) as count 
-            FROM phrases 
-            GROUP BY auteur 
-            ORDER BY count DESC
-        ''')
-        messages_by_user_data = cursor.fetchall()
-        messages_by_user = []
-        for row in messages_by_user_data:
-            messages_by_user.append({'auteur': row[0], 'count': row[1]})
-        
-        # Photos par utilisateur
-        cursor.execute('''
-            SELECT auteur, COUNT(*) as count 
-            FROM photos 
-            GROUP BY auteur 
-            ORDER BY count DESC
-        ''')
-        photos_by_user_data = cursor.fetchall()
-        photos_by_user = []
-        for row in photos_by_user_data:
-            photos_by_user.append({'auteur': row[0], 'count': row[1]})
-        
-        # Activité récente
-        cursor.execute('''
-            SELECT * FROM activities 
-            ORDER BY date DESC 
-            LIMIT 20
-        ''')
-        activities_data = cursor.fetchall()
-        recent_activity = []
-        for row in activities_data:
-            recent_activity.append({
-                'id': row[0],
-                'username': row[1],
-                'action': row[2],
-                'details': row[3],
-                'date': row[4]
-            })
-    else:
-        # Version SQLite originale
-        cursor.execute('SELECT COUNT(*) FROM phrases')
-        total_messages = cursor.fetchone()[0]
-        
-        cursor.execute('SELECT COUNT(*) FROM photos')
-        total_photos = cursor.fetchone()[0]
-        
-        cursor.execute('SELECT COUNT(*) FROM phrases WHERE est_favori = 1')
-        favoris_count = cursor.fetchone()[0]
-        
-        cursor.execute('SELECT COUNT(*) FROM letters')
-        total_letters = cursor.fetchone()[0]
-        
-        cursor.execute('SELECT COUNT(*) FROM memories')
-        total_memories = cursor.fetchone()[0]
-        
-        # Messages par utilisateur
-        cursor.execute('''
-            SELECT auteur, COUNT(*) as count 
-            FROM phrases 
-            GROUP BY auteur 
-            ORDER BY count DESC
-        ''')
-        messages_by_user_data = cursor.fetchall()
-        messages_by_user = [dict(row) for row in messages_by_user_data]
-        
-        # Photos par utilisateur
-        cursor.execute('''
-            SELECT auteur, COUNT(*) as count 
-            FROM photos 
-            GROUP BY auteur 
-            ORDER BY count DESC
-        ''')
-        photos_by_user_data = cursor.fetchall()
-        photos_by_user = [dict(row) for row in photos_by_user_data]
-        
-        # Activité récente
-        cursor.execute('''
-            SELECT * FROM activities 
-            ORDER BY date DESC 
-            LIMIT 20
-        ''')
-        activities_data = cursor.fetchall()
-        recent_activity = [dict(row) for row in activities_data]
-    
-    cursor.close()
-    conn.close()
-    
-    return render_template('stats.html',
-                         total_messages=total_messages,
-                         total_photos=total_photos,
-                         favoris_count=favoris_count,
-                         total_letters=total_letters,
-                         total_memories=total_memories,
-                         messages_by_user=messages_by_user,
-                         photos_by_user=photos_by_user,
-                         recent_activity=recent_activity,
-                         user=session['user'])
-
-
-
-
-
-# ROUTES MANQUANTES POUR LE CALENDRIER
-
-
-
-@app.route('/add_event', methods=['GET', 'POST'])
-def add_event():
-    """Ajouter un événement au calendrier"""
-    if not is_site_unlocked() and not session.get('special_access'):
-        return redirect(url_for('locked_page'))
-    
-    if request.method == 'POST':
-        title = request.form['title'].strip()
-        event_date = request.form['event_date']
-        event_type = request.form.get('event_type', 'special')
-        description = request.form.get('description', '').strip()
-        
-        if title and event_date:
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            
-            if DB_TYPE == 'postgresql':
-                cursor.execute('''
-                    INSERT INTO calendar_events (title, event_date, event_type, description, created_by)
-                    VALUES (%s, %s, %s, %s, %s)
-                ''', (title, event_date, event_type, description, session['user']))
-            else:
-                cursor.execute('''
-                    INSERT INTO calendar_events (title, event_date, event_type, description, created_by)
-                    VALUES (?, ?, ?, ?, ?)
-                ''', (title, event_date, event_type, description, session['user']))
-            
-            conn.commit()
-            cursor.close()
-            conn.close()
-            
-            log_activity(session['user'], 'event_added', f'Événement: {title}')
-            flash('Événement ajouté au calendrier ! 📅', 'success')
-            return redirect(url_for('love_calendar'))
-        else:
-            flash('Veuillez remplir le titre et la date', 'error')
-    
-    return render_template('add_event.html', user=session['user'])
-
-@app.route('/delete_event/<int:event_id>')
-def delete_event(event_id):
-    """Supprimer un événement"""
-    if not is_site_unlocked() and not session.get('special_access'):
-        return redirect(url_for('locked_page'))
-    
-    user = session['user']
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    # Vérifier que l'utilisateur est le créateur
-    if DB_TYPE == 'postgresql':
-        cursor.execute('SELECT created_by FROM calendar_events WHERE id = %s', (event_id,))
-        event_data = cursor.fetchone()
-        if event_data and event_data[0] == user:
-            cursor.execute('DELETE FROM calendar_events WHERE id = %s', (event_id,))
-            log_activity(user, 'event_deleted', f'Événement ID: {event_id}')
-            flash('Événement supprimé avec succès', 'success')
-        else:
-            flash('Vous ne pouvez supprimer que vos propres événements', 'error')
-    else:
-        cursor.execute('SELECT created_by FROM calendar_events WHERE id = ?', (event_id,))
-        event = cursor.fetchone()
-        if event and event['created_by'] == user:
-            cursor.execute('DELETE FROM calendar_events WHERE id = ?', (event_id,))
-            log_activity(user, 'event_deleted', f'Événement ID: {event_id}')
-            flash('Événement supprimé avec succès', 'success')
-        else:
-            flash('Vous ne pouvez supprimer que vos propres événements', 'error')
-    
-    conn.commit()
-    cursor.close()
-    conn.close()
-    return redirect(url_for('love_calendar'))
-
-
-
-
-
-# Gestion des erreurs
-@app.errorhandler(404)
-def not_found_error(error):
-    return render_template('errors/404.html'), 404
-
-@app.errorhandler(500)
-def internal_error(error):
-    return render_template('errors/500.html'), 500
-
-@app.errorhandler(413)
-def too_large(error):
-    flash('Fichier trop volumineux (max 16MB)', 'error')
-    return redirect(url_for('galerie'))
+        return jsonify({
+            'status': 'success',
+            'database_type': DB_TYPE,
+            'version': version,
+            'unlock_date': UNLOCK_DATE.isoformat(),
+            'current_time': datetime.now().isoformat(),
+            'is_unlocked': is_site_unlocked()
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'error': str(e),
+            'database_type': DB_TYPE
+        }), 500
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    debug = os.environ.get('FLASK_ENV') == 'development'
-    
-    app.run(host='0.0.0.0', port=port, debug=debug)
+    app.run(debug=True, host='0.0.0.0', port=5000)
