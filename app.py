@@ -1395,6 +1395,12 @@ def calendar():
     
     return render_template('calendar.html', events=events)
 
+# Ajout de l'alias pour love_calendar
+@app.route('/love_calendar')
+def love_calendar():
+    """Alias pour la page du calendrier"""
+    return redirect(url_for('calendar'))
+
 @app.route('/add_event', methods=['GET', 'POST'])
 def add_event():
     if not is_site_unlocked() and not session.get('special_access'):
@@ -1518,6 +1524,12 @@ def challenges():
     return render_template('challenges.html', 
                          challenges=challenges_list,
                          completed_challenges=completed_challenges)
+
+# Ajout de l'alias pour love_challenges
+@app.route('/love_challenges')
+def love_challenges():
+    """Alias pour la page des défis"""
+    return redirect(url_for('challenges'))
 
 @app.route('/complete_challenge/<int:challenge_id>')
 def complete_challenge(challenge_id):
