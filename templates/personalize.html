@@ -26,14 +26,14 @@
             <p>Personnalise ton expérience pour qu'elle te ressemble parfaitement</p>
         </div>
         
-        <form method="POST" action="{{ url_for('update_preferences') }}" class="personalize-form">
+        <form method="POST" class="personalize-form">
             <div class="preference-section">
                 <h3>🎨 Couleurs</h3>
                 <div class="color-preferences">
                     <div class="form-group">
                         <label for="favorite_color">Ta couleur préférée pour tes messages :</label>
                         <div class="color-picker-container">
-                            <input type="color" name="favorite_color" id="favorite_color" value="{{ favorite_color }}" class="color-picker">
+                            <input type="color" name="favorite_color" id="favorite_color" value="{{ current_color }}" class="color-picker">
                             <div class="color-preview" id="color-preview">
                                 <div class="preview-message">
                                     <p>Aperçu de ton message</p>
@@ -79,7 +79,7 @@
                 <div class="stat-icon">🗓️</div>
                 <div class="stat-info">
                     <div class="stat-label">Dans mon cœur depuis</div>
-                    <div class="stat-value">Toujours 💖</div>
+                    <div class="stat-value">{{ current_user.created_at if current_user.created_at else 'Toujours' }}</div>
                 </div>
             </div>
             
@@ -87,7 +87,7 @@
                 <div class="stat-icon">🔄</div>
                 <div class="stat-info">
                     <div class="stat-label">Visites du jardin</div>
-                    <div class="stat-value">{{ visit_count or 0 }}</div>
+                    <div class="stat-value">{{ current_user.visit_count or 0 }}</div>
                 </div>
             </div>
             
@@ -95,7 +95,7 @@
                 <div class="stat-icon">🕐</div>
                 <div class="stat-info">
                     <div class="stat-label">Dernière fois ici</div>
-                    <div class="stat-value">Maintenant ✨</div>
+                    <div class="stat-value">{{ current_user.last_login if current_user.last_login else 'Maintenant' }}</div>
                 </div>
             </div>
         </div>
@@ -108,7 +108,7 @@
             <div class="tip-item">
                 <span class="tip-icon">🎨</span>
                 <div class="tip-content">
-                    <h4>Prend soin de toi, pas que des autres</h4>
+                    <h4>Prend soin de toi, pas que des autres </h4>
                     <p>C'est comme dans les avions quand le truc des masques à oxygène la descend on dit de porter d'abord avant de faire porter les autres</p>
                 </div>
             </div>
@@ -116,7 +116,7 @@
             <div class="tip-item">
                 <span class="tip-icon">💝</span>
                 <div class="tip-content">
-                    <h4>Mange et bois de l'eau même si tu n'as pas faim</h4>
+                    <h4>Mange et bois de l'eau même si tu n'as pas faim faut manger on dit dans la vie si tu n'as pas l'argent pour construire c'est que mange </h4>
                     <p>Et puis gâteau d'anniversaire, garba, placali, tiêp, alloco, dibitérie ehhhh.</p>
                 </div>
             </div>
@@ -124,16 +124,16 @@
             <div class="tip-item">
                 <span class="tip-icon">📸</span>
                 <div class="tip-content">
-                    <h4>N'écoute pas trop les gens</h4>
-                    <p>Tu es celle à qui bon nombre de personnes veulent ressembler. #L'exemple par excellence.</p>
+                    <h4>N'écoute pas trop les gens ( sauf s'ils te disent de ne pas sauter d'une falaise là quand même faut les écouter )et ne laisse pas leur commentaire négatifs t'atteindre tu es celle à qui bon nombre de personnes veulent ressembler</h4>
+                    <p>#L'exemple par excellence.</p>
                 </div>
             </div>
             
             <div class="tip-item">
                 <span class="tip-icon">💌</span>
                 <div class="tip-content">
-                    <h4>Ne te met pas la pression pour quoi que ce soit</h4>
-                    <p>Les bonnes choses prennent du temps et je sais que tu es patiente alors tu recevras le meilleur</p>
+                    <h4>Ne te met pas la pression pour quoi que ce soit tout arrivera au bon moment</h4>
+                    <p>Les bonnes choses prennents du temps et je sais que tu es patiente alors tu recevras le meilleur</p>
                 </div>
             </div>
         </div>

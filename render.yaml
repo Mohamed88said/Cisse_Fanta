@@ -1,22 +1,15 @@
 services:
   - type: web
-    name: flask-love-app
+    name: flask-app
     env: python
     plan: free
     buildCommand: "pip install -r requirements.txt"
     startCommand: "gunicorn wsgi:application"
     envVars:
-      - key: DATABASE_URL
-        value: "postgresql://neondb_owner:npg_oC3pqDdPf5Ru@ep-lingering-mountain-afolq7j6-pooler.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require"
-      - key: CLOUDINARY_CLOUD_NAME
-        value: "djbdv90jr"
-      - key: CLOUDINARY_API_KEY
-        value: "455591489376377"
-      - key: CLOUDINARY_API_SECRET
-        value: "xfudLM75vr_yKqrpHVAr87NNhDo"
-      - key: SECRET_KEY
-        value: "68e60b4d247647f18db672d7b14d85dfdd7a1a69cdeb35144cc7b5563f369e23"
-      - key: FLASK_ENV
-        value: "production"
       - key: PYTHON_VERSION
-        value: "3.11.5"
+        value: 3.11.5
+
+  - type: pgsql
+    name: flask-db
+    plan: free
+    ipAllowList: []

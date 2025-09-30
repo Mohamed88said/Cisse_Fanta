@@ -2,25 +2,21 @@ Arborescence du projet :
 ├── .
 │   ├── .env
 │   ├── .gitignore
-│   ├── .venv/
+│   │   ├── pyvenv.cfg
 │   ├── Procfile
 │   ├── README.md
 │   ├── app.py
 │   ├── arborescence.txt
 │   ├── config.py
 │   ├── gen_arbo.py
-│   ├── instance/
-│   │   ├── database.db
 │   ├── mood_verses.json
 │   ├── package-lock.json
-│   ├── render.yaml
 │   ├── requirements.txt
 │   ├── runtime.txt
 │   ├── static/
 │   │   ├── style.css
 │   │   ├── uploads/
 │   │   │   ├── .gitkeep
-│   │   │   ├── 20250911_175051_Capture_decran_2025-05-27_134147.png
 │   ├── templates/
 │   │   ├── add.html
 │   │   ├── add_memory.html
@@ -33,7 +29,6 @@ Arborescence du projet :
 │   │   ├── galerie.html
 │   │   ├── index.html
 │   │   ├── letters.html
-│   │   ├── locked.html
 │   │   ├── login.html
 │   │   ├── love_calendar.html
 │   │   ├── love_challenges.html
@@ -43,7 +38,6 @@ Arborescence du projet :
 │   │   ├── personalize.html
 │   │   ├── read_letter.html
 │   │   ├── search_results.html
-│   │   ├── special_access.html
 │   │   ├── stats.html
 │   │   ├── write_letter.html
 │   ├── wsgi.py

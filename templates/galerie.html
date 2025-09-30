@@ -7,9 +7,6 @@
 
 <div class="navigation-links">
     <a href="{{ url_for('index') }}" class="btn btn-secondary">💌 Retour aux messages</a>
-    {% if user in ['maninka mousso', 'panda bg'] %}
-    <a href="{{ url_for('migrate_data') }}" class="btn btn-info" onclick="return confirm('Migrer les anciennes données? Cette opération est irréversible.')">🔄 Migrer vers Neon</a>
-    {% endif %}
 </div>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
@@ -29,7 +26,6 @@
             <input type="file" name="file" accept="image/*" required class="file-input">
             <div class="file-info">
                 <small>Formats acceptés: PNG, JPG, JPEG, GIF, WEBP (max 16MB)</small>
-                <small>📁 Stockage: Cloudinary (permanent) + Local (sauvegarde)</small>
             </div>
         </div>
         <div class="form-group">
@@ -44,26 +40,15 @@
         <div class="gallery-grid">
             {% for photo in photos %}
                 <div class="gallery-item">
-                    <!-- Utiliser Cloudinary URL si disponible, sinon local -->
-                    {% if photo.cloudinary_url %}
-                    <img src="{{ photo.cloudinary_url }}" 
-                         alt="{{ photo.legende }}" 
-                         loading="lazy"
-                         onclick="openModal('{{ photo.cloudinary_url }}', '{{ photo.legende }}', '{{ photo.auteur }}', '{{ photo.date }}')">
-                    <div class="cloudinary-badge">☁️ Cloudinary</div>
-                    {% else %}
                     <img src="{{ url_for('static', filename='uploads/' + photo.filename) }}" 
                          alt="{{ photo.legende }}" 
                          loading="lazy"
                          onclick="openModal('{{ url_for('static', filename='uploads/' + photo.filename) }}', '{{ photo.legende }}', '{{ photo.auteur }}', '{{ photo.date }}')">
-                    <div class="local-badge">💾 Local</div>
-                    {% endif %}
-                    
                     <div class="gallery-caption">
                         <h3>{{ photo.legende or 'Sans légende' }}</h3>
                         <div class="photo-meta">
                             <div class="photo-author">📷 {{ photo.auteur }}</div>
-                            <div class="photo-date">📅 {{ photo.date.strftime('%d/%m/%Y %H:%M') if photo.date is string else photo.date }}</div>
+                            <div class="photo-date">📅 {{ photo.date }}</div>
                             {% if photo.file_size %}
                                 <div class="photo-size">📏 {{ "%.1f"|format(photo.file_size / 1024 / 1024) }} MB</div>
                             {% endif %}
@@ -112,9 +97,6 @@
     {% else %}
         <div class="no-messages">
             <p>📷 Aucune photo pour le moment... Ajoute la première!</p>
-            {% if user in ['maninka mousso', 'panda bg'] %}
-            <p><a href="{{ url_for('migrate_data') }}" class="btn btn-info">🔄 Migrer les anciennes données vers Neon</a></p>
-            {% endif %}
         </div>
     {% endif %}
 </div>
@@ -130,36 +112,6 @@
         </div>
     </div>
 </div>
-
-<style>
-.cloudinary-badge {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    background: rgba(74, 144, 226, 0.9);
-    color: white;
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 0.7em;
-    font-weight: bold;
-}
-
-.local-badge {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    background: rgba(108, 117, 125, 0.9);
-    color: white;
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 0.7em;
-    font-weight: bold;
-}
-
-.gallery-item {
-    position: relative;
-}
-</style>
 
 <script>
 // Fonction pour liker une photo
@@ -181,14 +133,7 @@ function openModal(src, caption, author, date) {
     document.getElementById('photoModal').style.display = 'block';
     document.getElementById('modalImage').src = src;
     document.getElementById('modalCaption').textContent = caption || 'Sans légende';
-    
-    // Formater la date
-    let formattedDate = date;
-    if (typeof date === 'string' && date.includes('T')) {
-        formattedDate = new Date(date).toLocaleDateString('fr-FR');
-    }
-    
-    document.getElementById('modalMeta').textContent = `Par ${author} le ${formattedDate}`;
+    document.getElementById('modalMeta').textContent = `Par ${author} le ${date}`;
     document.body.style.overflow = 'hidden';
 }
 
