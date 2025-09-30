@@ -7,12 +7,26 @@ class Config:
     # 🔑 Sécurité
     SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-key-change-in-production")
 
-    # 📦 Base de données : priorité à DATABASE_URL (PostgreSQL sur Render), sinon SQLite en local
-    SQLALCHEMY_DATABASE_URI = os.environ.get(
-        "DATABASE_URL",
-        f"sqlite:///{os.path.join(os.getcwd(), 'instance', 'database.db')}"
-    )
+    # 📦 Base de données : SQLite en dev, PostgreSQL en prod
+    if os.environ.get("RENDER"):  # Sur Render
+        database_url = os.environ.get("DATABASE_URL", "")
+        if database_url:
+            SQLALCHEMY_DATABASE_URI = database_url.replace("postgresql://", "postgresql+psycopg://")
+        else:
+            raise ValueError("DATABASE_URL manquant sur Render")
+    else:  # En local
+        SQLALCHEMY_DATABASE_URI = f"sqlite:///{os.path.join(os.getcwd(), 'instance', 'database.db')}"
+    
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_recycle": 300,
+        "pool_pre_ping": True,
+    }
+
+    # ☁️ Configuration Cloudinary
+    CLOUDINARY_CLOUD_NAME = os.environ.get("CLOUDINARY_CLOUD_NAME")
+    CLOUDINARY_API_KEY = os.environ.get("CLOUDINARY_API_KEY")
+    CLOUDINARY_API_SECRET = os.environ.get("CLOUDINARY_API_SECRET")
 
     # 📂 Gestion des fichiers uploadés
     UPLOAD_FOLDER = os.path.join(os.getcwd(), "static", "uploads")
@@ -26,16 +40,16 @@ class Config:
 class DevelopmentConfig(Config):
     """Configuration pour le développement"""
     DEBUG = True
-    SESSION_COOKIE_SECURE = False  # HTTP autorisé en dev
+    SESSION_COOKIE_SECURE = False
 
 class ProductionConfig(Config):
     """Configuration pour la production"""
     DEBUG = False
-    SESSION_COOKIE_SECURE = True   # HTTPS obligatoire en prod
+    SESSION_COOKIE_SECURE = True
     PREFERRED_URL_SCHEME = 'https'
 
-config = {
-    'development': DevelopmentConfig,
-    'production': ProductionConfig,
-    'default': DevelopmentConfig
-}
+# Configuration automatique
+if os.environ.get("FLASK_ENV") == "production" or os.environ.get("RENDER"):
+    config = ProductionConfig
+else:
+    config = DevelopmentConfig

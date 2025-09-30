@@ -1,22 +1,36 @@
 import os
 import json
-import sqlite3
-from datetime import datetime, timedelta
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
+from datetime import datetime, timedelta, timezone
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_from_directory
-from werkzeug.utils import secure_filename
+from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy import text, extract
 import secrets
 import random
+from calendar import monthcalendar
+import calendar
 
 app = Flask(__name__)
 
-# Configuration sécurisée pour la production
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', secrets.token_hex(32))
-app.config['UPLOAD_FOLDER'] = 'static/uploads'
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+# Configuration de l'application
+app.config.from_object('config.ProductionConfig')
 
-# Configuration de la base de données
-DATABASE = os.environ.get('DATABASE_PATH', 'instance/database.db')
+# Configuration Cloudinary
+cloudinary.config(
+    cloud_name=app.config['CLOUDINARY_CLOUD_NAME'],
+    api_key=app.config['CLOUDINARY_API_KEY'],
+    api_secret=app.config['CLOUDINARY_API_SECRET']
+)
+
+# Vérification de la configuration de la base de données
+if not app.config.get('SQLALCHEMY_DATABASE_URI'):
+    raise ValueError("DATABASE_URL n'est pas configuré dans les variables d'environnement")
+
+# Initialisation de la base de données
+db = SQLAlchemy(app)
 
 # Date de déverrouillage (27 septembre 2025)
 UNLOCK_DATE = datetime(2025, 9, 26, 23, 00, 59)
@@ -27,173 +41,149 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def get_db_connection():
-    conn = sqlite3.connect(DATABASE)
-    conn.row_factory = sqlite3.Row
-    return conn
+# Modèles de base de données
+class User(db.Model):
+    __tablename__ = 'users'
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    password_hash = db.Column(db.String(120), nullable=False)
+    favorite_color = db.Column(db.String(7), default='#ffdde1')
+    visit_count = db.Column(db.Integer, default=0)
+    last_login = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class Phrase(db.Model):
+    __tablename__ = 'phrases'
+    id = db.Column(db.Integer, primary_key=True)
+    texte = db.Column(db.Text, nullable=False)
+    auteur = db.Column(db.String(80), nullable=False)
+    date = db.Column(db.DateTime, default=datetime.utcnow)
+    couleur = db.Column(db.String(7), default='#ffdde1')
+    tags = db.Column(db.String(200))
+    est_favori = db.Column(db.Boolean, default=False)
+    likes = db.Column(db.Integer, default=0)
+    is_special = db.Column(db.Boolean, default=False)
+
+class Photo(db.Model):
+    __tablename__ = 'photos'
+    id = db.Column(db.Integer, primary_key=True)
+    filename = db.Column(db.String(200), nullable=False)
+    cloudinary_url = db.Column(db.Text)
+    cloudinary_public_id = db.Column(db.String(200))
+    legende = db.Column(db.Text)
+    auteur = db.Column(db.String(80), nullable=False)
+    date = db.Column(db.DateTime, default=datetime.utcnow)
+    file_size = db.Column(db.Integer)
+    likes = db.Column(db.Integer, default=0)
+
+class Letter(db.Model):
+    __tablename__ = 'letters'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    sender = db.Column(db.String(80), nullable=False)
+    recipient = db.Column(db.String(80), nullable=False)
+    is_read = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class Memory(db.Model):
+    __tablename__ = 'memories'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    date_memory = db.Column(db.Date, nullable=False)
+    author = db.Column(db.String(80), nullable=False)
+    is_anniversary = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class CalendarEvent(db.Model):
+    __tablename__ = 'calendar_events'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    event_date = db.Column(db.Date, nullable=False)
+    event_type = db.Column(db.String(50), default='special')
+    description = db.Column(db.Text)
+    created_by = db.Column(db.String(80), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class Challenge(db.Model):
+    __tablename__ = 'challenges'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    challenge_type = db.Column(db.String(50), nullable=False)
+    points = db.Column(db.Integer, default=10)
+    is_active = db.Column(db.Boolean, default=True)
+    completed_by = db.Column(db.String(80))
+    completed_date = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class Activity(db.Model):
+    __tablename__ = 'activities'
+    id = db.Column(db.Integer, primary_key=True)
+    user = db.Column(db.String(80), nullable=False)
+    action = db.Column(db.String(100), nullable=False)
+    details = db.Column(db.Text)
+    date = db.Column(db.DateTime, default=datetime.utcnow)
 
 def init_db():
     """Initialise la base de données avec toutes les tables nécessaires"""
-    conn = get_db_connection()
-    
-    # Table des utilisateurs
-    conn.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
-            password_hash TEXT NOT NULL,
-            favorite_color TEXT DEFAULT '#ffdde1',
-            visit_count INTEGER DEFAULT 0,
-            last_login TIMESTAMP,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    
-    # Table des phrases
-    conn.execute('''
-        CREATE TABLE IF NOT EXISTS phrases (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            texte TEXT NOT NULL,
-            auteur TEXT NOT NULL,
-            date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            couleur TEXT DEFAULT '#ffdde1',
-            tags TEXT,
-            est_favori BOOLEAN DEFAULT 0,
-            likes INTEGER DEFAULT 0,
-            is_special BOOLEAN DEFAULT 0
-        )
-    ''')
-    
-    # Table des photos
-    conn.execute('''
-        CREATE TABLE IF NOT EXISTS photos (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            filename TEXT NOT NULL,
-            legende TEXT,
-            auteur TEXT NOT NULL,
-            date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            file_size INTEGER,
-            likes INTEGER DEFAULT 0
-        )
-    ''')
-    
-    # Table des lettres
-    conn.execute('''
-        CREATE TABLE IF NOT EXISTS letters (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            content TEXT NOT NULL,
-            sender TEXT NOT NULL,
-            recipient TEXT NOT NULL,
-            is_read BOOLEAN DEFAULT 0,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    
-    # Table des souvenirs
-    conn.execute('''
-        CREATE TABLE IF NOT EXISTS memories (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            description TEXT NOT NULL,
-            date_memory DATE NOT NULL,
-            author TEXT NOT NULL,
-            is_anniversary BOOLEAN DEFAULT 0,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    
-    # Table des événements du calendrier
-    conn.execute('''
-        CREATE TABLE IF NOT EXISTS calendar_events (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            event_date DATE NOT NULL,
-            event_type TEXT DEFAULT 'special',
-            description TEXT,
-            created_by TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    
-    # Table des défis
-    conn.execute('''
-        CREATE TABLE IF NOT EXISTS challenges (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            description TEXT NOT NULL,
-            challenge_type TEXT NOT NULL,
-            points INTEGER DEFAULT 10,
-            is_active BOOLEAN DEFAULT 1,
-            completed_by TEXT,
-            completed_date TIMESTAMP,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    
-    # Table des activités
-    conn.execute('''
-        CREATE TABLE IF NOT EXISTS activities (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user TEXT NOT NULL,
-            action TEXT NOT NULL,
-            details TEXT,
-            date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    
-    # Créer les utilisateurs par défaut si ils n'existent pas
-    existing_users = conn.execute('SELECT username FROM users').fetchall()
-    existing_usernames = [user['username'] for user in existing_users]
-    
-    # Mettre à jour les utilisateurs avec les nouveaux noms et mots de passe
-    if 'maninka mousso' not in existing_usernames:
-        # Supprimer l'ancien utilisateur fanta s'il existe
-        conn.execute('DELETE FROM users WHERE username = ?', ('fanta',))
-        # Créer le nouvel utilisateur
-        conn.execute('''
-            INSERT INTO users (username, password_hash, favorite_color)
-            VALUES (?, ?, ?)
-        ''', ('maninka mousso', generate_password_hash('Elle a toujours été belle'), '#ffdde1'))
-    
-    if 'panda bg' not in existing_usernames:
-        # Supprimer l'ancien utilisateur saïd s'il existe
-        conn.execute('DELETE FROM users WHERE username = ?', ('saïd',))
-        # Créer le nouvel utilisateur
-        conn.execute('''
-            INSERT INTO users (username, password_hash, favorite_color)
-            VALUES (?, ?, ?)
-        ''', ('panda bg', generate_password_hash('La lune est belle ce soir'), '#e1f5fe'))
-    
-    # Ajouter quelques défis par défaut
-    existing_challenges = conn.execute('SELECT COUNT(*) as count FROM challenges').fetchone()
-    if existing_challenges['count'] == 0:
-        default_challenges = [
-            ("Écris un message d'amour", "Partage un message tendre avec ton amour", "message", 15),
-            ("Partage une photo souvenir", "Upload une photo qui vous rappelle un beau moment", "photo", 20),
-            ("Vérifie ton humeur", "Utilise la fonction humeur du jour", "mood", 10),
-            ("Ajoute un souvenir précieux", "Immortalise un moment spécial dans vos souvenirs", "memory", 25),
-            ("Envoie une lettre d'amour", "Écris une belle lettre à ton partenaire", "letter", 30)
-        ]
+    with app.app_context():
+        # Créer toutes les tables
+        db.create_all()
         
-        for title, desc, c_type, points in default_challenges:
-            conn.execute('''
-                INSERT INTO challenges (title, description, challenge_type, points)
-                VALUES (?, ?, ?, ?)
-            ''', (title, desc, c_type, points))
-    
-    conn.commit()
-    conn.close()
+        # Vérifier si les utilisateurs existent déjà
+        existing_users = User.query.all()
+        existing_usernames = [user.username for user in existing_users]
+        
+        # Créer les utilisateurs s'ils n'existent pas
+        if 'maninka mousso' not in existing_usernames:
+            user1 = User(
+                username='maninka mousso',
+                password_hash=generate_password_hash('Elle a toujours été belle'),
+                favorite_color='#ffdde1'
+            )
+            db.session.add(user1)
+        
+        if 'panda bg' not in existing_usernames:
+            user2 = User(
+                username='panda bg',
+                password_hash=generate_password_hash('La lune est belle ce soir'),
+                favorite_color='#e1f5fe'
+            )
+            db.session.add(user2)
+        
+        # Ajouter des défis par défaut s'ils n'existent pas
+        existing_challenges = Challenge.query.count()
+        if existing_challenges == 0:
+            default_challenges = [
+                ("Écris un message d'amour", "Partage un message tendre avec ton amour", "message", 15),
+                ("Partage une photo souvenir", "Upload une photo qui vous rappelle un beau moment", "photo", 20),
+                ("Vérifie ton humeur", "Utilise la fonction humeur du jour", "mood", 10),
+                ("Ajoute un souvenir précieux", "Immortalise un moment spécial dans vos souvenirs", "memory", 25),
+                ("Envoie une lettre d'amour", "Écris une belle lettre à ton partenaire", "letter", 30)
+            ]
+            
+            for title, desc, c_type, points in default_challenges:
+                challenge = Challenge(
+                    title=title,
+                    description=desc,
+                    challenge_type=c_type,
+                    points=points
+                )
+                db.session.add(challenge)
+        
+        db.session.commit()
 
 def log_activity(user, action, details=None):
     """Enregistre une activité utilisateur"""
-    conn = get_db_connection()
-    conn.execute('''
-        INSERT INTO activities (user, action, details)
-        VALUES (?, ?, ?)
-    ''', (user, action, details))
-    conn.commit()
-    conn.close()
+    activity = Activity(
+        user=user,
+        action=action,
+        details=details
+    )
+    db.session.add(activity)
+    db.session.commit()
 
 def load_mood_verses():
     """Charge les versets depuis le fichier JSON"""
@@ -236,7 +226,6 @@ def is_site_unlocked():
 
 # Créer le dossier uploads s'il n'existe pas
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-os.makedirs('instance', exist_ok=True)
 
 # Initialiser la base de données
 init_db()
@@ -310,6 +299,7 @@ def unlock_special():
             'success': False,
             'message': 'Accès refusé. Merci de patienter.'
         })
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     # Récupérer le nombre de tentatives depuis la session
@@ -324,26 +314,17 @@ def login():
         if username not in session['login_attempts']:
             session['login_attempts'][username] = 0
         
-        conn = get_db_connection()
-        user = conn.execute(
-            'SELECT * FROM users WHERE username = ?', (username,)
-        ).fetchone()
-        conn.close()
+        user = User.query.filter_by(username=username).first()
         
-        if user and check_password_hash(user['password_hash'], password):
+        if user and check_password_hash(user.password_hash, password):
             # Réinitialiser les tentatives en cas de succès
             session['login_attempts'][username] = 0
             session['user'] = username
             
             # Mettre à jour les statistiques de connexion
-            conn = get_db_connection()
-            conn.execute('''
-                UPDATE users 
-                SET visit_count = visit_count + 1, last_login = CURRENT_TIMESTAMP
-                WHERE username = ?
-            ''', (username,))
-            conn.commit()
-            conn.close()
+            user.visit_count += 1
+            user.last_login = datetime.now(timezone.utc)
+            db.session.commit()
             
             log_activity(username, 'login')
             flash('Connexion réussie ! Bienvenue dans ton jardin secret 💖', 'success')
@@ -389,8 +370,6 @@ def login():
     
     return render_template('login.html', attempts=current_attempts)
 
-
-
 @app.route('/special_access', methods=['GET', 'POST'])
 def special_access():
     """Page d'accès spécial avec l'œil qui observe"""
@@ -411,8 +390,6 @@ def special_access():
             flash('Accès refusé. Merci de patienter.', 'error')
     
     return render_template('special_access.html')
-
-
 
 @app.route('/logout')
 def logout():
@@ -440,13 +417,14 @@ def index():
         tags = request.form.get('tags', '').strip()
         
         if texte:
-            conn = get_db_connection()
-            conn.execute('''
-                INSERT INTO phrases (texte, auteur, couleur, tags)
-                VALUES (?, ?, ?, ?)
-            ''', (texte, user, couleur, tags))
-            conn.commit()
-            conn.close()
+            phrase = Phrase(
+                texte=texte,
+                auteur=user,
+                couleur=couleur,
+                tags=tags
+            )
+            db.session.add(phrase)
+            db.session.commit()
             
             log_activity(user, 'message_added', f'Message: {texte[:50]}...')
             flash('Message ajouté avec succès ! 💖', 'success')
@@ -454,53 +432,22 @@ def index():
         return redirect(url_for('index'))
     
     # Récupérer les messages avec pagination
-    conn = get_db_connection()
-    
-    # Compter le total des messages
-    total = conn.execute('SELECT COUNT(*) FROM phrases').fetchone()[0]
-    
-    # Récupérer les messages pour la page actuelle
-    offset = (page - 1) * per_page
-    phrases = conn.execute('''
-        SELECT * FROM phrases 
-        ORDER BY date DESC 
-        LIMIT ? OFFSET ?
-    ''', (per_page, offset)).fetchall()
+    phrases = Phrase.query.order_by(Phrase.date.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
     
     # Statistiques
     stats = {
-        'total_messages': conn.execute('SELECT COUNT(*) FROM phrases').fetchone()[0],
-        'total_photos': conn.execute('SELECT COUNT(*) FROM photos').fetchone()[0],
-        'favoris_count': conn.execute('SELECT COUNT(*) FROM phrases WHERE est_favori = 1').fetchone()[0]
+        'total_messages': Phrase.query.count(),
+        'total_photos': Photo.query.count(),
+        'favoris_count': Phrase.query.filter_by(est_favori=True).count()
     }
     
     # Lettres non lues
-    unread_letters = conn.execute('''
-        SELECT COUNT(*) FROM letters 
-        WHERE recipient = ? AND is_read = 0
-    ''', (user,)).fetchone()[0]
+    unread_letters = Letter.query.filter_by(recipient=user, is_read=False).count()
     
     # Informations utilisateur
-    user_info = conn.execute('''
-        SELECT visit_count, favorite_color FROM users WHERE username = ?
-    ''', (user,)).fetchone()
-    
-    conn.close()
-    
-    # Pagination
-    has_prev = page > 1
-    has_next = offset + per_page < total
-    pagination = {
-        'page': page,
-        'per_page': per_page,
-        'total': total,
-        'pages': (total + per_page - 1) // per_page,
-        'has_prev': has_prev,
-        'has_next': has_next,
-        'prev_num': page - 1 if has_prev else None,
-        'next_num': page + 1 if has_next else None,
-        'iter_pages': lambda: range(max(1, page - 2), min((total + per_page - 1) // per_page + 1, page + 3))
-    }
+    user_info = User.query.filter_by(username=user).first()
     
     # Salutation personnalisée
     greetings = {
@@ -509,13 +456,13 @@ def index():
     }
     
     return render_template('index.html',
-                         phrases=phrases,
+                         phrases=phrases.items,
                          user=user,
-                         pagination=pagination,
+                         pagination=phrases,
                          stats=stats,
                          unread_letters=unread_letters,
-                         visit_count=user_info['visit_count'] if user_info else 0,
-                         current_user={'favorite_color': user_info['favorite_color'] if user_info else '#ffdde1'},
+                         visit_count=user_info.visit_count if user_info else 0,
+                         current_user={'favorite_color': user_info.favorite_color if user_info else '#ffdde1'},
                          personal_greeting=greetings.get(user, f"Salut {user.title()}"),
                          love_quote=get_love_quotes(),
                          now=datetime.now())
@@ -526,18 +473,13 @@ def toggle_favori(phrase_id):
     if not is_site_unlocked() and not session.get('special_access'):
         return redirect(url_for('locked_page'))
     
-    conn = get_db_connection()
-    phrase = conn.execute('SELECT est_favori FROM phrases WHERE id = ?', (phrase_id,)).fetchone()
+    phrase = Phrase.query.get_or_404(phrase_id)
+    phrase.est_favori = not phrase.est_favori
+    db.session.commit()
     
-    if phrase:
-        new_status = not phrase['est_favori']
-        conn.execute('UPDATE phrases SET est_favori = ? WHERE id = ?', (new_status, phrase_id))
-        conn.commit()
-        
-        action = 'favori_added' if new_status else 'favori_removed'
-        log_activity(session['user'], action, f'Phrase ID: {phrase_id}')
+    action = 'favori_added' if phrase.est_favori else 'favori_removed'
+    log_activity(session['user'], action, f'Phrase ID: {phrase_id}')
     
-    conn.close()
     return redirect(url_for('index'))
 
 @app.route('/like_phrase/<int:phrase_id>')
@@ -546,17 +488,13 @@ def like_phrase(phrase_id):
     if not is_site_unlocked() and not session.get('special_access'):
         return jsonify({'error': 'Site verrouillé'}), 403
     
-    conn = get_db_connection()
-    conn.execute('UPDATE phrases SET likes = likes + 1 WHERE id = ?', (phrase_id,))
-    conn.commit()
-    
-    # Récupérer le nouveau nombre de likes
-    likes = conn.execute('SELECT likes FROM phrases WHERE id = ?', (phrase_id,)).fetchone()
-    conn.close()
+    phrase = Phrase.query.get_or_404(phrase_id)
+    phrase.likes += 1
+    db.session.commit()
     
     log_activity(session['user'], 'phrase_liked', f'Phrase ID: {phrase_id}')
     
-    return jsonify({'likes': likes['likes'] if likes else 0})
+    return jsonify({'likes': phrase.likes})
 
 @app.route('/supprimer_phrase/<int:phrase_id>')
 def supprimer_phrase(phrase_id):
@@ -565,20 +503,17 @@ def supprimer_phrase(phrase_id):
         return redirect(url_for('locked_page'))
     
     user = session['user']
-    conn = get_db_connection()
+    phrase = Phrase.query.get_or_404(phrase_id)
     
     # Vérifier que l'utilisateur est l'auteur
-    phrase = conn.execute('SELECT auteur FROM phrases WHERE id = ?', (phrase_id,)).fetchone()
-    
-    if phrase and phrase['auteur'] == user:
-        conn.execute('DELETE FROM phrases WHERE id = ?', (phrase_id,))
-        conn.commit()
+    if phrase.auteur == user:
+        db.session.delete(phrase)
+        db.session.commit()
         log_activity(user, 'phrase_deleted', f'Phrase ID: {phrase_id}')
         flash('Message supprimé avec succès', 'success')
     else:
         flash('Vous ne pouvez supprimer que vos propres messages', 'error')
     
-    conn.close()
     return redirect(url_for('index'))
 
 @app.route('/galerie')
@@ -590,37 +525,11 @@ def galerie():
     page = request.args.get('page', 1, type=int)
     per_page = 12
     
-    conn = get_db_connection()
+    photos = Photo.query.order_by(Photo.date.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
     
-    # Compter le total des photos
-    total = conn.execute('SELECT COUNT(*) FROM photos').fetchone()[0]
-    
-    # Récupérer les photos pour la page actuelle
-    offset = (page - 1) * per_page
-    photos = conn.execute('''
-        SELECT * FROM photos 
-        ORDER BY date DESC 
-        LIMIT ? OFFSET ?
-    ''', (per_page, offset)).fetchall()
-    
-    conn.close()
-    
-    # Pagination
-    has_prev = page > 1
-    has_next = offset + per_page < total
-    pagination = {
-        'page': page,
-        'per_page': per_page,
-        'total': total,
-        'pages': (total + per_page - 1) // per_page,
-        'has_prev': has_prev,
-        'has_next': has_next,
-        'prev_num': page - 1 if has_prev else None,
-        'next_num': page + 1 if has_next else None,
-        'iter_pages': lambda: range(max(1, page - 2), min((total + per_page - 1) // per_page + 1, page + 3))
-    }
-    
-    return render_template('galerie.html', photos=photos, user=session['user'], pagination=pagination)
+    return render_template('galerie.html', photos=photos.items, user=session['user'], pagination=photos)
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -640,25 +549,27 @@ def upload_file():
         return redirect(url_for('galerie'))
     
     if file and allowed_file(file.filename):
-        # Créer un nom de fichier sécurisé avec timestamp
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_')
-        filename = timestamp + secure_filename(file.filename)
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        
         try:
-            file.save(file_path)
-            file_size = os.path.getsize(file_path)
+            # Upload vers Cloudinary
+            upload_result = cloudinary.uploader.upload(
+                file,
+                folder="love_site",
+                resource_type="image"
+            )
             
             # Enregistrer en base
-            conn = get_db_connection()
-            conn.execute('''
-                INSERT INTO photos (filename, legende, auteur, file_size)
-                VALUES (?, ?, ?, ?)
-            ''', (filename, legende, session['user'], file_size))
-            conn.commit()
-            conn.close()
+            photo = Photo(
+                filename=file.filename,
+                cloudinary_url=upload_result['secure_url'],
+                cloudinary_public_id=upload_result['public_id'],
+                legende=legende,
+                auteur=session['user'],
+                file_size=upload_result.get('bytes', 0)
+            )
+            db.session.add(photo)
+            db.session.commit()
             
-            log_activity(session['user'], 'photo_uploaded', f'Photo: {filename}')
+            log_activity(session['user'], 'photo_uploaded', f'Photo: {file.filename}')
             flash('Photo uploadée avec succès ! 📸', 'success')
             
         except Exception as e:
@@ -674,17 +585,13 @@ def like_photo(photo_id):
     if not is_site_unlocked() and not session.get('special_access'):
         return jsonify({'error': 'Site verrouillé'}), 403
     
-    conn = get_db_connection()
-    conn.execute('UPDATE photos SET likes = likes + 1 WHERE id = ?', (photo_id,))
-    conn.commit()
-    
-    # Récupérer le nouveau nombre de likes
-    likes = conn.execute('SELECT likes FROM photos WHERE id = ?', (photo_id,)).fetchone()
-    conn.close()
+    photo = Photo.query.get_or_404(photo_id)
+    photo.likes += 1
+    db.session.commit()
     
     log_activity(session['user'], 'photo_liked', f'Photo ID: {photo_id}')
     
-    return jsonify({'likes': likes['likes'] if likes else 0})
+    return jsonify({'likes': photo.likes})
 
 @app.route('/supprimer_photo/<int:photo_id>')
 def supprimer_photo(photo_id):
@@ -693,29 +600,26 @@ def supprimer_photo(photo_id):
         return redirect(url_for('locked_page'))
     
     user = session['user']
-    conn = get_db_connection()
+    photo = Photo.query.get_or_404(photo_id)
     
     # Vérifier que l'utilisateur est l'auteur
-    photo = conn.execute('SELECT auteur, filename FROM photos WHERE id = ?', (photo_id,)).fetchone()
-    
-    if photo and photo['auteur'] == user:
-        # Supprimer le fichier
-        try:
-            file_path = os.path.join(app.config['UPLOAD_FOLDER'], photo['filename'])
-            if os.path.exists(file_path):
-                os.remove(file_path)
-        except Exception as e:
-            print(f"Erreur lors de la suppression du fichier: {e}")
+    if photo.auteur == user:
+        # Supprimer de Cloudinary
+        if photo.cloudinary_public_id:
+            try:
+                cloudinary.uploader.destroy(photo.cloudinary_public_id)
+            except Exception as e:
+                print(f"Erreur lors de la suppression Cloudinary: {e}")
         
         # Supprimer de la base
-        conn.execute('DELETE FROM photos WHERE id = ?', (photo_id,))
-        conn.commit()
+        db.session.delete(photo)
+        db.session.commit()
+        
         log_activity(user, 'photo_deleted', f'Photo ID: {photo_id}')
         flash('Photo supprimée avec succès', 'success')
     else:
         flash('Vous ne pouvez supprimer que vos propres photos', 'error')
     
-    conn.close()
     return redirect(url_for('galerie'))
 
 @app.route('/mood', methods=['GET', 'POST'])
@@ -763,13 +667,10 @@ def search():
     phrases = []
     
     if query:
-        conn = get_db_connection()
-        phrases = conn.execute('''
-            SELECT * FROM phrases 
-            WHERE texte LIKE ? OR tags LIKE ?
-            ORDER BY date DESC
-        ''', (f'%{query}%', f'%{query}%')).fetchall()
-        conn.close()
+        phrases = Phrase.query.filter(
+            (Phrase.texte.ilike(f'%{query}%')) | 
+            (Phrase.tags.ilike(f'%{query}%'))
+        ).order_by(Phrase.date.desc()).all()
         
         log_activity(session['user'], 'search', f'Query: {query}')
     
@@ -782,23 +683,12 @@ def letters():
         return redirect(url_for('locked_page'))
     
     user = session['user']
-    conn = get_db_connection()
     
     # Lettres reçues
-    received_letters = conn.execute('''
-        SELECT * FROM letters 
-        WHERE recipient = ? 
-        ORDER BY created_at DESC
-    ''', (user,)).fetchall()
+    received_letters = Letter.query.filter_by(recipient=user).order_by(Letter.created_at.desc()).all()
     
     # Lettres envoyées
-    sent_letters = conn.execute('''
-        SELECT * FROM letters 
-        WHERE sender = ? 
-        ORDER BY created_at DESC
-    ''', (user,)).fetchall()
-    
-    conn.close()
+    sent_letters = Letter.query.filter_by(sender=user).order_by(Letter.created_at.desc()).all()
     
     return render_template('letters.html', 
                          received_letters=received_letters,
@@ -819,13 +709,14 @@ def write_letter():
         content = request.form['content'].strip()
         
         if title and content:
-            conn = get_db_connection()
-            conn.execute('''
-                INSERT INTO letters (title, content, sender, recipient)
-                VALUES (?, ?, ?, ?)
-            ''', (title, content, user, recipient))
-            conn.commit()
-            conn.close()
+            letter = Letter(
+                title=title,
+                content=content,
+                sender=user,
+                recipient=recipient
+            )
+            db.session.add(letter)
+            db.session.commit()
             
             log_activity(user, 'letter_sent', f'To: {recipient}, Title: {title}')
             flash('Lettre envoyée avec amour ! 💌', 'success')
@@ -840,26 +731,18 @@ def read_letter(letter_id):
         return redirect(url_for('locked_page'))
     
     user = session['user']
-    conn = get_db_connection()
-    
-    letter = conn.execute('SELECT * FROM letters WHERE id = ?', (letter_id,)).fetchone()
-    
-    if not letter:
-        flash('Lettre introuvable', 'error')
-        return redirect(url_for('letters'))
+    letter = Letter.query.get_or_404(letter_id)
     
     # Vérifier que l'utilisateur peut lire cette lettre
-    if letter['sender'] != user and letter['recipient'] != user:
+    if letter.sender != user and letter.recipient != user:
         flash('Vous n\'avez pas accès à cette lettre', 'error')
         return redirect(url_for('letters'))
     
     # Marquer comme lue si c'est le destinataire
-    if letter['recipient'] == user and not letter['is_read']:
-        conn.execute('UPDATE letters SET is_read = 1 WHERE id = ?', (letter_id,))
-        conn.commit()
+    if letter.recipient == user and not letter.is_read:
+        letter.is_read = True
+        db.session.commit()
         log_activity(user, 'letter_read', f'Letter ID: {letter_id}')
-    
-    conn.close()
     
     return render_template('read_letter.html', letter=letter, user=user)
 
@@ -869,23 +752,11 @@ def memories():
     if not is_site_unlocked() and not session.get('special_access'):
         return redirect(url_for('locked_page'))
     
-    conn = get_db_connection()
-    
     # Souvenirs anniversaires
-    anniversaries = conn.execute('''
-        SELECT * FROM memories 
-        WHERE is_anniversary = 1 
-        ORDER BY date_memory DESC
-    ''').fetchall()
+    anniversaries = Memory.query.filter_by(is_anniversary=True).order_by(Memory.date_memory.desc()).all()
     
     # Souvenirs réguliers
-    regular_memories = conn.execute('''
-        SELECT * FROM memories 
-        WHERE is_anniversary = 0 
-        ORDER BY date_memory DESC
-    ''').fetchall()
-    
-    conn.close()
+    regular_memories = Memory.query.filter_by(is_anniversary=False).order_by(Memory.date_memory.desc()).all()
     
     return render_template('memories.html', 
                          anniversaries=anniversaries,
@@ -905,13 +776,15 @@ def add_memory():
         is_anniversary = 'is_anniversary' in request.form
         
         if title and description and date_memory:
-            conn = get_db_connection()
-            conn.execute('''
-                INSERT INTO memories (title, description, date_memory, author, is_anniversary)
-                VALUES (?, ?, ?, ?, ?)
-            ''', (title, description, date_memory, session['user'], is_anniversary))
-            conn.commit()
-            conn.close()
+            memory = Memory(
+                title=title,
+                description=description,
+                date_memory=datetime.strptime(date_memory, '%Y-%m-%d').date(),
+                author=session['user'],
+                is_anniversary=is_anniversary
+            )
+            db.session.add(memory)
+            db.session.commit()
             
             log_activity(session['user'], 'memory_added', f'Memory: {title}')
             flash('Souvenir ajouté avec succès ! ✨', 'success')
@@ -925,10 +798,6 @@ def love_calendar():
     if not is_site_unlocked() and not session.get('special_access'):
         return redirect(url_for('locked_page'))
     
-    # Implémentation basique du calendrier
-    from calendar import monthcalendar
-    import calendar
-    
     year = request.args.get('year', datetime.now().year, type=int)
     month = request.args.get('month', datetime.now().month, type=int)
     
@@ -937,17 +806,15 @@ def love_calendar():
     month_name = calendar.month_name[month]
     
     # Récupérer les événements
-    conn = get_db_connection()
-    events = conn.execute('''
-        SELECT * FROM calendar_events 
-        WHERE strftime('%Y', event_date) = ? AND strftime('%m', event_date) = ?
-    ''', (str(year), f'{month:02d}')).fetchall()
-    conn.close()
+    events = CalendarEvent.query.filter(
+        extract('year', CalendarEvent.event_date) == year,
+        extract('month', CalendarEvent.event_date) == month
+    ).all()
     
     # Organiser les événements par jour
     events_by_day = {}
     for event in events:
-        day = int(event['event_date'].split('-')[2])
+        day = event.event_date.day
         if day not in events_by_day:
             events_by_day[day] = []
         events_by_day[day].append(event)
@@ -978,13 +845,15 @@ def add_calendar_event():
     description = request.form.get('description', '').strip()
     
     if title and event_date:
-        conn = get_db_connection()
-        conn.execute('''
-            INSERT INTO calendar_events (title, event_date, event_type, description, created_by)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (title, event_date, event_type, description, session['user']))
-        conn.commit()
-        conn.close()
+        event = CalendarEvent(
+            title=title,
+            event_date=datetime.strptime(event_date, '%Y-%m-%d').date(),
+            event_type=event_type,
+            description=description,
+            created_by=session['user']
+        )
+        db.session.add(event)
+        db.session.commit()
         
         flash('Événement ajouté au calendrier ! 📅', 'success')
     
@@ -996,34 +865,19 @@ def love_challenges():
     if not is_site_unlocked() and not session.get('special_access'):
         return redirect(url_for('locked_page'))
     
-    conn = get_db_connection()
-    
     # Défis actifs
-    active_challenges = conn.execute('''
-        SELECT * FROM challenges 
-        WHERE is_active = 1 AND completed_by IS NULL
-        ORDER BY points DESC
-    ''').fetchall()
+    active_challenges = Challenge.query.filter_by(is_active=True, completed_by=None).order_by(Challenge.points.desc()).all()
     
     # Défis terminés
-    completed_challenges = conn.execute('''
-        SELECT * FROM challenges 
-        WHERE completed_by IS NOT NULL
-        ORDER BY completed_date DESC
-    ''').fetchall()
+    completed_challenges = Challenge.query.filter(Challenge.completed_by.isnot(None)).order_by(Challenge.completed_date.desc()).all()
     
     # Points totaux de l'utilisateur
-    total_points = conn.execute('''
-        SELECT SUM(points) as total FROM challenges 
-        WHERE completed_by = ?
-    ''', (session['user'],)).fetchone()
-    
-    conn.close()
+    total_points = db.session.query(db.func.sum(Challenge.points)).filter(Challenge.completed_by == session['user']).scalar() or 0
     
     return render_template('love_challenges.html',
                          active_challenges=active_challenges,
                          completed_challenges=completed_challenges,
-                         total_points=total_points['total'] or 0,
+                         total_points=total_points,
                          user=session['user'])
 
 @app.route('/complete_challenge/<int:challenge_id>')
@@ -1032,19 +886,16 @@ def complete_challenge(challenge_id):
     if not is_site_unlocked() and not session.get('special_access'):
         return redirect(url_for('locked_page'))
     
-    conn = get_db_connection()
+    challenge = Challenge.query.get_or_404(challenge_id)
     
     # Marquer le défi comme terminé
-    conn.execute('''
-        UPDATE challenges 
-        SET completed_by = ?, completed_date = CURRENT_TIMESTAMP
-        WHERE id = ? AND completed_by IS NULL
-    ''', (session['user'], challenge_id))
+    if not challenge.completed_by:
+        challenge.completed_by = session['user']
+        challenge.completed_date = datetime.utcnow()
+        db.session.commit()
+        
+        flash('Défi terminé ! Bravo ! 🎉', 'success')
     
-    conn.commit()
-    conn.close()
-    
-    flash('Défi terminé ! Bravo ! 🎉', 'success')
     return redirect(url_for('love_challenges'))
 
 @app.route('/personalize', methods=['GET', 'POST'])
@@ -1054,31 +905,21 @@ def personalize():
         return redirect(url_for('locked_page'))
     
     user = session['user']
+    user_info = User.query.filter_by(username=user).first()
     
     if request.method == 'POST':
         favorite_color = request.form['favorite_color']
         
-        conn = get_db_connection()
-        conn.execute('''
-            UPDATE users SET favorite_color = ? WHERE username = ?
-        ''', (favorite_color, user))
-        conn.commit()
-        conn.close()
+        user_info.favorite_color = favorite_color
+        db.session.commit()
         
         flash('Préférences sauvegardées ! 🎨', 'success')
         return redirect(url_for('personalize'))
     
-    # Récupérer les informations utilisateur
-    conn = get_db_connection()
-    user_info = conn.execute('''
-        SELECT * FROM users WHERE username = ?
-    ''', (user,)).fetchone()
-    conn.close()
-    
     return render_template('personalize.html', 
                          user=user,
                          current_user=user_info,
-                         current_color=user_info['favorite_color'] if user_info else '#ffdde1')
+                         current_color=user_info.favorite_color if user_info else '#ffdde1')
 
 @app.route('/stats')
 def stats():
@@ -1086,39 +927,27 @@ def stats():
     if not is_site_unlocked() and not session.get('special_access'):
         return redirect(url_for('locked_page'))
     
-    conn = get_db_connection()
-    
     # Statistiques générales
-    total_messages = conn.execute('SELECT COUNT(*) FROM phrases').fetchone()[0]
-    total_photos = conn.execute('SELECT COUNT(*) FROM photos').fetchone()[0]
-    favoris_count = conn.execute('SELECT COUNT(*) FROM phrases WHERE est_favori = 1').fetchone()[0]
-    total_letters = conn.execute('SELECT COUNT(*) FROM letters').fetchone()[0]
-    total_memories = conn.execute('SELECT COUNT(*) FROM memories').fetchone()[0]
+    total_messages = Phrase.query.count()
+    total_photos = Photo.query.count()
+    favoris_count = Phrase.query.filter_by(est_favori=True).count()
+    total_letters = Letter.query.count()
+    total_memories = Memory.query.count()
     
     # Messages par utilisateur
-    messages_by_user = conn.execute('''
-        SELECT auteur, COUNT(*) as count 
-        FROM phrases 
-        GROUP BY auteur 
-        ORDER BY count DESC
-    ''').fetchall()
+    messages_by_user = db.session.query(
+        Phrase.auteur, 
+        db.func.count(Phrase.id).label('count')
+    ).group_by(Phrase.auteur).order_by(db.func.count(Phrase.id).desc()).all()
     
     # Photos par utilisateur
-    photos_by_user = conn.execute('''
-        SELECT auteur, COUNT(*) as count 
-        FROM photos 
-        GROUP BY auteur 
-        ORDER BY count DESC
-    ''').fetchall()
+    photos_by_user = db.session.query(
+        Photo.auteur, 
+        db.func.count(Photo.id).label('count')
+    ).group_by(Photo.auteur).order_by(db.func.count(Photo.id).desc()).all()
     
     # Activité récente
-    recent_activity = conn.execute('''
-        SELECT * FROM activities 
-        ORDER BY date DESC 
-        LIMIT 20
-    ''').fetchall()
-    
-    conn.close()
+    recent_activity = Activity.query.order_by(Activity.date.desc()).limit(20).all()
     
     return render_template('stats.html',
                          total_messages=total_messages,
@@ -1211,8 +1040,3 @@ if __name__ == '__main__':
     debug = os.environ.get('FLASK_ENV') == 'development'
     
     app.run(host='0.0.0.0', port=port, debug=debug)
-
-
-
-
-
