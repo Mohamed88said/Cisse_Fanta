@@ -12,6 +12,9 @@ import secrets
 import random
 from calendar import monthcalendar
 import calendar
+import requests
+import threading
+import time
 
 app = Flask(__name__)
 
@@ -1040,3 +1043,42 @@ if __name__ == '__main__':
     debug = os.environ.get('FLASK_ENV') == 'development'
     
     app.run(host='0.0.0.0', port=port, debug=debug)
+
+
+
+# Route de santé pour les services de monitoring
+@app.route('/health')
+def health_check():
+    return {'status': 'healthy', 'timestamp': datetime.now().isoformat()}
+
+# Route pour s'auto-pinger (optionnel)
+@app.route('/self-ping')
+def self_ping():
+    try:
+        # Remplace par l'URL de ton site Render
+        response = requests.get('https://ton-site.onrender.com/health')
+        return {'self_ping': 'success', 'status_code': response.status_code}
+    except Exception as e:
+        return {'self_ping': 'failed', 'error': str(e)}
+
+# Fonction pour auto-pinger périodiquement
+def start_auto_ping():
+    def ping_loop():
+        while True:
+            try:
+                # Ping toutes les 8 minutes (Render s'endort après 15 min d'inactivité)
+                requests.get('https://ton-site.onrender.com/self-ping', timeout=10)
+                print(f"Auto-ping à {datetime.now()}")
+            except Exception as e:
+                print(f"Erreur auto-ping: {e}")
+            time.sleep(480)  # 8 minutes
+    
+    # Démarrer le thread d'auto-ping
+    thread = threading.Thread(target=ping_loop)
+    thread.daemon = True
+    thread.start()
+
+# Démarrer l'auto-ping au lancement de l'app
+if __name__ == '__main__':
+    start_auto_ping()
+    app.run(debug=False)
