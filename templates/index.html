@@ -3,7 +3,7 @@
 <div class="header-container">
     <h1>💌 {{ personal_greeting }} 💌</h1>
     <div class="user-welcome">
-        <span class="username">{{ user }}</span>, tu as visité ton jardin secret <span class="visit-count">{{ visit_count }}</span> fois 
+        <p>Bienvenue dans ton espace secret, {{ user|title }} !</p>
         {% if unread_letters > 0 %}
             <div class="notification-badge">
                 <a href="{{ url_for('letters') }}" class="unread-letters">
